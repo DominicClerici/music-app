@@ -355,7 +355,7 @@ Dips before peaks are *structural*, not arithmetic: templates place a `bridge`/`
 
 ### 6.5 Relationship to `ArrangementPlan.intensity`
 
-Phase 5 owns the mapping from continuous energy to its 1–4 intensity ladder (PHASE_1 §4.4). The research strongly supports quantizing to 4 bands (Yamaha Main A–D, Korg V1–4) while keeping the float for continuous modulation (velocity, hat openness) — recorded here as guidance, decided in Phase 5.
+Phase 5 owns the mapping from continuous energy to its 1–4 intensity ladder (PHASE_1 §4.4). The research strongly supports quantizing to 4 bands (Yamaha Main A–D, Korg V1–4) while keeping the float for continuous modulation (velocity, hat openness) — recorded here as guidance, decided in Phase 5. (**Resolved** — PHASE_5 §3.1, 2026-07-07: global thresholds 0.30 / 0.55 / 0.80; the float stays live for density and Phase 6 modulation.)
 
 ---
 

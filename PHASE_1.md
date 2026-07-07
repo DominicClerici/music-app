@@ -350,7 +350,7 @@ Structured fields (`rootPc`/`quality`/`extensions`) are canonical; `symbol` is n
 | `densityBudget` | float 0–1 | soloist-space enforcement knob |
 | `register` | `{lowMidi: int, highMidi: int}` | the role's lane; validator: `highMidi ≤ 71` for every role except drums |
 
-**Extension points** — layering order, per-role articulation directives, lane-interaction rules (e.g. bass/kick locking hints): owned by **Phase 5**.
+**Extension points** — layering order, per-role articulation directives, lane-interaction rules (e.g. bass/kick locking hints): owned by **Phase 5** (resolved by PHASE_5 §4.4, 2026-07-07: layering order lives in pack data; the other two slots closed with no fields added — bass feel keys off `intensity`, kick-lock is an authoring convention with a reserved generator-interface hook).
 
 ### 4.5 `Phrase` — produced by Part generators; transformed by Transitions and Humanizer; consumed by Serializer
 
@@ -367,7 +367,7 @@ A Phrase carries **concrete pitches**: retargeting from degree-based patterns to
 
 `PhraseNote = {ticks: int, durationTicks: int, midi: int?, velocity: float, tags: [str]}` — same semantics as document NoteEvents (`midi` absent only for unpitched instruments); `tags` is a free string list for cross-stage annotations (e.g. `"ghost"`, `"accent"`, `"fill"`).
 
-**Extension points** — the `tags` vocabulary and any structured humanizer hints: owned by **Phases 5/6**. Source annotations for debugging (`sourcePatternId`, bar index) may be added by Phase 5.
+**Extension points** — the `tags` vocabulary and any structured humanizer hints: owned by **Phases 5/6** (PHASE_5 §8.1 contributes `"ghost"` and `"push"`, 2026-07-07). Source annotations for debugging (`sourcePatternId`, bar index) may be added by Phase 5.
 
 The Humanizer is `Phrase[] → Phrase[]` (same shape, adjusted ticks/velocities/durations); the Serializer is `Phrase[] + patches → TrackDocument` and is intentionally thin.
 
@@ -504,9 +504,9 @@ Every entry in every pattern bank, regardless of role, carries this envelope —
 | `energyLevel` | int 1–4 | rung on the intensity ladder (matches `ArrangementPlan.intensity`) |
 | `lengthTicks` | int | whole bars at PPQ 480 |
 | `weight` | int ≥ 1 | selection weight among eligible candidates (integer, per §5.3) |
-| `eligibility` | object | extension point owned by Phase 5 (chord-quality masks, bar-in-phrase, next-chord motion, tempo range…) — the research catalog of dimensions lives in Phase 5's session |
+| `eligibility` | object | extension point owned by Phase 5 — pinned by PHASE_5 §3.2 (2026-07-07): optional `tempoBpm: [min, max]` only in v1; Phase 6 may add fill-specific dimensions by amendment there |
 | `events` | list | see below |
-| `retarget` | object | `{registerLow: int, registerHigh: int, onChordChange: hold \| retrigger \| stop}` pinned; richer voice-leading policy is Phase 5's extension |
+| `retarget` | object | `{registerLow: int, registerHigh: int, onChordChange: hold \| retrigger \| stop}` pinned; semantics pinned by PHASE_5 §3.3 (anchor placement, lane folding, retrigger split); voicing policy lives in PHASE_5 §5.4/§6.4 |
 
 ### 6.3 Event primitives (pinned)
 
@@ -519,7 +519,7 @@ Every entry in every pattern bank, regardless of role, carries this envelope —
 - { pos: 720, dur: 240, degree: guide3, octave: 0, velocity: 0.75 }
 ```
 
-`degree` core vocabulary (v1): `root, third, fifth, seventh, guide3, guide7, tension, approach`. Semantics of `tension` (which tension, chosen how) and `approach` (chromatic vs diatonic, targeting next chord) are resolved by Phase 5 with Phase 4's theory utilities; the vocabulary may be *extended* by Phase 5, not repurposed.
+`degree` core vocabulary (v1): `root, third, fifth, seventh, guide3, guide7, tension, approach`. Semantics of `tension` (which tension, chosen how) and `approach` (chromatic vs diatonic, targeting next chord) are resolved by Phase 5 with Phase 4's theory utilities; the vocabulary may be *extended* by Phase 5, not repurposed. (Resolved and extended by PHASE_5 §3.3, 2026-07-07: full resolution table with dressing-safe fallbacks; added degrees `sixth` and `chord`; added event fields `push` and `minDensity`.)
 
 **Drums** — voice + velocity, no harmonic content:
 
@@ -529,7 +529,7 @@ Every entry in every pattern bank, regardless of role, carries this envelope —
 - { pos: 240, voice: hat_closed, velocity: 0.5 }
 ```
 
-Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom_low, tom_mid, tom_high, perc`. Each maps to a document track + trigger convention in the pack's `timbres.yaml` (Phase 7).
+Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom_low, tom_mid, tom_high, perc`. The voice→track mapping is engine data pinned by PHASE_5 §8.2 (2026-07-07 amendment: `hat_closed`/`hat_open` share the `hats` track; all others map 1:1); trigger conventions and patches remain in the pack's `timbres.yaml` (Phase 7).
 
 `progressions.yaml`, `forms.yaml`, `timbres.yaml` have only their *existence and ownership* pinned here; their schemas are designed in Phases 4, 3, and 7 respectively, as sections in those PHASE docs.
 
@@ -540,8 +540,8 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
 | Q1 | ~~Params schema (`meta.params` shape)~~ **Resolved** — PHASE_2 §3 | Phase 2 | mood taxonomy design |
-| Q2 | Intensity-ladder granularity: is 1–4 right? | Phase 5 | pattern-bank authoring experience; amend `ArrangementPlan.intensity` + `energyLevel` ranges here if changed |
-| Q3 | Eligibility-tag dimension set for pattern selection | Phase 5 | drum/bass/comping generator design (research catalog: weight, bar-in-phrase, chord quality/function, next-chord motion, tempo) |
+| Q2 | ~~Intensity-ladder granularity: is 1–4 right?~~ **Resolved** — confirmed 1–4, global energy thresholds (PHASE_5 §3.1) | ~~Phase 5~~ | — |
+| Q3 | ~~Eligibility-tag dimension set for pattern selection~~ **Resolved** — optional tempo band only + completeness rules (PHASE_5 §3.2) | ~~Phase 5~~ | — |
 | Q4 | ~~`progressions.yaml`~~ / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5; `progressions.yaml` **resolved** — PHASE_4 §4) | ~~Phases 4 / 3~~ / 7 | that session |
 | Q5 | Does PPQ 480 suffice for humanizer micro-timing (~1 ms at 120 bpm)? | Phase 6 | escape hatch: bump to 960 with a `schemaVersion` rev; no structural change |
 | Q6 | ~~Mid-song key modulation representation~~ **Resolved** — deferred post-v1; `HarmonicPlan.keys` region list reserved (PHASE_4 §7.1/D10) | ~~Phase 4~~ | — |

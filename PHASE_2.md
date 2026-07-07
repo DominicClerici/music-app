@@ -427,14 +427,14 @@ The mood *word* is not in the plan — downstream stages must key behavior off t
 
 | Field | Type | Consumers | Semantics |
 | --- | --- | --- | --- |
-| `noteDensity` | float [0, 1] | Phase 5 (arrangement planner distributes into per-role/per-section `densityBudget`) | pack-scaled overall event-density budget; 0 = sparsest the style allows, 1 = densest |
+| `noteDensity` | float [0, 1] | Phase 5 (arrangement planner distributes into per-role/per-section `densityBudget` — formula pinned PHASE_5 §4.2, 2026-07-07) | pack-scaled overall event-density budget; 0 = sparsest the style allows, 1 = densest |
 | `dissonance` | float [0, 1] | Phase 4 (progression/extension selection), Phase 5 (tension-degree usage) | pack-scaled harmonic-color budget; Phase 4 defines its concrete ladder against this scalar |
 | `dynamicsBase` | float [0, 1] | Phases 5/6 | center of the velocity distribution before accent maps |
 | `dynamicsRange` | float [0, 1] | Phase 6 | expressive velocity width around the base |
 | `articulationLegato` | float [0, 1] | Phases 5/6 | 0 = staccato, 1 = legato; scales default note durations |
 | `layersMax` | int 2–4 | Phase 5 (arrangement planner) | ceiling on simultaneously active roles at peak section energy |
 | `harmonicRhythmBase` | float, v1 ∈ {0.5, 1.0} | Phase 4 | baseline chords per bar, consumed as a **soft selection filter** over progression-pool entries (amended by PHASE_4 §5.2/D9, 2026-07-07: base 0.5 prefers entries with computed density ≤ 1.0 when available; base 1.0 is inert; pool content keeps authority over local harmonic rhythm) |
-| `registerBias` | float [−1, 1] | Phase 5 | nudges part registers up/down *within* ArrangementPlan lanes; never violates the C5 ceiling |
+| `registerBias` | float [−1, 1] | Phase 5 | nudges part registers up/down *within* ArrangementPlan lanes; never violates the C5 ceiling (concretized PHASE_5 §4.3, 2026-07-07: shifts comping/pads lanes by `round(bias × 12)` semitones, clamped ≤ 71; bass/drums unshifted). Consumption of `dynamicsBase` (additive velocity shift) and `articulationLegato` (duration scaling, comping + pattern-mode bass) pinned in PHASE_5 §3.4 |
 
 ### 7.3 `timbreDirectives`
 

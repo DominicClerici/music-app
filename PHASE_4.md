@@ -405,10 +405,11 @@ All candidates enumerate every octave placement that fits the lane (`bottom ≥ 
 | `triad_close` | triad, root position + 2 inversions |
 | `triad_open` | `triad_close` with the middle voice dropped an octave |
 | `quartal` | three stacked 4ths from the scale (§7.4) starting on a chord tone (pads) |
+| `fifths` | {root, root+7, root+12} — 3rd-omitted pad stack (added by PHASE_5 §6.5, 2026-07-07, resolving part of Q9) |
 
 ### 8.5 Voice-leading distance (pinned; integer)
 
-Voicings compared ascending-sorted, equal cardinality (pad/truncate policy is the caller's). With integer weights `w`:
+Voicings compared ascending-sorted, equal cardinality (pad/truncate policy is the caller's — Phase 5's callers pad the shorter voicing with its own top pitch, PHASE_5 §6.4, 2026-07-07). With integer weights `w`:
 
 ```
 vl_distance(a, b, w) = w.move · Σᵢ |aᵢ − bᵢ|          # L1 taxicab (Tymoczko)
@@ -702,7 +703,7 @@ Semantics-table compliance is visible: the same melancholic quartet PHASE_3 fitt
 | Q6 | Target-aware intro approach (BiaB-style last-chord rewrite toward the first body chord) | Phase 8 / post-v1 | whether authored-open intros ever land badly against a drawn first section |
 | Q7 | Deceptive rule is dormant (no v1 form triggers it) — does it fire correctly for Phase 8's doubled final choruses? | Phase 8 | PHASE_3 Q2 (doubled-chorus forms); synthetic fixture exists meanwhile |
 | Q8 | Secondary-dominant slash syntax (`V7/ii`) for authoring ergonomics | Phase 8 | author feedback; absolute tokens cover v1 |
-| Q9 | Additional voicing candidate classes (cluster pads, spread triads, guitar-shape sets) | Phase 5 | part-generator needs; additive to §8.4 |
+| Q9 | Additional voicing candidate classes (cluster pads, spread triads, guitar-shape sets) — **partially resolved**: PHASE_5 added `fifths` (2026-07-07); further classes remain open for Phase 8 | Phase 5 → Phase 8 | pack-authoring needs; additive to §8.4 |
 
 ---
 
