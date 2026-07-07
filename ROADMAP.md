@@ -36,6 +36,7 @@ Decisions made during roadmap planning (2026-07-06). These are settled unless a 
 | Form model | **Templates with parameterized slots + repeat blocks** (decided in Phase 3, 2026-07-07): `forms.yaml` declares section defaults + weighted template spines; repeat blocks fit the length budget arithmetically (BiaB/Aebersold convention); an 11-type section vocabulary (starter six + postchorus/head/solo/main/breakdown) carries one semantics table for Phases 4–6; energy = engine base table + positional rules + arousal + pack envelope. Fitting fills toward `maxLength` from below (hard ceiling), degrading outro-before-bridge per corpus presence. See `PHASE_3.md` §3–7/D1–D14. |
 | Harmony model | **Authored pools + bounded transforms** (decided in Phase 4, 2026-07-07): `progressions.yaml` holds per-phrase-label Roman-numeral progressions (case+suffix tokens, major-scale-relative degrees), gated by mode/valence/dissonance, drawn once per harmonyTag; runtime rewrites only three boundary events (turnaround relaunch at same-tag loops, dormant deceptive fallback, mandatory final close from a `finals` pool); a 7-tier dissonance-dressing ladder with dominant-hotter function offsets maps `budgets.dissonance` to chord color; repeats are harmonically identical in v1; modulation deferred with `HarmonicPlan.keys` regions reserved; the shared theory library (owned interval/scale tables, voicing candidates, integer-cost Viterbi voice-leading) is pinned for Phase 5. See `PHASE_4.md` §3–8/D1–D16. |
 | Part-generation model | **Cached pattern selection + engine algorithms parameterized by pack data** (decided in Phase 5, 2026-07-07): intensity 1–4 confirmed with global energy thresholds (0.30/0.55/0.80); one pattern draw per (role, kind, rung) per song — same-rung sections share their groove, variation is Phase 6's; eligibility = optional tempo band + completeness rules; degree-based retargeting with dressing-safe fallbacks, authored `push` anticipations, and Yamaha-style lane folding/retrigger; arrangement = pack layering order + additive count rules under `layersMax`; bass is dual-mode (authored patterns / engine walking-bass with per-bar sub-seeds); comping and pads take rhythm from chord-hit patterns and pitches from one deterministic Viterbi voicing pass per role; the Serializer and first end-to-end milestone land here. See `PHASE_5.md` §3–8/D1–D22. |
+| Transitions & humanization model | **Note-structure vs performance split** (decided in Phase 6, 2026-07-07): stage 6 owns all note-structural edits — deterministic section-boundary devices (fill/stop/dropout per the PHASE_3 semantics table) + drawn phrase fills, fill sizing via authored content windows with tail truncation, crash+kick entry rule, the HOLD ending transform, and sparse mutation via five constructive-safe operators on 2-bar drum / 8-bar comping units (pack-gated tables in a new `transitions.yaml`); stage 7 is note-count-preserving performance rendering — tick-domain offbeat-only swing, ms-authored feel-offset maps (`feel.yaml`), sub-JND triangular jitter (velocity width from `dynamicsRange`), walking-bass legato, and the Friberg–Sundberg ritard (q=3, v_end=0.65) as stepped tempo events; `fade` aliases to HOLD in v1; PPQ 480 confirmed (PHASE_1 Q5). See `PHASE_6.md` §3–6/D1–D17. |
 
 ## 3. System Overview
 
@@ -73,9 +74,11 @@ params ──> 1. Interpreter          params → GenerationPlan
                                      drums (pattern lib + intensity ladder),
                                      bass (kick-lock / walking), comping (voice-led
                                      voicings + comping rhythms), pads/texture
-       ──> 6. Transition engine    phrases → phrases + fills, crashes, risers, stops
+       ──> 6. Transition engine    phrases → phrases + fills, crashes, risers, stops,
+                                     pattern mutation (2-bar units; moved here from
+                                     stage 7 by PHASE_6 D1/D8, 2026-07-07)
        ──> 7. Humanizer            swing, velocity accent maps + jitter,
-                                     micro-timing, 4-bar pattern mutation
+                                     micro-timing, duration; emits ritard tempo events
        ──> 8. Sound designer       role + mood + flavor → Tone.js patches + FX chains
        ──> 9. Serializer           everything → TrackDocument
 ```
@@ -142,10 +145,10 @@ The largest phase — its session should split it further.
 
 The "sounds like a band, not a MIDI file" phase.
 
-- Fill generation and placement: small fill each 4-bar phrase, big fill at section boundaries, sized to the energy jump; crash + kick on the downbeat after.
-- Transition devices: risers before high-energy sections, breakdowns, the 1-beat full stop before a chorus.
-- Anti-repetition: mutate patterns slightly every 4 bars, comping rhythm every 8; nothing loops verbatim.
-- Humanization: swing ratios per style, metric velocity accent maps + jitter, ghost notes, micro-timing offsets (laid-back hats, tight kick/bass), duration variation.
+- Fill generation and placement: small fill each 4-bar phrase (drawn, selective — refined by PHASE_6 D2), big fill at section boundaries, sized to the energy jump; crash + kick on the downbeat after.
+- Transition devices: risers before high-energy sections (reserved to Phase 7/8 by PHASE_6 D5), breakdowns, the 1-beat full stop before a chorus.
+- Anti-repetition: mutate patterns slightly — refined to 2-bar drum units with heavy no-op bias (comping every 8 bars) per the corpus evidence (PHASE_6 D8); with humanizer jitter on top, nothing loops verbatim.
+- Humanization: swing ratios per style, metric velocity accent maps + jitter, ghost notes (authored in Phase 5, modulated here — PHASE_6), micro-timing offsets (laid-back hats, tight kick/bass), duration variation.
 
 ### Phase 7 — Sound Design
 

@@ -79,12 +79,13 @@ One ladder for all packs: pack `energyRange` envelopes (PHASE_3 §6.4) already p
 eligibility: { tempoBpm: [min, max] }   # optional; pattern eligible iff min ≤ plan.tempoBpm ≤ max
 ```
 
-Everything else in the research catalog (bar-position masks, post-fill, chord-type/next-chord-motion conditions) is either made unnecessary by per-rung caching and degree abstraction, handled structurally (positional variation authored *inside* multi-bar patterns), or owned by Phase 6 (fill-specific dimensions — Phase 6 may add eligibility fields for `kind: fill`/`break` patterns by amending this section).
+Everything else in the research catalog (bar-position masks, post-fill, chord-type/next-chord-motion conditions) is either made unnecessary by per-rung caching and degree abstraction, handled structurally (positional variation authored *inside* multi-bar patterns), or owned by Phase 6 (fill-specific dimensions — Phase 6 may add eligibility fields for `kind: fill`/`break` patterns by amending this section; PHASE_6, 2026-07-07: no new dimensions needed in v1 — the slot stays open for Phase 8).
 
 **Completeness rules** (loader; the F13/P6 pattern — selection can never come up empty):
 
 - Per role with a pattern bank: ≥ 1 `main` pattern with **no** eligibility gate at **each** rung 1–4; ≥ 1 ungated `intro`; ≥ 1 ungated `ending`.
 - A bass bank with `mode: walking` (§5.3) is exempt — the walker serves every section and kind.
+- **PT12** (added by PHASE_6 §10.6, 2026-07-07): the drum bank carries ≥ 1 ungated `kind: fill` pattern — Phase 6's fill resolution (destination rung + nearest-rung fallback) can never come up empty. Fill selection also respects `eligibility.tempoBpm`.
 
 ### 3.3 Retargeting: degrees → pitches
 
@@ -528,8 +529,9 @@ arr    = arrange(plan, form, pack, rng_arrangement)            # §4
 phrases = []
 for role in [drums, bass, comping, pads]:                      # pinned order (§4.4)
     phrases += generate(role, arr, chords, plan, pack, phrases, streams[role])
-phrases = transitions(phrases, ...)     # Phase 6 — identity stub until built
-phrases = humanize(phrases, ...)        # Phase 6 — identity stub until built
+phrases = transitions(phrases, ...)     # Phase 6 — designed PHASE_6 §3 (stub until built)
+phrases, tempoEvents = humanize(phrases, ...)   # Phase 6 — PHASE_6 §5; also returns
+                                        #   ritard tempo events (PHASE_6 §6, 2026-07-07)
 patches = sound_design(plan, pack)      # Phase 7 — stub timbres until built
 doc    = serialize(plan, form, phrases, patches)               # §8.3
 ```
@@ -544,7 +546,7 @@ doc    = serialize(plan, form, phrases, patches)               # §8.3
 | `snare` | `snare` | |
 | `hat_closed`, `hat_open` | `hats` | open = longer `durationTicks` on the shared MetalSynth track (default durs: closed 60, open 360) |
 | `ride` | `ride` | default dur 240 |
-| `crash` | `crash` | Phase 6 territory |
+| `crash` | `crash` | emitted by Phase 6 (entry crashes, HOLD final hit); default dur 1440 (PHASE_6 §10.7, 2026-07-07) |
 | `tom_low` / `tom_mid` / `tom_high` | `tom_low` / `tom_mid` / `tom_high` | |
 | `perc` | `perc` | |
 
@@ -552,7 +554,7 @@ Tracks exist only for voices the selected patterns actually emit. Default `dur` 
 
 ### 8.3 Serializer (thin, as PHASE_1 intends)
 
-Per track: concatenate its Phrases in section order; sort notes by `(ticks, midi)`; clamp `durationTicks ≥ 1`; truncate any note ending past the final section's end (V8). Document assembly: `sections` derived 1:1 from `SongForm` (types, §3.3 labels, energy, tick ranges); `header` from the plan (PPQ 480, single tempo, single time signature); `meta` echoes params/seed/overrides/versions; per-track `instrument`/`effects` from the sound-design stage; stub channel defaults (drums −4 dB except kick −2, bass −3, comping −6, pads −10; pan 0 except hats +0.2, ride −0.15, comping +0.1, pads −0.1); no buses; master = `Compressor {threshold: −24, ratio: 4}` + `Limiter {threshold: −1}`. Output must pass every PHASE_1 §3.8 validator rule (V1–V8).
+Per track: concatenate its Phrases in section order; sort notes by `(ticks, midi)`; clamp `durationTicks ≥ 1`; truncate any note ending past the final section's end (V8). Document assembly: `sections` derived 1:1 from `SongForm` (types, §3.3 labels, energy, tick ranges); `header` from the plan (PPQ 480, base tempo + the Humanizer's ritard tempo events when present — amended by PHASE_6 §6, 2026-07-07; single time signature); `meta` echoes params/seed/overrides/versions; per-track `instrument`/`effects` from the sound-design stage; stub channel defaults (drums −4 dB except kick −2, bass −3, comping −6, pads −10; pan 0 except hats +0.2, ride −0.15, comping +0.1, pads −0.1); no buses; master = `Compressor {threshold: −24, ratio: 4}` + `Limiter {threshold: −1}`. Output must pass every PHASE_1 §3.8 validator rule (V1–V8).
 
 ### 8.4 Stub `timbres.yaml`
 
@@ -647,11 +649,11 @@ Both examples serialize to `TrackDocument`s passing V1–V8 and play in the Phas
 | Q2 | Runtime kick/bass alignment pass (consume the reserved drums→bass phrase handoff)? | Post-v1 | listening evidence that authoring convention is insufficient (D14 hook documented) |
 | Q3 | Pattern-degree approach variants (`approach_above`, `approach_diatonic`)? | Phase 8 | first pack needing them; additive vocabulary extension per §3.3 |
 | Q4 | Blues bass: authored boogie patterns (via `sixth`) vs walking mode with parameters — which serves the blues pack? | Phase 8 | blues pack authoring session; both mechanisms exist |
-| Q5 | `kind: break` semantics and stop-time patterns (PHASE_3 Q5) | Phase 6/8 | fill/transition design; eligibility extension path (§3.2) |
+| Q5 | `kind: break` semantics and stop-time patterns (PHASE_3 Q5) — **partially resolved** (PHASE_6, 2026-07-07: the v1 `stop` device is pure note deletion and needs no break patterns; `kind: break` stays reserved for Phase 8 stop-time choruses) | ~~Phase 6~~/8 | blues/pack authoring |
 | Q6 | Pad voicing motion over long static sections (MMA's `Move`-style slow drift)? | Post-v1 | evidence that held pads read as static across 16+ bars |
 | Q7 | Two-drummer/percussion layer (Yamaha's Sub-Rhythm channel) as a fifth role or a drums extension? | Phase 8 | lo-fi/fusion authoring needs; role enum is closed in v1 |
 | Q8 | Comping-reacts-to-soloist (interactive density)? | Post-v1 | there is no soloist input in v1 by design; revisit if a live-input mode ever exists |
-| Q9 | Walker repeated-note polish (beat-3/beat-4 collision avoidance)? | Phase 6 or post-v1 listening | whether occasional repeated pitches (§9.2 bar 21) read as natural or mechanical |
+| Q9 | Walker repeated-note polish (beat-3/beat-4 collision avoidance)? (PHASE_6, 2026-07-07: confirmed post-v1 — the Humanizer never re-pitches) | Post-v1 listening | whether occasional repeated pitches (§9.2 bar 21) read as natural or mechanical |
 
 ---
 

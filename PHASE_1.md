@@ -273,7 +273,8 @@ params → [1 Interpreter]   → GenerationPlan   (producer: Phase 2)
        → [4 Arrangement]   → ArrangementPlan  (Phase 5)
        → [5 Parts]         → Phrase[]         (Phase 5)
        → [6 Transitions]   → Phrase[]         (Phase 6)
-       → [7 Humanizer]     → Phrase[]         (Phase 6)
+       → [7 Humanizer]     → Phrase[] + tempo events   (Phase 6; events appended to
+                                              header.tempos — PHASE_6 §6, 2026-07-07)
        → [8 Sound design]  → patches/FX       (Phase 7)
        → [9 Serializer]    → TrackDocument    (format pinned here; built in Phase 5)
 ```
@@ -367,7 +368,7 @@ A Phrase carries **concrete pitches**: retargeting from degree-based patterns to
 
 `PhraseNote = {ticks: int, durationTicks: int, midi: int?, velocity: float, tags: [str]}` — same semantics as document NoteEvents (`midi` absent only for unpitched instruments); `tags` is a free string list for cross-stage annotations (e.g. `"ghost"`, `"accent"`, `"fill"`).
 
-**Extension points** — the `tags` vocabulary and any structured humanizer hints: owned by **Phases 5/6** (PHASE_5 §8.1 contributes `"ghost"` and `"push"`, 2026-07-07). Source annotations for debugging (`sourcePatternId`, bar index) may be added by Phase 5.
+**Extension points** — the `tags` vocabulary and any structured humanizer hints: owned by **Phases 5/6** (PHASE_5 §8.1 contributes `"ghost"` and `"push"`, 2026-07-07; PHASE_6 §3.9 contributes `"fill"`, `"crash"`, `"var"`, `"hold"`, 2026-07-07). Source annotations for debugging (`sourcePatternId`, bar index) may be added by Phase 5.
 
 The Humanizer is `Phrase[] → Phrase[]` (same shape, adjusted ticks/velocities/durations); the Serializer is `Phrase[] + patches → TrackDocument` and is intentionally thin.
 
@@ -477,6 +478,7 @@ styles/pop_rock/
     pads.yaml          #   "
   progressions.yaml    # progression pools, schema owned by Phase 4
   forms.yaml           # form tendencies, schema owned by Phase 3
+  transitions.yaml     # boundary devices & mutation config, schema owned by Phase 6
   timbres.yaml         # timbre palette, schema owned by Phase 7
 ```
 
@@ -543,7 +545,7 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | Q2 | ~~Intensity-ladder granularity: is 1–4 right?~~ **Resolved** — confirmed 1–4, global energy thresholds (PHASE_5 §3.1) | ~~Phase 5~~ | — |
 | Q3 | ~~Eligibility-tag dimension set for pattern selection~~ **Resolved** — optional tempo band only + completeness rules (PHASE_5 §3.2) | ~~Phase 5~~ | — |
 | Q4 | ~~`progressions.yaml`~~ / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5; `progressions.yaml` **resolved** — PHASE_4 §4) | ~~Phases 4 / 3~~ / 7 | that session |
-| Q5 | Does PPQ 480 suffice for humanizer micro-timing (~1 ms at 120 bpm)? | Phase 6 | escape hatch: bump to 960 with a `schemaVersion` rev; no structural change |
+| Q5 | ~~Does PPQ 480 suffice for humanizer micro-timing?~~ **Resolved** — confirmed sufficient; every modeled effect ≥ 3 ticks, float-ms math with one terminal rounding (PHASE_6 §5.7/D16) | ~~Phase 6~~ | — |
 | Q6 | ~~Mid-song key modulation representation~~ **Resolved** — deferred post-v1; `HarmonicPlan.keys` region list reserved (PHASE_4 §7.1/D10) | ~~Phase 4~~ | — |
 | Q7 | Optional `debug` block embedding IRs in `TrackDocument` | Any phase that needs it | additive, non-breaking |
 | Q8 | Sampler support (sampled instrument flavors) | Post-v1 | asset hosting + async loading story |
