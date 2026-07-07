@@ -478,7 +478,7 @@ Phase 7 may add fields here as *it* needs (it consumes, this phase produces; add
 | Q1 | Per-pack per-mood overrides (e.g., jazz's `dark` differing from pop's `dark` beyond expression ranges)? | Phase 8 (authoring experience) | whether global overrides + expression ranges prove insufficient across 5 packs |
 | Q2 | Widen the interpreter draw to tonic selection (seeded pick from the pool instead of first-entry)? | Any later phase / listening feedback | evidence that fixed auto-keys feel repetitive; append-only draw discipline (§6.1) makes this safe |
 | Q3 | `harmonicRhythmBase` mapping is designer's choice (documented literature gap) — does it survive contact with Phase 4's progression design? | Phase 4 | Phase 4 may renegotiate the field's semantics (amendment to §7.2) |
-| Q4 | User-facing global energy/intensity knob (distinct from mood)? | Phase 3 (which owns section energy) | whether per-section energy curves leave a gap a global knob must fill |
+| Q4 | ~~User-facing global energy/intensity knob (distinct from mood)?~~ **Resolved** — no knob in v1; arousal modulation + pack energy envelopes cover it, insertion point documented (PHASE_3 §6.3/D10) | ~~Phase 3~~ (resolved 2026-07-07) | revisit post-v1 only with listening evidence |
 | Q5 | Mood blending / custom V/A input (API power users)? | Post-v1 | D6 keeps coordinates private; revisit only with a validation story for arbitrary points |
 | Q6 | Lydian rung in the mode ladder? | Phase 8 (if a pack wants it) | resolving the Persichetti vs Temperley–Tan conflict via listening tests |
 | Q7 | Non-4/4 time signatures in `params`? | When a pack ships one | pack manifests already declare `timeSignatures`; params stays silent until needed |

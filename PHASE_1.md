@@ -122,7 +122,7 @@ Semantics: an event applies from its tick until the next event of the same kind 
 { "type": "chorus", "label": "Chorus 2", "startTick": 30720, "endTick": 46080, "energy": 0.9 }
 ```
 
-- `type`: section-type string (vocabulary owned by Phase 3; `intro | verse | prechorus | chorus | bridge | outro` are the starter set).
+- `type`: section-type string (vocabulary owned by Phase 3; the full v1 vocabulary — 11 types — is defined in PHASE_3 §3, superseding the starter set listed here at design time).
 - Sections are contiguous, non-overlapping, start at tick 0, and cover the song end-to-end. `endTick` is exclusive and equals the next section's `startTick`.
 - `energy`: the section's 0–1 energy scalar, carried for client display and validators.
 
@@ -310,7 +310,7 @@ Each section: `{id: str, type: str, index: int, startBar: int, lengthBars: int, 
 - Bar → tick conversion is `startBar × numerator × (480 × 4 / denominator)` using the plan's time signature.
 - `TrackDocument.sections` is derived 1:1 from these (type/label/energy + tick ranges).
 
-**Extension points** — phrase substructure (4-bar groupings), cadence directives at boundaries, repetition/variation markers: owned by **Phase 3**.
+**Extension points** — phrase substructure (4-bar groupings), cadence directives at boundaries, repetition/variation markers: owned by **Phase 3** (pinned in PHASE_3 §4, 2026-07-07 — note: Phase 3 pinned an `ending` directive but deliberately no cadence field; cadence logic stayed with Phase 4).
 
 ### 4.3 `HarmonicPlan` — produced by Harmony engine; consumed by all Part generators, Transitions
 
@@ -542,7 +542,7 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | Q1 | ~~Params schema (`meta.params` shape)~~ **Resolved** — PHASE_2 §3 | Phase 2 | mood taxonomy design |
 | Q2 | Intensity-ladder granularity: is 1–4 right? | Phase 5 | pattern-bank authoring experience; amend `ArrangementPlan.intensity` + `energyLevel` ranges here if changed |
 | Q3 | Eligibility-tag dimension set for pattern selection | Phase 5 | drum/bass/comping generator design (research catalog: weight, bar-in-phrase, chord quality/function, next-chord motion, tempo) |
-| Q4 | `progressions.yaml` / `forms.yaml` / `timbres.yaml` schemas | Phases 4 / 3 / 7 | those sessions |
+| Q4 | `progressions.yaml` / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5) | Phases 4 / ~~3~~ / 7 | those sessions |
 | Q5 | Does PPQ 480 suffice for humanizer micro-timing (~1 ms at 120 bpm)? | Phase 6 | escape hatch: bump to 960 with a `schemaVersion` rev; no structural change |
 | Q6 | Mid-song key modulation representation | Phase 4 | `HarmonicPlan` extension point reserved |
 | Q7 | Optional `debug` block embedding IRs in `TrackDocument` | Any phase that needs it | additive, non-breaking |

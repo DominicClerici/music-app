@@ -33,6 +33,7 @@ Decisions made during roadmap planning (2026-07-06). These are settled unless a 
 | Output format | Tone.js-oriented JSON (`TrackDocument`), modeled on `@tonejs/midi`'s schema with Tone.js synth patches/effects replacing General MIDI programs. |
 | Backend stack | **Python ≥ 3.12** (decided in Phase 1, 2026-07-06): the project's focus is generation quality, and encoding the output for the browser is trivial serialization. music21 (wrapped) for theory; pydantic v2 models with exported JSON Schema as the client contract. See `PHASE_1.md` §2/D1–D2. |
 | Style × mood interaction | **Packs declare supported moods** (decided in Phase 2, 2026-07-06): each style pack lists its supported subset of the 12-word mood vocabulary plus a default; unsupported combos are validation errors, never silent substitution. Mood = V/A anchor + formulas + per-mood overrides. See `PHASE_2.md` §4–5/D1–D3. |
+| Form model | **Templates with parameterized slots + repeat blocks** (decided in Phase 3, 2026-07-07): `forms.yaml` declares section defaults + weighted template spines; repeat blocks fit the length budget arithmetically (BiaB/Aebersold convention); an 11-type section vocabulary (starter six + postchorus/head/solo/main/breakdown) carries one semantics table for Phases 4–6; energy = engine base table + positional rules + arousal + pack envelope. Fitting fills toward `maxLength` from below (hard ceiling), degrading outro-before-bridge per corpus presence. See `PHASE_3.md` §3–7/D1–D14. |
 
 ## 3. System Overview
 
@@ -113,7 +114,7 @@ The user-facing parameter surface and the Interpreter stage.
 
 - Form templates per style family: verse–chorus (pop/rock), 12-bar (blues), AABA (jazz), one-part loop (chill), and their variants.
 - Per-section energy curves (e.g., intro 0.3, verse 0.5, pre-chorus 0.65, chorus 0.9, final chorus 1.0).
-- Fitting to max length: drop optional sections (bridge first), halve section lengths, never emit a section under 4 bars.
+- Fitting to max length: arithmetic repeat counts + a pack-authored degradation ladder (outro first, then intro-shrink, then bridge — corpus presence ranks expendability; refined from this sketch's original "bridge first" by PHASE_3 D11), never emit a section under 4 bars.
 - Section-type semantics downstream stages consume (what "chorus" *means* to the arranger, the harmony engine, the transition engine).
 
 ### Phase 4 — Harmony Engine
