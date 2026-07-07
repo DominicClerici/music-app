@@ -476,11 +476,11 @@ Draw narrative: one template (no draw). Intro include *feasible* (min config 44 
 
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
-| Q1 | `postchorus`, `main`, `breakdown`, `variant`, and 8/16-bar blues options are schema-complete but unexercised by the two reference packs — do they survive contact with chill_lofi/blues/fusion authoring? | Phase 8 | authoring experience; any gap amends §3/§5 |
-| Q2 | Authored "spice" deviations: shortened verse 2 (23% of corpus), doubled final chorus (45%), 9-bar chorus tags — via slot-level `bars:` overrides? | Phase 8 (mechanism exists, content decision) | listening tests; D9's override hook |
+| Q1 | ~~Do the unexercised types/options survive contact with authoring?~~ **Resolved** (PHASE_8 §3.3/D2, 2026-07-07): `main`/`breakdown` and the 8/16-bar cyclic options are exercised by chill_lofi/blues/fusion and work; `postchorus` stays unexercised (future pop-adjacent pack); `variant` did **not** survive as load-bearing — label-only in v1, design reserved (PHASE_8 §12 Q2) | ~~Phase 8~~ | — |
+| Q2 | Authored "spice" deviations: shortened verse 2 (23% of corpus), doubled final chorus (45%), 9-bar chorus tags — via slot-level `bars:` overrides? (PHASE_8 §3.8, 2026-07-07: **deferred post-v1** — with pop's empty `turnarounds`, PHASE_4 D6 keeps the deceptive rule inert, so a doubled chorus repeats identically; no payoff now) | Post-v1 | listening tests; D9's override hook |
 | Q3 | Intra-section energy ramps (prechorus/buildup rising within the section) — v1 keeps sections flat per Nobile; EDM-style styles would want ramps | Phase 5/6 if a style needs it | whether prechorus builds read as static at render |
-| Q4 | More than one repeat block per template (e.g., lo-fi `[A B]×N … [A]×M`) | Phase 8 if chill_lofi authoring hits the wall | F4's ≤ 1 rule relaxation + fitting for two knobs |
-| Q5 | Blues stop-time / featured choruses (a `variant` on `solo`?) | Phase 8 + Phase 5 pattern eligibility | pattern-bank support for stop-time |
+| Q4 | ~~More than one repeat block per template?~~ **Resolved** — not needed: lo-fi's ABAB…B shape fits one repeat block plus trailing slots (PHASE_8 §4.2/D2, 2026-07-07); F4's ≤ 1 rule stands | ~~Phase 8~~ | — |
+| Q5 | Blues stop-time / featured choruses (a `variant` on `solo`?) (PHASE_8 §3.8, 2026-07-07: **deferred post-v1** — requires load-bearing `variant` selection, deliberately kept dormant; the PHASE_6 `stop` boundary device covers the adjacent need) | Post-v1 | load-bearing `variant` (PHASE_8 §12 Q2) |
 | Q6 | Should section-length options be tempo-aware (16-bar sections at very fast tempos)? Currently only budget-aware. | Post-v1 listening | evidence that fast-tempo forms feel short-sectioned |
 
 ---

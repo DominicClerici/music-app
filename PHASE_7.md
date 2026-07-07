@@ -252,9 +252,10 @@ Distortion: [distortion, oversample, wet]   Filter: [type, frequency, Q, rolloff
 StereoWidener: [width]   Tremolo: [frequency, depth, spread, wet]
 Compressor: [threshold, ratio, attack, release]   Limiter: [threshold]
 EQ3: [low, mid, high, lowFrequency, highFrequency]
+Vibrato: [frequency, depth, wet]   AutoFilter: [frequency, baseFrequency, octaves, depth, wet]
 ```
 
-(`envelope.*` expands to the five envelope fields + `attackCurve`; the committed file is fully expanded. Classes/paths are added by amendment as packs need them; DuoSynth/PluckSynth/other whitelisted effects enter the allowlist when first used.)
+(`envelope.*` expands to the five envelope fields + `attackCurve`; the committed file is fully expanded. Classes/paths are added by amendment as packs need them; DuoSynth/PluckSynth/other whitelisted effects enter the allowlist when first used. The Vibrato and AutoFilter rows were added by PHASE_8 §3.7, 2026-07-07 — first used by chill_lofi's tape wobble and fusion_jazz's clav wah.)
 
 ---
 
@@ -600,13 +601,13 @@ Bus: `decay` = 0.7×3.143^0.657 ≈ **1.485 s**, `preDelay` = **0.0231**, return
 
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
-| Q1 | Final loudness calibration: the D7 class trims and channel tables are research-derived but unheard — do the summed reference tracks balance? | Phase 7 implementation session (listening checklist, DoD §13.8) | ears on the milestone documents |
+| Q1 | Final loudness calibration: the D7 class trims and channel tables are research-derived but unheard — do the summed reference tracks balance? (PHASE_8 §8.4, 2026-07-07: named listening task **T1**, run per pack via the calibration report) | Phase 7/8 implementation (listening checklist, DoD §13.8) | ears on the milestone documents |
 | Q2 | Keytrack emulation (per-note cutoff scaling) for wide-lane comping — is lane-tuned filtering enough? | Post-v1 | listening evidence of dull-highs/harsh-lows across the comping lane |
-| Q3 | Riser wiring: track/role convention, placement rules, pack opt-in (PHASE_6 Q2 remainder; recipe pinned §4.7) | Phase 8 | transitions.yaml extension + arrangement of the riser track |
-| Q4 | Per-pack `mod_defaults` overrides (a lo-fi pack wanting a darker global brightness band) — PHASE_2 Q1's pattern applied to sound | Phase 8 | evidence the global defaults fail across 5 packs |
+| Q3 | Riser wiring: track/role convention, placement rules, pack opt-in (PHASE_6 Q2 remainder; recipe pinned §4.7) (PHASE_8 §3.8, 2026-07-07: **no v1 pack opts in** — stays dormant post-v1) | Post-v1 | transitions.yaml extension + arrangement of the riser track |
+| Q4 | ~~Per-pack `mod_defaults` overrides?~~ **Resolved** — not needed: per-flavor `mod` overrides cover every new engine-class and character case across all five packs (PHASE_8 §3.8, 2026-07-07) | ~~Phase 8~~ | — |
 | Q5 | StereoWidener 0.7 on pads vs strict mono compatibility | Post-v1 listening | mono-fold checks on real devices |
 | Q6 | LUFS normalization / offline loudness measurement | Post-v1 | whether clients need normalized output (targets documented §6.4) |
-| Q7 | Acoustic-piano quality: does the FM-keys `piano` read acceptably in-ensemble, or does it push PHASE_1 Q8 (Sampler) forward? | Phase 8 listening | pack authoring across 5 styles |
+| Q7 | Acoustic-piano quality: does the FM-keys `piano` read acceptably in-ensemble, or does it push PHASE_1 Q8 (Sampler) forward? (PHASE_8 §8.4, 2026-07-07: named listening task **T2**) | Phase 8 listening | pack authoring across 5 styles |
 | Q8 | Exact Tone.js minor pin (PHASE_1 Q9) — unchanged, implementation session | Phase 1/7 implementation | current stable at build time |
 
 ---

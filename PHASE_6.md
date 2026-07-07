@@ -214,7 +214,7 @@ All roles' offbeat events move identically *in position* (drums, comping, patter
 
 ### 5.3 Micro-timing offset maps — `feel.yaml` (engine data; D11)
 
-`src/trackgen/humanize/feel.yaml`, loaded like `moods.yaml`; internal, recalibratable; validator caps `|offset| ≤ 25 ms` (inside the < 19 ms ensemble-preference ceiling with jitter margin, far under the ~40 ms flam threshold). Two feel tables selected by `plan.swing` (null → `straight`, else `swung`). Values in ms; scalar = all beat classes; per-class maps where measurement demands:
+`src/trackgen/humanize/feel.yaml`, loaded like `moods.yaml`; internal, recalibratable; validator caps `|offset| ≤ 25 ms` (inside the < 19 ms ensemble-preference ceiling with jitter margin, far under the ~40 ms flam threshold). The `offsetsMs` tables are **named profiles** (amended by PHASE_8 §3.4, 2026-07-07): the engine menu is `straight`, `swung`, `laidback`, `tight` (the two new profiles' values in PHASE_8 §3.4); selection = the pack's `interpreter.yaml` `feelTable` when present, else the swing-derived default (null → `straight`, else `swung`). Values in ms; scalar = all beat classes; per-class maps where measurement demands:
 
 ```yaml
 offsetsMs:
@@ -379,13 +379,13 @@ Both examples still serialize to `TrackDocument`s passing V1–V8: fills/crashes
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
 | Q1 | Correlated 1/f timing drift (shared "clock" stream + lag-1 anticorrelation) — audibly better than white at our amplitudes? | Post-v1 | listening evidence; would need a section-scoped drift stream design that preserves excerpt reproducibility (D12 hook documented) |
-| Q2 | Riser implementation: sound source (noise → filter-ramp patch), track/role convention, placement rules — **patch half resolved** (PHASE_7 §4.7, 2026-07-07: NoiseSynth envelope-swell recipe pinned, dormant); track/placement/pack opt-in remain | ~~Phase 7 (patch)~~ + Phase 8 (pack opt-in) | the device slot and vocabulary position are reserved here |
+| Q2 | Riser implementation: sound source (noise → filter-ramp patch), track/role convention, placement rules — **patch half resolved** (PHASE_7 §4.7, 2026-07-07: NoiseSynth envelope-swell recipe pinned, dormant); track/placement/pack opt-in remain (PHASE_8 §3.8, 2026-07-07: **no v1 pack opts in** — lo-fi is anti-climax, blues doesn't use risers, fusion builds by arrangement; stays dormant post-v1) | Post-v1 | the device slot and vocabulary position are reserved here |
 | Q3 | True fade via a document-level automation lane (CC11/master-gain analog) | Post-v1 | `TrackDocument` automation extension (relates to PHASE_1 Q7's debug-block precedent for additive schema growth) |
-| Q4 | SHOT (choked-hit) cold variant as a `close` enum extension | Phase 8 | PHASE_3 §4.1 enum amendment; BiaB's shot/hold split is the model |
-| Q5 | Stop-time choruses and `kind: break` pattern semantics (PHASE_5 Q5 remainder — the v1 `stop` device needs no break patterns) | Phase 8 | blues/pack authoring; PHASE_5 §3.2's fill-eligibility amendment path |
+| Q4 | SHOT (choked-hit) cold variant as a `close` enum extension (PHASE_8 §3.8, 2026-07-07: **deferred** — blues band-hit endings are finals-pool + ending-pattern content under `cold`) | Post-v1 | PHASE_3 §4.1 enum amendment; BiaB's shot/hold split is the model |
+| Q5 | Stop-time choruses and `kind: break` pattern semantics (PHASE_5 Q5 remainder) (PHASE_8 §3.8, 2026-07-07: **deferred post-v1** — requires load-bearing `variant`, PHASE_8 §12 Q2) | Post-v1 | load-bearing `variant`; PHASE_5 §3.2's fill-eligibility amendment path |
 | Q6 | Fill lay-out / unison-hit variants for non-drum roles during big fills | Phase 8 | listening evidence that always-play reads as stiff at max-energy boundaries |
-| Q7 | Per-pack `feel.yaml` overrides (e.g., harder laid-back for lo-fi) | Phase 8 | PHASE_2 Q1's pattern: wait for evidence global tables fail across 5 packs |
-| Q8 | Mutation operators for pattern-mode bass (octave pop, passing-tone toggle)? | Phase 8 | blues/lo-fi authoring; operator vocabulary is additive |
+| Q7 | ~~Per-pack `feel.yaml` overrides?~~ **Resolved** — the two-table model provably fails at five packs (lo-fi laid-back vs fusion tight, both swung); resolved as named engine profiles + a pack `feelTable` selector, never per-pack value authoring (PHASE_8 §3.4/D5, 2026-07-07; §5.3 amended) | ~~Phase 8~~ | — |
+| Q8 | Mutation operators for pattern-mode bass (octave pop, passing-tone toggle)? (PHASE_8 §3.8, 2026-07-07: **re-deferred with evidence** — all three new packs are patterns-mode bass, and in each genre the locked bass loop is the idiom: boogie cell, fusion ostinato, static sub) | Post-v1 | listening evidence; operator vocabulary is additive |
 | Q9 | Walker repeated-note polish (PHASE_5 Q9) — unchanged, stays post-v1; the humanizer does not re-pitch | Post-v1 | listening evidence |
 
 ---

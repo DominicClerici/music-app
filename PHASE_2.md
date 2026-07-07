@@ -220,6 +220,8 @@ tonics:                        # per-mode preference order, note names; first = 
 
 feel: straight8                # straight8 | straight16 | swing8 | swing16
 # swingRatio: 0.60             # optional override of the tempo-derived ratio (§6.4)
+# feelTable: laidback          # optional named humanizer feel profile (added by PHASE_8 §3.4,
+                               #   2026-07-07); absent → swing-derived default (PHASE_6 §5.3)
 
 expressionRanges:              # style-relative floors/ceilings for the two pack-scaled budgets
   density:    [0.20, 0.85]
@@ -274,9 +276,10 @@ Rules:
 - `expressionRanges` values in [0, 1], `lo ≤ hi`.
 - Every role must appear in `flavors` with ≥ 1 id; `ensembles.default` is required and must cover all four roles; every ensemble value must be a declared flavor id.
 - Flavor/ensemble ids here are *vocabulary* — validation surface for `params`. Phase 7's `timbres.yaml` must provide a patch recipe for every declared flavor id (a pack with a dangling flavor id fails pack validation once Phase 7's loader lands).
+- `feelTable` (optional; added by PHASE_8 §3.4, 2026-07-07): must name an engine feel profile from the PHASE_6 §5.3 menu; absent → the swing-derived default.
 - These two files are normative as schema; their *content* is reference-quality, refined during Phase 8 authoring.
 
-The mood lists above encode the interaction model's intent: pop/rock drops only `mysterious`; jazz drops `triumphant`/`aggressive`; expect chill/lo-fi to drop `aggressive`/`triumphant`/`tense`, blues to drop `triumphant`/`dreamy`, fusion to sit near jazz. Final lists are Phase 8 authoring decisions per pack.
+The mood lists above encode the interaction model's intent: pop/rock drops only `mysterious`; jazz drops `triumphant`/`aggressive`; expect chill/lo-fi to drop `aggressive`/`triumphant`/`tense`, blues to drop `triumphant`/`dreamy`, fusion to sit near jazz. Final lists are Phase 8 authoring decisions per pack. (Decided 2026-07-07, PHASE_8 §4–§6/D8: chill_lofi also drops `energetic`; blues also drops `happy`/`calm`; fusion gains `triumphant`, drops `romantic`/`dark`/`melancholic`.)
 
 ---
 
@@ -475,12 +478,12 @@ Phase 7 may add fields here as *it* needs (it consumes, this phase produces; add
 
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
-| Q1 | Per-pack per-mood overrides (e.g., jazz's `dark` differing from pop's `dark` beyond expression ranges)? | Phase 8 (authoring experience) | whether global overrides + expression ranges prove insufficient across 5 packs |
+| Q1 | ~~Per-pack per-mood overrides?~~ **Resolved** — not needed: mood tempo centers ∩ pack tempo ranges yield each genre's tiers, and expression ranges do the rest, across all five packs (PHASE_8 §3.8, 2026-07-07) | ~~Phase 8~~ | — |
 | Q2 | Widen the interpreter draw to tonic selection (seeded pick from the pool instead of first-entry)? | Any later phase / listening feedback | evidence that fixed auto-keys feel repetitive; append-only draw discipline (§6.1) makes this safe |
 | Q3 | ~~`harmonicRhythmBase` mapping — does it survive contact with Phase 4's progression design?~~ **Resolved** — renegotiated to a soft density filter at pool selection (PHASE_4 §5.2/D9; §7.2 row amended, 2026-07-07) | ~~Phase 4~~ | — |
 | Q4 | ~~User-facing global energy/intensity knob (distinct from mood)?~~ **Resolved** — no knob in v1; arousal modulation + pack energy envelopes cover it, insertion point documented (PHASE_3 §6.3/D10) | ~~Phase 3~~ (resolved 2026-07-07) | revisit post-v1 only with listening evidence |
 | Q5 | Mood blending / custom V/A input (API power users)? | Post-v1 | D6 keeps coordinates private; revisit only with a validation story for arbitrary points |
-| Q6 | Lydian rung in the mode ladder? | Phase 8 (if a pack wants it) | resolving the Persichetti vs Temperley–Tan conflict via listening tests |
+| Q6 | ~~Lydian rung in the mode ladder?~~ **Resolved** — stays excluded: no v1 pack's mode menu wants it (PHASE_8 §3.8, 2026-07-07) | ~~Phase 8~~ | — |
 | Q7 | Non-4/4 time signatures in `params`? | When a pack ships one | pack manifests already declare `timeSignatures`; params stays silent until needed |
 
 ---

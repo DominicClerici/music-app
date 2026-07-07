@@ -648,10 +648,10 @@ Both examples serialize to `TrackDocument`s passing V1–V8 and play in the Phas
 | Q1 | Per-role intensity offsets / density factors (e.g. drums a rung hotter than pads in the same section)? | Phase 8 | authoring experience across 5 packs; amend §4.1/§4.2 |
 | Q2 | Runtime kick/bass alignment pass (consume the reserved drums→bass phrase handoff)? | Post-v1 | listening evidence that authoring convention is insufficient (D14 hook documented) |
 | Q3 | Pattern-degree approach variants (`approach_above`, `approach_diatonic`)? | Phase 8 | first pack needing them; additive vocabulary extension per §3.3 |
-| Q4 | Blues bass: authored boogie patterns (via `sixth`) vs walking mode with parameters — which serves the blues pack? | Phase 8 | blues pack authoring session; both mechanisms exist |
-| Q5 | `kind: break` semantics and stop-time patterns (PHASE_3 Q5) — **partially resolved** (PHASE_6, 2026-07-07: the v1 `stop` device is pure note deletion and needs no break patterns; `kind: break` stays reserved for Phase 8 stop-time choruses) | ~~Phase 6~~/8 | blues/pack authoring |
+| Q4 | ~~Blues bass: boogie patterns vs walking mode?~~ **Resolved** — authored boogie/box/pedal/triplet-arpeggio degree patterns (`mode: patterns`); walking blues remains the jazz pack's territory (PHASE_8 §3.2/D3, 2026-07-07) | ~~Phase 8~~ | — |
+| Q5 | `kind: break` semantics and stop-time patterns (PHASE_3 Q5) — **partially resolved** (PHASE_6, 2026-07-07: the v1 `stop` device is pure note deletion and needs no break patterns); remainder **deferred post-v1** (PHASE_8 §3.8, 2026-07-07: stop-time choruses require load-bearing `variant`, PHASE_8 §12 Q2; `kind: break` stays reserved) | Post-v1 | load-bearing `variant` |
 | Q6 | Pad voicing motion over long static sections (MMA's `Move`-style slow drift)? | Post-v1 | evidence that held pads read as static across 16+ bars |
-| Q7 | Two-drummer/percussion layer (Yamaha's Sub-Rhythm channel) as a fifth role or a drums extension? | Phase 8 | lo-fi/fusion authoring needs; role enum is closed in v1 |
+| Q7 | ~~Percussion layer: fifth role or drums extension?~~ **Resolved** — no fifth role: the `perc` drum voice carries lo-fi shaker/rim and fusion auxiliary percussion as ordinary drum-bank events (PHASE_8 §3.6, 2026-07-07); role enum stays closed | ~~Phase 8~~ | — |
 | Q8 | Comping-reacts-to-soloist (interactive density)? | Post-v1 | there is no soloist input in v1 by design; revisit if a live-input mode ever exists |
 | Q9 | Walker repeated-note polish (beat-3/beat-4 collision avoidance)? (PHASE_6, 2026-07-07: confirmed post-v1 — the Humanizer never re-pitches) | Post-v1 listening | whether occasional repeated pitches (§9.2 bar 21) read as natural or mechanical |
 

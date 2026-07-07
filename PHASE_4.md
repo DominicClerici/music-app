@@ -55,9 +55,11 @@ Research base (session 4): the de Clercq & Temperley rock-harmony corpus (exact 
 ### 3.1 Token grammar (pinned)
 
 ```
-token    := degree quality? bass?
+token    := degree quality? extgroup? bass?     (extgroup added by PHASE_8 §3.5, 2026-07-07)
 degree   := ("b" | "#")? numeral          numeral ∈ {I…VII, i…vii}
 quality  := "7" | "maj7" | "6" | "ø7" | "°" | "°7" | "+" | "sus2" | "sus4" | "7sus4"
+extgroup := "(" ext ("," ext)* ")"        ext ∈ {9, b9, #9, 11, #11, 13, b13}; legal only
+                                          after an explicit quality; fully pins the token
 bass     := "/" ("b" | "#")? digit        digit ∈ 1–7
 hold     := "~"                           (bar-level token: previous chord continues)
 ```
@@ -77,7 +79,7 @@ hold     := "~"                           (bar-level token: previous chord conti
 
 - **Bare tokens are dressable** (no suffix — the dissonance ladder may upgrade them, §6); **suffixed tokens are pinned** (dressing may add extensions at high tiers but never changes the core quality).
 - **No secondary-dominant slash syntax** (`V7/ii`) in v1: absolute altered-degree tokens express the same chords (`VI7`, `III7`, `II7` are the rhythm-changes bridge) with simpler parsing and unambiguous provenance (D3; ergonomics revisited in Q8 §12).
-- **No authored extensions** in v1 tokens — extensions come only from dressing (Q1 §12).
+- ~~No authored extensions in v1 tokens~~ **Amended by PHASE_8 §3.5 (2026-07-07, resolving Q1)**: parenthesized extension groups (`bVI7(#11)`, `I7(#9)`) are legal after an explicit quality suffix, validated per §6.4 (rule P11); an authored extension group **fully pins the token** — dressing skips the slot, consuming no draw.
 - `bass` resolves through the same degree map to `ChordSpec.bassPc`. Unexercised by the v1 reference packs (Q2 §12).
 - **Within-bar timing**: a bar is a list of 1, 2, or 4 tokens splitting its beats evenly (4/4: whole, halves, quarters). Three tokens in 4/4 is a validation error. `~` as the sole token continues the previous chord for the whole bar; holds merge into the previous event *within one phrase instance* (phrase- and section-boundary events are never merged — a repeated phrase re-states its first chord as a new event).
 
@@ -151,6 +153,7 @@ The per-phrase-label unit makes *same label ⇒ same harmonic material* structur
 - **P8** `turnarounds`: 1–2 bars; final chord D-function.
 - **P9** `finals`: non-empty; 1–2 bars; final chord rooted on degree 1.
 - **P10** strict schema — unknown keys rejected (pydantic).
+- **P11** *(added by PHASE_8 §3.5, 2026-07-07)* authored extension groups appear only after an explicit quality suffix and contain only extensions legal for that quality per §6.4.
 
 ---
 
@@ -695,14 +698,14 @@ Semantics-table compliance is visible: the same melancholic quartet PHASE_3 fitt
 
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
-| Q1 | Authored extensions in tokens (e.g. `V7b9` in a pack) — needed once Phase 8 authors fusion/lo-fi color? | Phase 8 | authoring experience; grammar extension is additive |
-| Q2 | Slash-bass `/n` is grammar-complete but unexercised (pedal intros, pop I/3) | Phase 8 | first pack that wants it; P-rule fixtures exist |
-| Q3 | Per-pack dressing-table overrides (jazz b9-leaning dominants in minor vs pop) — PHASE_2 Q1's pattern applied to dressing | Phase 8 | whether the global tables + expressionRanges prove insufficient across 5 packs |
+| Q1 | ~~Authored extensions in tokens?~~ **Resolved** — yes, for fusion: parenthesized extension groups, fully pinning, draw-free (PHASE_8 §3.5/D6, 2026-07-07; §3.1/P11 amended). Lo-fi turned out not to need them (its 7ths/9ths floor falls out of expressionRanges) | ~~Phase 8~~ | — |
+| Q2 | Slash-bass `/n` is grammar-complete but unexercised (pedal intros, pop I/3) (PHASE_8, 2026-07-07: still unexercised by all five v1 packs — fusion sus chords use `7sus4` tokens directly) | Post-v1 | first pack that wants it; P-rule fixtures exist |
+| Q3 | Per-pack dressing-table overrides (jazz b9-leaning dominants in minor vs pop) — PHASE_2 Q1's pattern applied to dressing (PHASE_8 §3.8, 2026-07-07: **evidence strengthened for "no"** — the global ladder survives five packs; fusion's #9 color is authored via Q1's extensions, lo-fi's floor via expressionRanges) | Post-v1 | listening evidence only |
 | Q4 | A seeded substitution pass between repeat instances (BiaB-style percentage) | Post-v1 | listening evidence that identical repeats read as static (D7 hook documented) |
 | Q5 | Truck-driver modulation transform over `keys` regions | Post-v1 | demand; representation reserved (D10) |
 | Q6 | Target-aware intro approach (BiaB-style last-chord rewrite toward the first body chord) | Phase 8 / post-v1 | whether authored-open intros ever land badly against a drawn first section |
-| Q7 | Deceptive rule is dormant (no v1 form triggers it) — does it fire correctly for Phase 8's doubled final choruses? | Phase 8 | PHASE_3 Q2 (doubled-chorus forms); synthetic fixture exists meanwhile |
-| Q8 | Secondary-dominant slash syntax (`V7/ii`) for authoring ergonomics | Phase 8 | author feedback; absolute tokens cover v1 |
+| Q7 | Deceptive rule is dormant (no v1 form triggers it) (PHASE_8 §3.8, 2026-07-07: **stays dormant post-v1** — pop ships empty `turnarounds`, so D6 keeps deceptive inert even for doubled choruses; the synthetic fixture remains its only exerciser) | Post-v1 | PHASE_3 Q2 (also deferred) |
+| Q8 | ~~Secondary-dominant slash syntax (`V7/ii`)?~~ **Closed** — not needed by any v1 pack; absolute tokens cover all five (PHASE_8 §3.8, 2026-07-07) | — | — |
 | Q9 | Additional voicing candidate classes (cluster pads, spread triads, guitar-shape sets) — **partially resolved**: PHASE_5 added `fifths` (2026-07-07); further classes remain open for Phase 8 | Phase 5 → Phase 8 | pack-authoring needs; additive to §8.4 |
 
 ---
