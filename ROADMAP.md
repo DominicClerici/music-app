@@ -32,6 +32,7 @@ Decisions made during roadmap planning (2026-07-06). These are settled unless a 
 | Reproducibility | **Seeded randomness with the seed exposed**: same params + same seed → identical track. Fresh seed per generation by default; seed always returned in the output. |
 | Output format | Tone.js-oriented JSON (`TrackDocument`), modeled on `@tonejs/midi`'s schema with Tone.js synth patches/effects replacing General MIDI programs. |
 | Backend stack | **Python ≥ 3.12** (decided in Phase 1, 2026-07-06): the project's focus is generation quality, and encoding the output for the browser is trivial serialization. music21 (wrapped) for theory; pydantic v2 models with exported JSON Schema as the client contract. See `PHASE_1.md` §2/D1–D2. |
+| Style × mood interaction | **Packs declare supported moods** (decided in Phase 2, 2026-07-06): each style pack lists its supported subset of the 12-word mood vocabulary plus a default; unsupported combos are validation errors, never silent substitution. Mood = V/A anchor + formulas + per-mood overrides. See `PHASE_2.md` §4–5/D1–D3. |
 
 ## 3. System Overview
 

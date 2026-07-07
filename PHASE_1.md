@@ -398,7 +398,7 @@ def derive(parent: int, name: str) -> int:
 - **Names, not indices**: adding a stage never renumbers existing streams, so old seeds keep producing the same song across versions (within a `generatorVersion`).
 - Hierarchy by chaining: `derive(derive(derive(M, "drums"), "fills"), "bar:17")` — the same tree-hashing scheme as NumPy `SeedSequence` / JAX `fold_in`.
 
-**Stream registry (pinned)** — top-level names: `form, harmony, arrangement, drums, bass, comping, pads, transitions, humanize, sound`. Sub-stream names below a top-level stream are owned by that stage's phase.
+**Stream registry (pinned)** — top-level names: `interpreter, form, harmony, arrangement, drums, bass, comping, pads, transitions, humanize, sound`. Sub-stream names below a top-level stream are owned by that stage's phase. (`interpreter` added by PHASE_2 D4, 2026-07-06 — additive amendment.)
 
 ### 5.3 Per-stage RNG instances
 
@@ -443,6 +443,7 @@ For `master = 3735928559` (base36 `1ps9wxb`):
 
 | Stream | `derive(M, name)` | base36 |
 | --- | --- | --- |
+| `interpreter` | 1597995742192405040 | `c52i7pgxyq7k` |
 | `form` | 7567330889165579844 | `1lhqyx6gblkjo` |
 | `harmony` | 226146634901021418 | `1puqahumzht6` |
 | `arrangement` | 17905737752012141625 | `3s1f2al1nfupl` |
@@ -467,6 +468,8 @@ A style family ships as a **versioned directory of YAML files** — data, not co
 ```
 styles/pop_rock/
   manifest.yaml        # identity + compatibility
+  interpreter.yaml     # supported moods, mode menu, tonic pools, feel,
+                       #   expression ranges, flavors/ensembles — schema owned by Phase 2
   patterns/
     drums.yaml         # pattern bank, schema owned by Phase 5
     bass.yaml          #   "
@@ -536,7 +539,7 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
-| Q1 | Params schema (`meta.params` shape) | Phase 2 | mood taxonomy design |
+| Q1 | ~~Params schema (`meta.params` shape)~~ **Resolved** — PHASE_2 §3 | Phase 2 | mood taxonomy design |
 | Q2 | Intensity-ladder granularity: is 1–4 right? | Phase 5 | pattern-bank authoring experience; amend `ArrangementPlan.intensity` + `energyLevel` ranges here if changed |
 | Q3 | Eligibility-tag dimension set for pattern selection | Phase 5 | drum/bass/comping generator design (research catalog: weight, bar-in-phrase, chord quality/function, next-chord motion, tempo) |
 | Q4 | `progressions.yaml` / `forms.yaml` / `timbres.yaml` schemas | Phases 4 / 3 / 7 | those sessions |
