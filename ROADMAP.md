@@ -31,7 +31,7 @@ Decisions made during roadmap planning (2026-07-06). These are settled unless a 
 | Instruments parameter | **Role-based ensemble**: the system thinks in roles (drums, bass, comping, pads/texture); the user picks a sound flavor per role or an ensemble preset. |
 | Reproducibility | **Seeded randomness with the seed exposed**: same params + same seed → identical track. Fresh seed per generation by default; seed always returned in the output. |
 | Output format | Tone.js-oriented JSON (`TrackDocument`), modeled on `@tonejs/midi`'s schema with Tone.js synth patches/effects replacing General MIDI programs. |
-| Backend stack | **Deferred** — decided in Phase 1. (Leading candidates: TypeScript/Node for shared types with the client and Tonal.js; Python for its theory ecosystem.) |
+| Backend stack | **Python ≥ 3.12** (decided in Phase 1, 2026-07-06): the project's focus is generation quality, and encoding the output for the browser is trivial serialization. music21 (wrapped) for theory; pydantic v2 models with exported JSON Schema as the client contract. See `PHASE_1.md` §2/D1–D2. |
 
 ## 3. System Overview
 
