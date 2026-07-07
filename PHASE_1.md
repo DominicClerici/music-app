@@ -164,7 +164,7 @@ Rationale: every consumer (client UI, looping, our validators) wants ranges; MID
 
 - `type` whitelist (v1): `Synth, MonoSynth, DuoSynth, FMSynth, AMSynth, MembraneSynth, NoiseSynth, MetalSynth, PluckSynth, PolySynth`. No `Sampler` in v1 — the roadmap commits to synthesized tones; sampled flavors would add async asset loading and hosting concerns (open question §7).
 - `voice` (PolySynth only) whitelist: `Synth, MonoSynth, FMSynth, AMSynth, MembraneSynth, MetalSynth` — Tone.js requires PolySynth voices to be Monophonic subclasses; NoiseSynth/PluckSynth are not eligible and the validator rejects them.
-- `options` is a plain nested JSON object of Tone.js constructor options. The generator only ever emits keys from a maintained server-side allowlist of (class, option-path) pairs, so a Tone.js upgrade is a deliberate migration, not silent drift.
+- `options` is a plain nested JSON object of Tone.js constructor options. The generator only ever emits keys from a maintained server-side allowlist of (class, option-path) pairs, so a Tone.js upgrade is a deliberate migration, not silent drift. (Allowlist pinned as engine data `sound/allowlist.yaml` by PHASE_7 §5.2, 2026-07-07.)
 
 **EffectPatch**
 
@@ -544,7 +544,7 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | Q1 | ~~Params schema (`meta.params` shape)~~ **Resolved** — PHASE_2 §3 | Phase 2 | mood taxonomy design |
 | Q2 | ~~Intensity-ladder granularity: is 1–4 right?~~ **Resolved** — confirmed 1–4, global energy thresholds (PHASE_5 §3.1) | ~~Phase 5~~ | — |
 | Q3 | ~~Eligibility-tag dimension set for pattern selection~~ **Resolved** — optional tempo band only + completeness rules (PHASE_5 §3.2) | ~~Phase 5~~ | — |
-| Q4 | ~~`progressions.yaml`~~ / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5; `progressions.yaml` **resolved** — PHASE_4 §4) | ~~Phases 4 / 3~~ / 7 | that session |
+| Q4 | ~~`progressions.yaml` / `forms.yaml` / `timbres.yaml` schemas~~ **Fully resolved** — `forms.yaml` PHASE_3 §5; `progressions.yaml` PHASE_4 §4; `timbres.yaml` PHASE_7 §4 | ~~Phases 4 / 3 / 7~~ | — |
 | Q5 | ~~Does PPQ 480 suffice for humanizer micro-timing?~~ **Resolved** — confirmed sufficient; every modeled effect ≥ 3 ticks, float-ms math with one terminal rounding (PHASE_6 §5.7/D16) | ~~Phase 6~~ | — |
 | Q6 | ~~Mid-song key modulation representation~~ **Resolved** — deferred post-v1; `HarmonicPlan.keys` region list reserved (PHASE_4 §7.1/D10) | ~~Phase 4~~ | — |
 | Q7 | Optional `debug` block embedding IRs in `TrackDocument` | Any phase that needs it | additive, non-breaking |

@@ -379,7 +379,7 @@ Both examples still serialize to `TrackDocument`s passing V1–V8: fills/crashes
 | # | Question | Resolves in | Depends on |
 | --- | --- | --- | --- |
 | Q1 | Correlated 1/f timing drift (shared "clock" stream + lag-1 anticorrelation) — audibly better than white at our amplitudes? | Post-v1 | listening evidence; would need a section-scoped drift stream design that preserves excerpt reproducibility (D12 hook documented) |
-| Q2 | Riser implementation: sound source (noise → filter-ramp patch), track/role convention, placement rules | Phase 7 (patch) + Phase 8 (pack opt-in) | Phase 7's patch schema; the device slot and vocabulary position are reserved here |
+| Q2 | Riser implementation: sound source (noise → filter-ramp patch), track/role convention, placement rules — **patch half resolved** (PHASE_7 §4.7, 2026-07-07: NoiseSynth envelope-swell recipe pinned, dormant); track/placement/pack opt-in remain | ~~Phase 7 (patch)~~ + Phase 8 (pack opt-in) | the device slot and vocabulary position are reserved here |
 | Q3 | True fade via a document-level automation lane (CC11/master-gain analog) | Post-v1 | `TrackDocument` automation extension (relates to PHASE_1 Q7's debug-block precedent for additive schema growth) |
 | Q4 | SHOT (choked-hit) cold variant as a `close` enum extension | Phase 8 | PHASE_3 §4.1 enum amendment; BiaB's shot/hold split is the model |
 | Q5 | Stop-time choruses and `kind: break` pattern semantics (PHASE_5 Q5 remainder — the v1 `stop` device needs no break patterns) | Phase 8 | blues/pack authoring; PHASE_5 §3.2's fill-eligibility amendment path |

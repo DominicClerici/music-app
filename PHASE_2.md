@@ -446,7 +446,7 @@ Consumed by Phase 7 (sound design), which owns the mapping from directives + `ro
 | `attackHardness` | float [0, 1] | envelope attack sharpness tendency |
 | `space` | float [0, 1] | reverb/air amount tendency (bus send levels, decay) |
 
-Phase 7 may add fields here as *it* needs (it consumes, this phase produces; additions are negotiated amendments to this table).
+Phase 7 may add fields here as *it* needs (it consumes, this phase produces; additions are negotiated amendments to this table). (Consumption pinned by PHASE_7, 2026-07-07 — no fields added: `brightness` → per-role tone-color mappings, `attackHardness` → envelope attack on pitched roles (drums exempt), `space` → reverb sends + bus decay/preDelay; PHASE_7 §5.1/§6.2.)
 
 ---
 
