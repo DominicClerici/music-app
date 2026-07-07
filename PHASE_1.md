@@ -335,7 +335,7 @@ Each section: `{id: str, type: str, index: int, startBar: int, lengthBars: int, 
 
 Structured fields (`rootPc`/`quality`/`extensions`) are canonical; `symbol` is never parsed by any stage.
 
-**Extension points** — cadence annotations, borrowed-chord provenance, per-section key/modulation, chord-scale hints for part generators: owned by **Phase 4**.
+**Extension points** — cadence annotations, borrowed-chord provenance, per-section key/modulation, chord-scale hints for part generators: owned by **Phase 4** (pinned in PHASE_4 §7, 2026-07-07: `keys` regions, per-event `scale`/`function`/`tags`, `poolSelections`).
 
 ### 4.4 `ArrangementPlan` — produced by Arrangement planner; consumed by Part generators, Transitions
 
@@ -542,9 +542,9 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | Q1 | ~~Params schema (`meta.params` shape)~~ **Resolved** — PHASE_2 §3 | Phase 2 | mood taxonomy design |
 | Q2 | Intensity-ladder granularity: is 1–4 right? | Phase 5 | pattern-bank authoring experience; amend `ArrangementPlan.intensity` + `energyLevel` ranges here if changed |
 | Q3 | Eligibility-tag dimension set for pattern selection | Phase 5 | drum/bass/comping generator design (research catalog: weight, bar-in-phrase, chord quality/function, next-chord motion, tempo) |
-| Q4 | `progressions.yaml` / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5) | Phases 4 / ~~3~~ / 7 | those sessions |
+| Q4 | ~~`progressions.yaml`~~ / ~~`forms.yaml`~~ / `timbres.yaml` schemas (`forms.yaml` **resolved** — PHASE_3 §5; `progressions.yaml` **resolved** — PHASE_4 §4) | ~~Phases 4 / 3~~ / 7 | that session |
 | Q5 | Does PPQ 480 suffice for humanizer micro-timing (~1 ms at 120 bpm)? | Phase 6 | escape hatch: bump to 960 with a `schemaVersion` rev; no structural change |
-| Q6 | Mid-song key modulation representation | Phase 4 | `HarmonicPlan` extension point reserved |
+| Q6 | ~~Mid-song key modulation representation~~ **Resolved** — deferred post-v1; `HarmonicPlan.keys` region list reserved (PHASE_4 §7.1/D10) | ~~Phase 4~~ | — |
 | Q7 | Optional `debug` block embedding IRs in `TrackDocument` | Any phase that needs it | additive, non-breaking |
 | Q8 | Sampler support (sampled instrument flavors) | Post-v1 | asset hosting + async loading story |
 | Q9 | Exact Tone.js minor version to pin (`^15.1.0` assumed) | Phase 1 implementation session | check current stable when the playground is built |

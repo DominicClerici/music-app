@@ -22,7 +22,7 @@ Follow these steps in order.
 
 ### 2. Research deeply
 
-Before proposing any design, research the phase's specific domain — spawn parallel research agents where useful. Think hard; do not design from vibes. Examples of the expected depth:
+Before proposing any design, research the phase's specific domain — spawn parallel research agents where useful, using the `opus` model exclusively (never `fable-5`). Think hard; do not design from vibes. Examples of the expected depth:
 
 - Phase 3 (Form): how real songs in each style family are structured, bar-count statistics, energy-curve conventions.
 - Phase 5 (Parts): drum pattern representation formats, walking-bass construction rules, comping voicing practice, how Band-in-a-Box/Yamaha/MMA solved each.

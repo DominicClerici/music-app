@@ -34,6 +34,7 @@ Decisions made during roadmap planning (2026-07-06). These are settled unless a 
 | Backend stack | **Python ≥ 3.12** (decided in Phase 1, 2026-07-06): the project's focus is generation quality, and encoding the output for the browser is trivial serialization. music21 (wrapped) for theory; pydantic v2 models with exported JSON Schema as the client contract. See `PHASE_1.md` §2/D1–D2. |
 | Style × mood interaction | **Packs declare supported moods** (decided in Phase 2, 2026-07-06): each style pack lists its supported subset of the 12-word mood vocabulary plus a default; unsupported combos are validation errors, never silent substitution. Mood = V/A anchor + formulas + per-mood overrides. See `PHASE_2.md` §4–5/D1–D3. |
 | Form model | **Templates with parameterized slots + repeat blocks** (decided in Phase 3, 2026-07-07): `forms.yaml` declares section defaults + weighted template spines; repeat blocks fit the length budget arithmetically (BiaB/Aebersold convention); an 11-type section vocabulary (starter six + postchorus/head/solo/main/breakdown) carries one semantics table for Phases 4–6; energy = engine base table + positional rules + arousal + pack envelope. Fitting fills toward `maxLength` from below (hard ceiling), degrading outro-before-bridge per corpus presence. See `PHASE_3.md` §3–7/D1–D14. |
+| Harmony model | **Authored pools + bounded transforms** (decided in Phase 4, 2026-07-07): `progressions.yaml` holds per-phrase-label Roman-numeral progressions (case+suffix tokens, major-scale-relative degrees), gated by mode/valence/dissonance, drawn once per harmonyTag; runtime rewrites only three boundary events (turnaround relaunch at same-tag loops, dormant deceptive fallback, mandatory final close from a `finals` pool); a 7-tier dissonance-dressing ladder with dominant-hotter function offsets maps `budgets.dissonance` to chord color; repeats are harmonically identical in v1; modulation deferred with `HarmonicPlan.keys` regions reserved; the shared theory library (owned interval/scale tables, voicing candidates, integer-cost Viterbi voice-leading) is pinned for Phase 5. See `PHASE_4.md` §3–8/D1–D16. |
 
 ## 3. System Overview
 
@@ -122,7 +123,7 @@ The user-facing parameter surface and the Interpreter stage.
 - Progression pools tagged by mood/style (Roman-numeral form, transposed to the user key).
 - Functional-harmony constraint rules (tonic/subdominant/dominant flow) for variation and bridge generation.
 - Cadence logic at section boundaries (verses end open on V, choruses close on I, deceptive cadences before repeated final choruses).
-- Key/mode selection and mood mapping (major/minor/Dorian/Mixolydian/…); borrowed-chord substitutions.
+- Key/mode selection and mood mapping (absorbed by Phase 2, PHASE_2 D5: the Interpreter emits the final key/mode; Phase 4 owns everything *inside* the key); borrowed-chord substitutions.
 - Shared theory utilities: chord symbol → pitches, voicing candidates, voice-leading distance minimization. These become the library every part generator uses.
 
 ### Phase 5 — Rhythm Section Part Generators

@@ -433,7 +433,7 @@ The mood *word* is not in the plan — downstream stages must key behavior off t
 | `dynamicsRange` | float [0, 1] | Phase 6 | expressive velocity width around the base |
 | `articulationLegato` | float [0, 1] | Phases 5/6 | 0 = staccato, 1 = legato; scales default note durations |
 | `layersMax` | int 2–4 | Phase 5 (arrangement planner) | ceiling on simultaneously active roles at peak section energy |
-| `harmonicRhythmBase` | float, v1 ∈ {0.5, 1.0} | Phase 4 | baseline chords per bar; Phase 4 may vary per section but should honor the baseline feel (designer's-choice mapping — flagged, not research-backed) |
+| `harmonicRhythmBase` | float, v1 ∈ {0.5, 1.0} | Phase 4 | baseline chords per bar, consumed as a **soft selection filter** over progression-pool entries (amended by PHASE_4 §5.2/D9, 2026-07-07: base 0.5 prefers entries with computed density ≤ 1.0 when available; base 1.0 is inert; pool content keeps authority over local harmonic rhythm) |
 | `registerBias` | float [−1, 1] | Phase 5 | nudges part registers up/down *within* ArrangementPlan lanes; never violates the C5 ceiling |
 
 ### 7.3 `timbreDirectives`
@@ -477,7 +477,7 @@ Phase 7 may add fields here as *it* needs (it consumes, this phase produces; add
 | --- | --- | --- | --- |
 | Q1 | Per-pack per-mood overrides (e.g., jazz's `dark` differing from pop's `dark` beyond expression ranges)? | Phase 8 (authoring experience) | whether global overrides + expression ranges prove insufficient across 5 packs |
 | Q2 | Widen the interpreter draw to tonic selection (seeded pick from the pool instead of first-entry)? | Any later phase / listening feedback | evidence that fixed auto-keys feel repetitive; append-only draw discipline (§6.1) makes this safe |
-| Q3 | `harmonicRhythmBase` mapping is designer's choice (documented literature gap) — does it survive contact with Phase 4's progression design? | Phase 4 | Phase 4 may renegotiate the field's semantics (amendment to §7.2) |
+| Q3 | ~~`harmonicRhythmBase` mapping — does it survive contact with Phase 4's progression design?~~ **Resolved** — renegotiated to a soft density filter at pool selection (PHASE_4 §5.2/D9; §7.2 row amended, 2026-07-07) | ~~Phase 4~~ | — |
 | Q4 | ~~User-facing global energy/intensity knob (distinct from mood)?~~ **Resolved** — no knob in v1; arousal modulation + pack energy envelopes cover it, insertion point documented (PHASE_3 §6.3/D10) | ~~Phase 3~~ (resolved 2026-07-07) | revisit post-v1 only with listening evidence |
 | Q5 | Mood blending / custom V/A input (API power users)? | Post-v1 | D6 keeps coordinates private; revisit only with a validation story for arbitrary points |
 | Q6 | Lydian rung in the mode ladder? | Phase 8 (if a pack wants it) | resolving the Persichetti vs Temperley–Tan conflict via listening tests |
