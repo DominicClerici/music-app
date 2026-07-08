@@ -40,11 +40,19 @@ Each IR section below has two parts:
 | Concern | Choice |
 | --- | --- |
 | Language / runtime | Python ≥ 3.12 |
+| Delivery surface | **Pure library** — `generate(params, seed?) → TrackDocument`, one pure entry point — **plus a thin Typer CLI**. An HTTP layer is deferred until a client exists; it is a small wrapper over `generate()` (D16), never a second validation surface. |
+| Packaging & deps | **uv** with a committed `uv.lock`; music21 and the Tone.js target (Q9) pinned to exact versions. Reproducibility is a core project value, so a dependency bump is a deliberate, reviewed event — never silent drift. |
+| Lint / format | **Ruff** (formatter + linter). A custom banned-API ruleset forbids module-level `random.`, `datetime.now`, `time.*`, and `os.urandom` outside the seed boundary — turning determinism invariant 5 (§9.7) from a manual grep into an enforced gate. |
+| Type checking | **mypy** (strict). Frozen pydantic IRs make static checking high-value. |
+| CLI framework | **Typer** — type-hint driven, pairs with pydantic; hosts the PHASE_8 §9.1 audition CLI (`--explain`, `--section`, `--solo/--mute`, `bless`). |
 | Models & validation | pydantic v2, `frozen=True` on every IR and document model (immutability makes stage purity structural) |
-| Music theory | **music21 (BSD, maintained), wrapped**: a thin `theory/` module exposes pure functions (plain ints/strings in and out — pitch classes, MIDI numbers, chord specs). Pipeline stages import our wrapper, never music21. Rationale: music21's Roman-numeral/key machinery is the best available and generation-grade; the wrapper contains its score-centric object model and keeps a swap-out possible. mingus is GPL + unmaintained (disqualified); fully hand-rolled theory re-implements solved problems. Voicing search and voice-leading minimization (Phase 4) will be ours, over the wrapper. |
+| Music theory | **music21 (BSD, maintained), wrapped**: a thin `theory/` module exposes pure functions (plain ints/strings in and out — pitch classes, MIDI numbers, chord specs). Pipeline stages import our wrapper, never music21. Rationale: music21's Roman-numeral/key machinery is the best available and generation-grade; the wrapper contains its score-centric object model and keeps a swap-out possible. mingus is GPL + unmaintained (disqualified); fully hand-rolled theory re-implements solved problems. Voicing search and voice-leading minimization (Phase 4) will be ours, over the wrapper. **The wrapper lazy-imports music21** inside its functions, never at module top — music21's import is slow and pulls numpy in transitively, so CLI startup and non-theory tests stay fast. |
 | Style-pack files | YAML via PyYAML (`safe_load`), validated into frozen pydantic models at load |
 | RNG | stdlib `random.Random`, one instance per stream (see §5); no numpy API dependence |
 | Tests | pytest; golden-vector and golden-seed tests from day one |
+| Property tests | **Hypothesis** for invariant tests — it draws params + seed and asserts invariants (register ceiling, V1–V8, fills only in legal bars), never fighting the RNG; the fixed smoke matrix stays a `pytest.mark.parametrize` grid |
+| Goldens / approval | **Committed JSON fixtures + a hand-rolled semantic `bless` reporter** (PHASE_8 §8.2 / D11). No snapshot library (syrupy/approvaltests) for the golden *system* — the required musical, per-stage diff is domain-specific; a snapshot lib may back only the simple exact-match IR goldens if it ever helps |
+| JSON serialization | stdlib `json` (a 30–60 KB document needs nothing faster; orjson is a later, HTTP-time concern) |
 | Schema export | pydantic → JSON Schema, committed at `docs/schema/trackdocument.schema.json`; the browser client validates against this artifact |
 
 ### Repository layout
@@ -52,9 +60,11 @@ Each IR section below has two parts:
 ```
 music-app/
   pyproject.toml
+  uv.lock
   src/trackgen/
     schema/        # pydantic models: TrackDocument + IRs
     seeds.py       # master seed, derive(), streams registry, weighted_choice
+    cli.py         # Typer app: generate + PHASE_8 §9.1 audition CLI + bless
     theory/        # music21 wrapper (pure functions only)
     packs/         # style-pack loader + envelope validation
     pipeline/      # stage interfaces (implementations land in later phases)
@@ -573,6 +583,7 @@ Drum voice vocabulary (v1): `kick, snare, hat_closed, hat_open, ride, crash, tom
 | D13 | **No Sampler in v1; synthesis only** | Roadmap commits to synthesized tones; samples add async asset loading/hosting concerns with no v1 payoff. | Allowing Sampler with URL maps (deferred to Q8). |
 | D14 | **Register invariant concretized: non-drum `midi ≤ 71` (below C5=72); drums exempt** | Makes roadmap invariant 4 machine-checkable; drum trigger notes are timbre parameters, not harmonic content. | Applying the ceiling to drums too (would forbid MetalSynth's ~G5 trigger convention for hats). |
 | D15 | **Milestone fixture exercises every schema feature** | The milestone exists to de-risk the contract; anything unexercised stays risky until Phase 5. | Minimal smoke fixture; dual smoke+full fixtures (playground can load any fixture later anyway). |
+| D16 | **Project tooling (2026-07-08): uv + Ruff/mypy + Typer + Hypothesis; goldens = committed JSON + hand-rolled semantic `bless`; library-first, HTTP deferred** | Reproducibility is the project's core value, so an exact `uv.lock` and pinned music21/Tone make dependency bumps deliberate bless-style events; Ruff banned-API rules turn determinism invariant 5 into an enforced gate, not a manual grep; the semantic per-stage bless report (PHASE_8 §8.2) is domain-specific, so no snapshot library can produce it; the pipeline is a pure function, so a library + Typer CLI is the honest shape and HTTP is a thin wrapper when a client exists; music21 is lazy-imported to contain its slow import and transitive numpy pull. | FastAPI from day one (premature request/validation/deploy surface, orthogonal to generation quality); Poetry / pip-tools (slower, weaker reproducibility than uv); syrupy/approvaltests as the golden *system* (textual diffs can't satisfy the semantic report); Hypothesis over pipeline internals (avoided — it draws params+seed, never fights the RNG). |
 
 ---
 
@@ -592,7 +603,7 @@ Phase 1 is **built** when an implementation session demonstrates all of the foll
    - [ ] Tempo audibly steps up at the chorus downbeat; sections align with the documented tick ranges (log or UI markers).
    - [ ] Reverb audible on sends (mute the bus → dry), master limiter prevents clipping at full ensemble.
    - [ ] Document plays identically on reload (no scheduling nondeterminism).
-7. **Determinism guard**: a test that constructs two RNGs from the same stream seed and asserts identical draw sequences, plus a lint/grep check that `src/trackgen/` contains no `random.` module-level calls, no `datetime.now`, no `os.urandom` outside the seed API boundary.
+7. **Determinism guard**: a test that constructs two RNGs from the same stream seed and asserts identical draw sequences, plus a Ruff banned-API rule (§2) that fails on any `random.` module-level call, `datetime.now`, `time.*`, or `os.urandom` outside the seed API boundary.
 
 Golden-seed regression tests over full generated documents arrive with Phase 5 (first end-to-end track); Phase 1's golden surface is the seed vectors + fixture validation.
 
