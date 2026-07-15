@@ -95,7 +95,7 @@ class TimeSignature(DocumentModel):
 class Header(DocumentModel):
     """§3.3 `header` — timing."""
 
-    ppq: int = 480
+    ppq: Literal[480] = 480
     tempos: list[Tempo]
     time_signatures: list[TimeSignature]
 

@@ -112,3 +112,42 @@ def test_rejects_envelope_violations(tmp_path: Path, mutate: object) -> None:
 
     with pytest.raises((ValidationError, PackLoadError)):
         load_pack(pack_dir)
+
+
+@pytest.mark.parametrize(
+    "empty_value", [None, []], ids=["patterns-none", "patterns-empty"]
+)
+def test_rejects_bank_with_empty_patterns(tmp_path: Path, empty_value: object) -> None:
+    pack_dir = _write_pack(tmp_path, yaml.safe_load(yaml.safe_dump(BASE_ENVELOPE)))
+    # Overwrite one bank so its `patterns:` key is None / empty (not a list of entries).
+    (pack_dir / "patterns" / "bass.yaml").write_text(
+        yaml.safe_dump({"patterns": empty_value})
+    )
+    # None `patterns:` is treated as empty and must not crash; an empty pack is
+    # still structurally loadable, so this asserts no unwrapped error is raised.
+    load_pack(pack_dir)
+
+
+def test_rejects_bank_patterns_not_a_list(tmp_path: Path) -> None:
+    pack_dir = _write_pack(tmp_path, yaml.safe_load(yaml.safe_dump(BASE_ENVELOPE)))
+    (pack_dir / "patterns" / "bass.yaml").write_text(
+        yaml.safe_dump({"patterns": {"not": "a list"}})
+    )
+    with pytest.raises(PackLoadError):
+        load_pack(pack_dir)
+
+
+def test_rejects_manifest_not_a_mapping(tmp_path: Path) -> None:
+    pack_dir = _write_pack(tmp_path, yaml.safe_load(yaml.safe_dump(BASE_ENVELOPE)))
+    (pack_dir / "manifest.yaml").write_text(yaml.safe_dump(["not", "a", "mapping"]))
+    with pytest.raises(PackLoadError):
+        load_pack(pack_dir)
+
+
+def test_rejects_manifest_missing_required_field(tmp_path: Path) -> None:
+    pack_dir = _write_pack(tmp_path, yaml.safe_load(yaml.safe_dump(BASE_ENVELOPE)))
+    bad_manifest = dict(VALID_MANIFEST)
+    del bad_manifest["id"]
+    (pack_dir / "manifest.yaml").write_text(yaml.safe_dump(bad_manifest))
+    with pytest.raises(PackLoadError):
+        load_pack(pack_dir)

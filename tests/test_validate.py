@@ -1,7 +1,7 @@
 """Tests for the document validator (PHASE_1 §3.8, rules V1-V8) and the
 committed JSON Schema export drift guard."""
 
-from typing import Any
+from typing import Any, Literal
 
 from trackgen.schema import (
     Bus,
@@ -26,7 +26,7 @@ from trackgen.schema.validate import validate_document
 # Builders for a small, valid document (does not depend on the Task 5 fixture)
 # ---------------------------------------------------------------------------
 
-PPQ = 480
+PPQ: Literal[480] = 480
 BAR = PPQ * 4  # 4/4 at PPQ 480
 
 # 4 bars: intro / verse / chorus / outro
@@ -210,6 +210,17 @@ def test_v2_non_contiguous_sections_reported() -> None:
     doc = make_document(sections=sections)
     violations = validate_document(doc)
     assert any(v.startswith("V2:") for v in violations)
+
+
+def test_v2_first_section_not_at_zero_reported() -> None:
+    sections = make_sections()
+    # Shift the whole song so the first section no longer starts at tick 0.
+    sections[0] = sections[0].model_copy(update={"start_tick": 10})
+    doc = make_document(sections=sections)
+    violations = validate_document(doc)
+    assert any(
+        v.startswith("V2:") and "contiguous from tick 0" in v for v in violations
+    )
 
 
 def test_v2_valid_sections_pass() -> None:

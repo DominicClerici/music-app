@@ -87,6 +87,7 @@
       "description": "\u00a73.3 `header` \u2014 timing.",
       "properties": {
         "ppq": {
+          "const": 480,
           "default": 480,
           "title": "Ppq",
           "type": "integer"

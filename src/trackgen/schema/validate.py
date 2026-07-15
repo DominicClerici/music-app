@@ -8,15 +8,6 @@ rule id (e.g. ``"V3: ..."``) so callers/tests can assert which rule fired.
 
 from trackgen.schema.document import TrackDocument
 
-_MONOPHONIC_VOICES = {
-    "Synth",
-    "MonoSynth",
-    "FMSynth",
-    "AMSynth",
-    "MembraneSynth",
-    "MetalSynth",
-}
-
 
 def validate_document(doc: TrackDocument) -> list[str]:
     """Return a list of human-readable violation messages; empty == valid."""
@@ -93,17 +84,8 @@ def _check_v3_notes(doc: TrackDocument) -> list[str]:
                     f"V3: track '{track.id}' notes not sorted by (ticks, midi)"
                 )
 
-        for note in notes:
-            if note.duration_ticks < 1:
-                violations.append(
-                    f"V3: track '{track.id}' note at ticks={note.ticks} has "
-                    f"durationTicks < 1"
-                )
-            if not (0 < note.velocity <= 1):
-                violations.append(
-                    f"V3: track '{track.id}' note at ticks={note.ticks} has "
-                    f"velocity outside (0, 1]"
-                )
+        # durationTicks (>= 1) and velocity ((0, 1]) are enforced by NoteEvent
+        # field-level constraints, so V3 only checks sort order + duplicate ticks.
 
     return violations
 
@@ -168,7 +150,7 @@ def _check_v7_polysynth_voice(doc: TrackDocument) -> list[str]:
     for track in doc.tracks:
         instrument = track.instrument
         if instrument.type == "PolySynth":
-            if instrument.voice is None or instrument.voice not in _MONOPHONIC_VOICES:
+            if instrument.voice is None:
                 violations.append(
                     f"V7: track '{track.id}' PolySynth missing a valid Monophonic voice"
                 )

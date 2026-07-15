@@ -36,6 +36,8 @@ def load_pack(path: str | Path) -> StylePack:
 
     manifest_path = pack_dir / "manifest.yaml"
     raw_manifest = _read_yaml(manifest_path)
+    if not isinstance(raw_manifest, dict):
+        raise PackLoadError(f"{manifest_path}: manifest must be a mapping")
     try:
         manifest = Manifest.model_validate(raw_manifest)
     except ValidationError as exc:
@@ -45,7 +47,15 @@ def load_pack(path: str | Path) -> StylePack:
     for role in PATTERN_ROLES:
         bank_path = pack_dir / "patterns" / f"{role}.yaml"
         raw_bank = _read_yaml(bank_path)
-        raw_entries = (raw_bank or {}).get("patterns", [])
+        if raw_bank is None:
+            raw_bank = {}
+        if not isinstance(raw_bank, dict):
+            raise PackLoadError(f"{bank_path}: pattern bank must be a mapping")
+        raw_entries = raw_bank.get("patterns")
+        if raw_entries is None:
+            raw_entries = []
+        if not isinstance(raw_entries, list):
+            raise PackLoadError(f"{bank_path}: 'patterns' must be a list")
         try:
             patterns[role] = [
                 PatternEnvelope.model_validate(entry) for entry in raw_entries
