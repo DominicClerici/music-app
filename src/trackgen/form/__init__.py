@@ -11,10 +11,13 @@ from trackgen.form.energy import (
     load_energy_table,
     section_energy,
 )
+from trackgen.form.stage import form, section_label
 
 __all__ = [
     "EnergyLoadError",
     "EnergyTable",
+    "form",
     "load_energy_table",
     "section_energy",
+    "section_label",
 ]
