@@ -22,4 +22,10 @@ Numbered sequentially (`C-01`, `C-02`, …), never renumbered. If a later sessio
 
 ## Log
 
-*(none yet)*
+### C-01: `PARAM_MALFORMED` structural error code added beyond the §3.1 catalog
+- **Date / session:** 2026-07-15, session 02 (Phase 2)
+- **What deviated:** PHASE_2 §3.1 pins a 14-code validation catalog (all semantic conditions, assuming well-typed JSON input). The implementation adds a 15th code, `PARAM_MALFORMED`, emitted by `generate_plan` when `Params.model_validate` rejects a malformed field *type* (e.g. a fractional `tempoBpm`, a non-mapping `key`/`roleFlavors`). `validate_params` (the §3.1 catalog function) is unchanged and still returns only the 14 documented codes.
+- **Why:** `validate_params` operates on the raw client dict and deliberately defers type/structural checks to the pydantic `Params` model (D-S6 two-layer design). Without wrapping, a malformed-type request escaped the public `generate_plan` boundary as a raw `pydantic.ValidationError` — contradicting §3.1's "failures return the full list of errors." Wrapping into `ParamsInvalid` with a structural code keeps a single structured error type at the boundary without fabricating a *semantic* §3.1 code.
+- **Impact:** A later client-contract/HTTP layer enumerating error codes must include `PARAM_MALFORMED` (structural) alongside the 14 semantic §3.1 codes. Its `field` is a pydantic dotted location (e.g. `tempoBpm`), and its `message` is the pydantic message (not a hand-authored catalog message). Purely additive — no existing code changes meaning.
+- **Doc amendment:** none needed — §3.1 does not specify behavior for malformed input types, so this fills an unspecified gap rather than changing a pinned condition. A future PHASE_2 §3.1 pass could document it explicitly.
+- **Status:** resolved
