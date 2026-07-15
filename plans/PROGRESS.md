@@ -51,13 +51,15 @@ Not split into chunks (single session). **Awaiting approval — no task dispatch
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | `SongForm` extension fields (`total_of_type`/`phrases`/`harmony_tag`/`variant`/`ending`/`template_id`) | sonnet | not started | — |
-| T2 | `forms.yaml` schema + F1–F13 loader + `pop_rock`/`jazz` reference files + rejection fixtures | sonnet | not started | — |
-| T3 | Energy model (`form/energy.yaml` §6.1 + §6.2–§6.4 rules) + energy-column test | sonnet | not started | — |
+| T1 | `SongForm` extension fields (`total_of_type`/`phrases`/`harmony_tag`/`variant`/`ending`/`template_id`) | sonnet | done | 474c273 |
+| T2 | `forms.yaml` schema + F1–F13 loader + `pop_rock`/`jazz` reference files + rejection fixtures | sonnet | done | 2d4f5a9 |
+| T3 | Energy model (`form/energy.yaml` §6.1 + §6.2–§6.4 rules) + energy-column test | sonnet | done | 66725bf |
 | T4 | Form generator stage (§7.1) + goldens/determinism/property/ladder tests | opus | not started | — |
 | T5 | §10 doc-amendment consistency check | orchestrator | not started | — |
 
-DoD (§11) — evidence collected as tasks land (all 8 items TBD).
+Per-task reviews (opus) done for T1–T3; fixes applied and committed within each task: T2 F8 ending-candidate set widened (trailing-optional + `drop`-exposed enders), F9 `dropFromRepeat` scoped to the repeat block, `eligibility.arousal` order guard; T3 test discrimination (clamp-before-envelope, full base-table, R4 override) added; T1 positive `SectionEnding` path added. Combined gates green: **301 tests**, ruff/format/mypy clean.
+
+DoD (§11) — items 1 (§11.1 loader F1–F13 + rejection fixtures) and 2 (§11.2 energy data + column test) landed; 3–8 pending T4 + whole-session review.
 
 ### Phase 2 — session 02 (plan: `plans/sessions/SESSION_02.md`)
 
