@@ -5,6 +5,7 @@
 validates everything into the frozen models in `trackgen.packs.models`.
 """
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ import yaml
 from pydantic import ValidationError
 
 from trackgen.packs.models import (
+    FormsConfig,
     InterpreterConfig,
     Manifest,
     PatternEnvelope,
@@ -21,6 +23,10 @@ from trackgen.packs.models import (
 PATTERN_ROLES = ("drums", "bass", "comping", "pads")
 
 STYLES_ROOT = Path(__file__).resolve().parents[3] / "styles"
+
+_TICKS_PER_QUARTER = 480
+_MIN_LENGTH_SEC = 30
+_MIN_BAR_BUDGET = 4
 
 
 class PackLoadError(Exception):
@@ -35,6 +41,24 @@ def _read_yaml(path: Path) -> Any:
         raise PackLoadError(f"{path}: could not read pack file ({exc})") from exc
     except yaml.YAMLError as exc:
         raise PackLoadError(f"{path}: invalid YAML ({exc})") from exc
+
+
+def _check_f11(forms: FormsConfig, manifest: Manifest) -> None:
+    """PHASE_3 §5.1 F11 / D-S12 — `tempoRange.lo` must yield a bar budget
+    >= 4 at the 30 s minimum-length floor, so the fitter always has room for
+    one legal section. Needs the manifest, so this runs in the loader rather
+    than a pure `FormsConfig` model validator."""
+    tempo_lo = manifest.tempo_range[0]
+    numerator, denominator = manifest.time_signatures[0]
+    max_length_ticks = math.floor(_MIN_LENGTH_SEC * tempo_lo * 8)
+    ticks_per_bar = numerator * (_TICKS_PER_QUARTER * 4 // denominator)
+    bar_budget = max_length_ticks // ticks_per_bar
+    if bar_budget < _MIN_BAR_BUDGET:
+        raise ValueError(
+            f"tempoRange.lo ({tempo_lo}) yields a bar budget of {bar_budget} "
+            f"at the {_MIN_LENGTH_SEC}s minimum length, below the required "
+            f"{_MIN_BAR_BUDGET} (F11)"
+        )
 
 
 def load_pack(path: str | Path) -> StylePack:
@@ -83,7 +107,24 @@ def load_pack(path: str | Path) -> StylePack:
                 f"{interpreter_path}: invalid interpreter config\n{exc}"
             ) from exc
 
-    return StylePack(manifest=manifest, patterns=patterns, interpreter=interpreter)
+    forms: FormsConfig | None = None
+    forms_path = pack_dir / "forms.yaml"
+    if forms_path.exists():
+        raw_forms = _read_yaml(forms_path)
+        if not isinstance(raw_forms, dict):
+            raise PackLoadError(f"{forms_path}: forms must be a mapping")
+        try:
+            forms = FormsConfig.model_validate(raw_forms)
+        except ValidationError as exc:
+            raise PackLoadError(f"{forms_path}: invalid forms config\n{exc}") from exc
+        try:
+            _check_f11(forms, manifest)
+        except ValueError as exc:
+            raise PackLoadError(f"{forms_path}: {exc}") from exc
+
+    return StylePack(
+        manifest=manifest, patterns=patterns, interpreter=interpreter, forms=forms
+    )
 
 
 def registered_styles() -> set[str]:

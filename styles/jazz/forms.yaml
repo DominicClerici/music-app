@@ -1,0 +1,30 @@
+# jazz reference forms (PHASE_3 §5.4, D-S4 — verbatim, do not "improve").
+energyRange: [0.10, 0.90]          # a jazz trio never slams like a rock band
+
+sections:
+  intro: { bars: [[4, 3], [8, 1]], phrases: { 4: [a], 8: [a, a] },
+           harmonyTag: { 4: intro, 8: intro } }      # pool: turnarounds/vamps (Phase 4)
+  head:  { bars: [[32, 3], [12, 1]],                 # AABA standard : jazz blues
+           phrases: { 32: [a, a, b, a], 12: [a, b, c] },
+           harmonyTag: { 32: aaba_32, 12: blues_12 } }
+  solo:  { inherit: head }                           # solos play the same form
+  outro: { bars: [[4, 1]], phrases: { 4: [a] }, harmonyTag: { 4: outro } }
+
+templates:
+  - id: head_solos_head            # head in → N solo choruses → head out
+    weight: 100
+    spine:
+      - { section: intro, optional: [1, 1] }
+      - { section: head }
+      - repeat:
+          count: [1, null]         # null = fill the budget (Aebersold tempo scaling)
+          slots:
+            - { section: solo }
+      - { section: head }
+      - { section: outro }
+    ending: { tagBars: 4, close: ritard }   # tag the last phrase, ritard close
+    degrade:
+      - { shrink: intro }
+      - { drop: intro }
+      - { drop: outro }
+    fallback: { section: solo, bars: 12 }

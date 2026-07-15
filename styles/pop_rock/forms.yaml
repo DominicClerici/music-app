@@ -1,0 +1,81 @@
+# pop_rock reference forms (PHASE_3 §5.3, D-S4 — verbatim, do not "improve").
+energyRange: [0.00, 1.00]
+
+sections:
+  intro:     { bars: [[4, 3], [8, 1]],  phrases: { 4: [a],    8: [a, a] },
+               harmonyTag: { 4: intro,  8: intro } }
+  verse:     { bars: [[8, 3], [16, 1]], phrases: { 8: [a, a], 16: [a, a, a, a] },
+               harmonyTag: { 8: verse,  16: verse } }
+  prechorus: { bars: [[4, 2], [8, 2]],  phrases: { 4: [a],    8: [a, a] },
+               harmonyTag: { 4: prechorus, 8: prechorus } }
+  chorus:    { bars: [[8, 3], [16, 1]], phrases: { 8: [a, a], 16: [a, a, a, a] },
+               harmonyTag: { 8: chorus, 16: chorus } }
+  bridge:    { bars: [[8, 3], [4, 1]],  phrases: { 8: [a, a], 4: [a] },
+               harmonyTag: { 8: bridge, 4: bridge } }
+  outro:     { bars: [[4, 3], [8, 1]],  phrases: { 4: [a],    8: [a, a] },
+               harmonyTag: { 4: outro,  8: outro } }
+
+templates:
+  - id: verse_chorus_bridge        # the plurality form: ~45% of the corpus
+    weight: 60
+    spine:
+      - { section: intro, optional: [6, 1] }        # intros present in 86% of songs
+      - repeat:
+          count: [2, 3]                             # 2–3 verse–chorus cycles
+          slots:
+            - { section: verse }
+            - { section: prechorus, optional: [2, 3] }   # ~39% prevalence
+            - { section: chorus }
+      - { section: bridge }
+      - { section: chorus }                         # the final chorus
+      - { section: outro, optional: [4, 5] }        # ~44% prevalence
+    ending: { tagBars: 0, close: cold }             # fade-outs are dead (Slate 2014)
+    degrade:
+      - { drop: outro }          # research order: outro (44% presence) before
+      - { shrink: intro }        #   bridge (67%) — refines the ROADMAP sketch (D11)
+      - { drop: bridge }
+      - { dropFromRepeat: prechorus }
+      - { shrink: verse }
+      - { shrink: chorus }
+      - { drop: intro }
+    fallback: { section: chorus, bars: 8 }
+
+  - id: verse_chorus               # no bridge: the V–C–V–C(–V–C) minority (~17%)
+    weight: 25
+    spine:
+      - { section: intro, optional: [6, 1] }
+      - repeat:
+          count: [2, 3]
+          slots:
+            - { section: verse }
+            - { section: chorus }                   # last cycle's chorus is final
+      - { section: outro, optional: [4, 5] }
+    ending: { tagBars: 0, close: cold }
+    degrade:
+      - { drop: outro }
+      - { shrink: intro }
+      - { shrink: verse }
+      - { shrink: chorus }
+      - { drop: intro }
+    fallback: { section: chorus, bars: 8 }
+
+  - id: chorus_first               # hook-first opening (~10-14%); high energy only
+    weight: 15
+    eligibility: { arousal: [0.15, 1.0] }
+    spine:
+      - { section: chorus, energy: 0.65 }           # the withheld first chorus
+      - repeat:
+          count: [2, 2]
+          slots:
+            - { section: verse }
+            - { section: chorus }
+      - { section: bridge }
+      - { section: chorus }
+      - { section: outro, optional: [4, 5] }
+    ending: { tagBars: 0, close: cold }
+    degrade:
+      - { drop: outro }
+      - { drop: bridge }
+      - { shrink: verse }
+      - { shrink: chorus }
+    fallback: { section: chorus, bars: 8 }
