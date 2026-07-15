@@ -1,0 +1,17 @@
+# PHASE_3 §6.1 engine base table.
+#
+# Engine-owned data (not a style pack): the base energy value for each of
+# the 11 section types (PHASE_3 §3.1 vocabulary). Recalibratable without a
+# code change.
+base:
+  intro: 0.30
+  verse: 0.45
+  prechorus: 0.60
+  chorus: 0.75
+  postchorus: 0.65
+  bridge: 0.40
+  head: 0.50
+  solo: 0.60
+  main: 0.50
+  breakdown: 0.25
+  outro: 0.35
