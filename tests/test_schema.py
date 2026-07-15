@@ -29,6 +29,8 @@ from trackgen.schema import (
     PlanTimeSignature,
     Register,
     Section,
+    SectionEnding,
+    SectionPhrase,
     SeedSpec,
     Send,
     SongForm,
@@ -258,11 +260,116 @@ def test_song_form_valid() -> None:
                 start_bar=0,
                 length_bars=4,
                 energy=0.3,
+                total_of_type=1,
+                phrases=[SectionPhrase(label="a", bars=4)],
+                harmony_tag="intro",
             )
         ],
         total_bars=4,
+        template_id="verse_chorus_bridge",
     )
     assert form.total_bars == 4
+
+
+def test_song_form_phase3_extension_fields() -> None:
+    """PHASE_3 §4.4 — the worked `solo-2` fragment round-trips through
+    FormSection/SongForm.
+    """
+    section = FormSection(
+        id="solo-2",
+        type="solo",
+        index=2,
+        start_bar=24,
+        length_bars=12,
+        energy=0.704,  # normative — do not edit to match code
+        total_of_type=3,
+        phrases=[
+            SectionPhrase(label="a", bars=4),
+            SectionPhrase(label="b", bars=4),
+            SectionPhrase(label="c", bars=4),
+        ],
+        harmony_tag="blues_12",
+        variant=None,
+        ending=None,
+    )
+    form = SongForm(sections=[section], total_bars=64, template_id="head_solos_head")
+
+    assert form.template_id == "head_solos_head"
+    assert form.sections[0].id == "solo-2"
+    assert form.sections[0].total_of_type == 3
+    assert [p.bars for p in form.sections[0].phrases] == [4, 4, 4]
+    assert form.sections[0].harmony_tag == "blues_12"
+    assert form.sections[0].variant is None
+    assert form.sections[0].ending is None
+
+
+def test_section_ending_valid_round_trip() -> None:
+    """PHASE_3 §4 — a valid `SectionEnding` attaches to a `FormSection` and
+    round-trips through field access unchanged.
+    """
+    ending = SectionEnding(tag_bars=4, close="ritard")
+    section = FormSection(
+        id="outro-1",
+        type="outro",
+        index=1,
+        start_bar=60,
+        length_bars=4,
+        energy=0.344,
+        total_of_type=1,
+        phrases=[SectionPhrase(label="a", bars=4)],
+        harmony_tag="outro",
+        ending=ending,
+    )
+    assert section.ending is not None
+    assert section.ending.tag_bars == 4
+    assert section.ending.close == "ritard"
+
+
+def test_section_phrase_bars_sum_not_enforced() -> None:
+    """PHASE_3 §4.1 — Σ phrases[].bars == length_bars is a stage/property-test
+    invariant, not a schema constraint; the model must accept a partial fixture.
+    """
+    section = FormSection(
+        id="verse-1",
+        type="verse",
+        index=1,
+        start_bar=0,
+        length_bars=8,
+        energy=0.5,
+        total_of_type=1,
+        phrases=[SectionPhrase(label="a", bars=4)],  # sums to 4, not 8
+        harmony_tag="verse",
+    )
+    assert section.length_bars == 8
+    assert sum(p.bars for p in section.phrases) == 4
+
+
+def test_section_ending_bad_tag_bars_rejected() -> None:
+    """PHASE_3 §4.1 — `tagBars` is restricted to {0, 4, 8}."""
+    with pytest.raises(ValidationError):
+        SectionEnding(tag_bars=6, close="cold")  # type: ignore[arg-type]
+
+
+def test_section_ending_bad_close_rejected() -> None:
+    """PHASE_3 §4.1 — `close` is restricted to {ritard, cold, fade}."""
+    with pytest.raises(ValidationError):
+        SectionEnding(tag_bars=4, close="wrong")  # type: ignore[arg-type]
+
+
+def test_form_section_total_of_type_zero_rejected() -> None:
+    """PHASE_3 §4.1 — `totalOfType` must be >= 1."""
+    with pytest.raises(ValidationError):
+        FormSection(
+            id="intro-1",
+            type="intro",
+            index=1,
+            start_bar=0,
+            length_bars=4,
+            energy=0.3,
+            total_of_type=0,
+            phrases=[SectionPhrase(label="a", bars=4)],
+            harmony_tag="intro",
+        )
 
 
 def test_harmonic_plan_valid() -> None:
@@ -402,7 +509,15 @@ def test_energy_out_of_range_rejected() -> None:
 def test_length_bars_under_four_rejected() -> None:
     with pytest.raises(ValidationError):
         FormSection(
-            id="intro-1", type="intro", index=1, start_bar=0, length_bars=3, energy=0.3
+            id="intro-1",
+            type="intro",
+            index=1,
+            start_bar=0,
+            length_bars=3,
+            energy=0.3,
+            total_of_type=1,
+            phrases=[SectionPhrase(label="a", bars=3)],
+            harmony_tag="intro",
         )
 
 

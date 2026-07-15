@@ -111,6 +111,20 @@ class GenerationPlan(IRModel):
 # --- 4.2 SongForm -------------------------------------------------------------
 
 
+class SectionPhrase(IRModel):
+    """§4.1 — one phrase within a section's `phrases` list."""
+
+    label: str
+    bars: int = Field(ge=1)
+
+
+class SectionEnding(IRModel):
+    """§4.1 — the ending directive; non-null on the final section only."""
+
+    tag_bars: Literal[0, 4, 8]
+    close: Literal["ritard", "cold", "fade"]
+
+
 class FormSection(IRModel):
     id: str
     type: str
@@ -118,6 +132,11 @@ class FormSection(IRModel):
     start_bar: int = Field(ge=0)
     length_bars: int = Field(ge=4)
     energy: float = Field(ge=0, le=1)
+    total_of_type: int = Field(ge=1)
+    phrases: list[SectionPhrase]
+    harmony_tag: str
+    variant: str | None = None
+    ending: SectionEnding | None = None
 
 
 class SongForm(IRModel):
@@ -125,6 +144,7 @@ class SongForm(IRModel):
 
     sections: list[FormSection]
     total_bars: int = Field(ge=0)
+    template_id: str
 
 
 # --- 4.3 HarmonicPlan ---------------------------------------------------------
