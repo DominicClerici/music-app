@@ -1,0 +1,14 @@
+# Stub comping pattern bank (PHASE_1 §6.2/§6.3).
+patterns:
+  - id: comping_main_1
+    role: comping
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 10
+    events:
+      - { pos: 0, dur: 480, degree: root, octave: 0, velocity: 0.7 }
+      - { pos: 480, dur: 240, degree: guide3, octave: 0, velocity: 0.6 }
+      - { pos: 960, dur: 480, degree: guide7, octave: 0, velocity: 0.65 }
+      - { pos: 1680, dur: 240, degree: approach, octave: 0, velocity: 0.55 }
+    retarget: { registerLow: 48, registerHigh: 67, onChordChange: hold }

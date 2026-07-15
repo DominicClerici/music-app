@@ -1,0 +1,14 @@
+# Stub bass pattern bank (PHASE_1 §6.2/§6.3). PitchedEvents use the v1 core
+# degree vocabulary only -- rhythm + chord-degree, never a literal pitch.
+patterns:
+  - id: bass_main_1
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 10
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.9 }
+      - { pos: 960, dur: 480, degree: fifth, octave: 0, velocity: 0.7 }
+      - { pos: 1440, dur: 480, degree: root, octave: 0, velocity: 0.75 }
+    retarget: { registerLow: 36, registerHigh: 55, onChordChange: retrigger }

@@ -1,0 +1,9 @@
+# Minimal valid manifest for the Phase 1 pack-loader stub (PHASE_1 §6.1).
+# Not a real style family -- just enough to exercise load_pack().
+formatVersion: 1
+id: _stub
+name: Stub
+version: 0.1.0
+engine: ">=0.1"
+timeSignatures: [[4, 4]]
+tempoRange: [80, 140]

@@ -1,0 +1,11 @@
+# Stub pads pattern bank (PHASE_1 §6.2/§6.3). Pads sustain -- one long note.
+patterns:
+  - id: pads_main_1
+    role: pads
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 10
+    events:
+      - { pos: 0, dur: 1920, degree: tension, octave: 0, velocity: 0.5 }
+    retarget: { registerLow: 55, registerHigh: 71, onChordChange: stop }
