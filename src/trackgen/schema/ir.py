@@ -64,6 +64,34 @@ class SwingSpec(IRModel):
     subdivision: Literal["8", "16"]
 
 
+class MoodVector(IRModel):
+    """§7.1 — the resolved mood's V/A anchor."""
+
+    valence: float = Field(ge=-1, le=1)
+    arousal: float = Field(ge=-1, le=1)
+
+
+class Budgets(IRModel):
+    """§7.2 — pack-scaled generation budgets."""
+
+    note_density: float = Field(ge=0, le=1)
+    dissonance: float = Field(ge=0, le=1)
+    dynamics_base: float = Field(ge=0, le=1)
+    dynamics_range: float = Field(ge=0, le=1)
+    articulation_legato: float = Field(ge=0, le=1)
+    layers_max: int = Field(ge=2, le=4)
+    harmonic_rhythm_base: float
+    register_bias: float = Field(ge=-1, le=1)
+
+
+class TimbreDirectives(IRModel):
+    """§7.3 — Phase 7 sound-design tendencies."""
+
+    brightness: float = Field(ge=0, le=1)
+    attack_hardness: float = Field(ge=0, le=1)
+    space: float = Field(ge=0, le=1)
+
+
 class GenerationPlan(IRModel):
     """§4.1 — produced by Interpreter, consumed by every stage."""
 
@@ -75,6 +103,9 @@ class GenerationPlan(IRModel):
     swing: SwingSpec | None = None
     max_length_ticks: int = Field(ge=0)
     role_flavors: dict[str, str] = Field(default_factory=dict)
+    mood_vector: MoodVector
+    budgets: Budgets
+    timbre_directives: TimbreDirectives
 
 
 # --- 4.2 SongForm -------------------------------------------------------------

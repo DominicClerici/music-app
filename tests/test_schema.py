@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from trackgen.schema import (
     ArrangementEntry,
     ArrangementPlan,
+    Budgets,
     Bus,
     Channel,
     ChordEvent,
@@ -21,6 +22,7 @@ from trackgen.schema import (
     Key,
     Master,
     Meta,
+    MoodVector,
     NoteEvent,
     Phrase,
     PhraseNote,
@@ -33,6 +35,7 @@ from trackgen.schema import (
     StylePackRef,
     SwingSpec,
     Tempo,
+    TimbreDirectives,
     TimeSignature,
     Track,
     TrackDocument,
@@ -191,6 +194,21 @@ def test_track_document_valid() -> None:
 # ---------------------------------------------------------------------------
 
 
+def make_budgets(**overrides: Any) -> Budgets:
+    fields: dict[str, Any] = {
+        "note_density": 0.5,
+        "dissonance": 0.3,
+        "dynamics_base": 0.5,
+        "dynamics_range": 0.2,
+        "articulation_legato": 0.5,
+        "layers_max": 3,
+        "harmonic_rhythm_base": 1.0,
+        "register_bias": 0.0,
+    }
+    fields.update(overrides)
+    return Budgets(**fields)
+
+
 def test_generation_plan_valid() -> None:
     plan = GenerationPlan(
         style_pack=StylePackRef(id="pop_rock", version="0.1.0"),
@@ -201,6 +219,11 @@ def test_generation_plan_valid() -> None:
         swing=SwingSpec(ratio=0.6, subdivision="8"),
         max_length_ticks=30720,
         role_flavors={"drums": "default"},
+        mood_vector=MoodVector(valence=0.0, arousal=0.0),
+        budgets=make_budgets(),
+        timbre_directives=TimbreDirectives(
+            brightness=0.5, attack_hardness=0.5, space=0.5
+        ),
     )
     assert plan.swing is not None
     assert plan.swing.ratio == 0.6
@@ -216,6 +239,11 @@ def test_generation_plan_swing_none() -> None:
         swing=None,
         max_length_ticks=30720,
         role_flavors={},
+        mood_vector=MoodVector(valence=0.0, arousal=0.0),
+        budgets=make_budgets(),
+        timbre_directives=TimbreDirectives(
+            brightness=0.5, attack_hardness=0.5, space=0.5
+        ),
     )
     assert plan.swing is None
 
@@ -436,9 +464,53 @@ def test_generation_plan_frozen() -> None:
         swing=None,
         max_length_ticks=30720,
         role_flavors={},
+        mood_vector=MoodVector(valence=0.0, arousal=0.0),
+        budgets=make_budgets(),
+        timbre_directives=TimbreDirectives(
+            brightness=0.5, attack_hardness=0.5, space=0.5
+        ),
     )
     with pytest.raises(ValidationError):
         plan.tempo_bpm = 100.0
+
+
+def test_generation_plan_phase2_fields() -> None:
+    plan = GenerationPlan(
+        style_pack=StylePackRef(id="pop_rock", version="0.1.0"),
+        seed=SeedSpec(master=1, overrides={}),
+        key=Key(tonic_pc=0, mode="major"),
+        tempo_bpm=96.0,
+        time_signature=PlanTimeSignature(numerator=4, denominator=4),
+        swing=None,
+        max_length_ticks=30720,
+        role_flavors={},
+        mood_vector=MoodVector(valence=0.75, arousal=0.4),
+        budgets=Budgets(
+            note_density=0.648,
+            dissonance=0.132,
+            dynamics_base=0.65,
+            dynamics_range=0.21,
+            articulation_legato=0.34,
+            layers_max=4,
+            harmonic_rhythm_base=1.0,
+            register_bias=0.188,
+        ),
+        timbre_directives=TimbreDirectives(
+            brightness=0.835, attack_hardness=0.66, space=0.36
+        ),
+    )
+    assert plan.mood_vector.valence == 0.75
+    assert plan.budgets.layers_max == 4
+    assert plan.timbre_directives.space == 0.36
+
+    with pytest.raises(ValidationError):
+        MoodVector(valence=-2, arousal=0.0)
+
+    with pytest.raises(ValidationError):
+        make_budgets(layers_max=5)
+
+    with pytest.raises(ValidationError):
+        TimbreDirectives(brightness=1.2, attack_hardness=0.5, space=0.5)
 
 
 # ---------------------------------------------------------------------------

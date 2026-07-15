@@ -24,6 +24,7 @@ from trackgen.schema.document import (
 from trackgen.schema.ir import (
     ArrangementEntry,
     ArrangementPlan,
+    Budgets,
     ChordEvent,
     ChordQuality,
     ChordSpec,
@@ -32,6 +33,7 @@ from trackgen.schema.ir import (
     HarmonicPlan,
     IRModel,
     Key,
+    MoodVector,
     Phrase,
     PhraseNote,
     Register,
@@ -39,6 +41,7 @@ from trackgen.schema.ir import (
     SongForm,
     StylePackRef,
     SwingSpec,
+    TimbreDirectives,
 )
 from trackgen.schema.ir import TimeSignature as PlanTimeSignature
 
@@ -66,6 +69,7 @@ __all__ = [
     # ir.py
     "ArrangementEntry",
     "ArrangementPlan",
+    "Budgets",
     "ChordEvent",
     "ChordQuality",
     "ChordSpec",
@@ -74,6 +78,7 @@ __all__ = [
     "HarmonicPlan",
     "IRModel",
     "Key",
+    "MoodVector",
     "Phrase",
     "PhraseNote",
     "PlanTimeSignature",
@@ -82,4 +87,5 @@ __all__ = [
     "SongForm",
     "StylePackRef",
     "SwingSpec",
+    "TimbreDirectives",
 ]
