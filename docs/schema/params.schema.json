@@ -1,0 +1,158 @@
+{
+  "$defs": {
+    "KeySpec": {
+      "additionalProperties": false,
+      "description": "PHASE_2 \u00a73 `params.key` \u2014 either subfield may be given alone.",
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mode"
+        },
+        "tonic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tonic"
+        }
+      },
+      "title": "KeySpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "PHASE_2 \u00a73 \u2014 the complete `params` input surface.\n\nAll fields but `style_family` are optional; no domain defaults are baked\nin here (defaults are the Interpreter's job, PHASE_2 \u00a76).",
+  "properties": {
+    "ensemblePreset": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ensemblepreset"
+    },
+    "key": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/KeySpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "maxLengthSec": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Maxlengthsec"
+    },
+    "mood": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mood"
+    },
+    "roleFlavors": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Roleflavors",
+      "type": "object"
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seed"
+    },
+    "seedOverrides": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Seedoverrides",
+      "type": "object"
+    },
+    "seedText": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seedtext"
+    },
+    "styleFamily": {
+      "title": "Stylefamily",
+      "type": "string"
+    },
+    "tempoBpm": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tempobpm"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    }
+  },
+  "required": [
+    "styleFamily"
+  ],
+  "title": "Params",
+  "type": "object"
+}
