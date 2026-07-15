@@ -22,6 +22,7 @@ __all__ = [
     "fresh_master",
     "from_base36",
     "master_from_string",
+    "stream_rng",
     "stream_seed",
     "to_base36",
     "weighted_choice",
@@ -67,6 +68,15 @@ def derive(parent: int, name: str) -> int:
 def stream_seed(master: int, overrides: dict[str, int], name: str) -> int:
     """Resolve a stream's seed, honoring reroll overrides (PHASE_1 §5.4)."""
     return overrides.get(name, derive(master, name))
+
+
+def stream_rng(master: int, overrides: dict[str, int], name: str) -> random.Random:
+    """A `random.Random` seeded by this stream's resolved seed (PHASE_1 §5.3/§5.4).
+
+    Constructing the RNG lives here so the `random`-module boundary stays inside
+    `seeds.py`; downstream stages get their generator through this factory.
+    """
+    return random.Random(stream_seed(master, overrides, name))
 
 
 def to_base36(n: int) -> str:

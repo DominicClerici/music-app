@@ -27,6 +27,11 @@ from trackgen.interpreter.params import (
     parse_tonic,
     validate_params,
 )
+from trackgen.interpreter.stage import (
+    ParamsInvalid,
+    generate_plan,
+    interpret,
+)
 
 __all__ = [
     "DERIVED_KEYS",
@@ -38,11 +43,14 @@ __all__ = [
     "MoodTable",
     "ParamError",
     "Params",
+    "ParamsInvalid",
     "apply_overrides",
     "clamp01",
     "derived_defaults",
     "export_params_schema",
     "formulas",
+    "generate_plan",
+    "interpret",
     "load_moods",
     "params_schema_json",
     "parse_tonic",
