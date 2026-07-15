@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>trackgen — Tone.js playground</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0; padding: 1rem 1.25rem; line-height: 1.4;
+      background: #14161a; color: #e6e8ec;
+    }
+    h1 { font-size: 1.15rem; margin: 0 0 .25rem; }
+    .sub { color: #99a; font-size: .8rem; margin-bottom: 1rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .75rem; }
+    button {
+      font: inherit; padding: .4rem .9rem; border-radius: 6px; border: 1px solid #3a3f47;
+      background: #232830; color: #e6e8ec; cursor: pointer;
+    }
+    button:hover:not(:disabled) { background: #2c333d; }
+    button:disabled { opacity: .4; cursor: default; }
+    button.primary { background: #2f6f4f; border-color: #3a8a63; }
+    button.stop { background: #7a3030; border-color: #9a4040; }
+    input[type=file] { font: inherit; color: #cdd; max-width: 100%; }
+    .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+    .panel { border: 1px solid #2a2f37; border-radius: 8px; padding: .6rem .75rem; background: #1a1d23; }
+    .panel h2 { font-size: .85rem; margin: 0 0 .5rem; text-transform: uppercase; letter-spacing: .05em; color: #8fa; }
+    table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+    th, td { text-align: left; padding: .2rem .4rem; border-bottom: 1px solid #262b33; }
+    th { color: #99a; font-weight: 600; }
+    tr.active td { background: #234; color: #cfe; }
+    .badge { display: inline-block; padding: .05rem .4rem; border-radius: 4px; background: #2a3038; font-size: .72rem; }
+    #console {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .74rem;
+      background: #0e1013; border: 1px solid #262b33; border-radius: 8px;
+      padding: .5rem .65rem; height: 240px; overflow-y: auto; white-space: pre-wrap;
+    }
+    #console .err { color: #ff8080; }
+    #console .warn { color: #ffcf70; }
+    #console .ok { color: #80e0a0; }
+    #console .dim { color: #778; }
+    .playhead { font-variant-numeric: tabular-nums; }
+    label.mute { display: inline-flex; align-items: center; gap: .3rem; font-size: .8rem; }
+    .err-banner { color: #ff9090; background: #2a1414; border: 1px solid #5a2a2a;
+      padding: .5rem .75rem; border-radius: 6px; margin-bottom: .75rem; display: none; }
+  </style>
+</head>
+<body>
+  <h1>trackgen — Tone.js playground</h1>
+  <div class="sub">Phase 1 milestone player · implements PHASE_1 §3.7 · Tone.js <span id="toneVer">15.1.22</span></div>
+
+  <div class="err-banner" id="errBanner"></div>
+
+  <div class="row">
+    <button class="primary" id="playBtn" disabled>▶ Play</button>
+    <button class="stop" id="stopBtn" disabled>■ Stop</button>
+    <span class="playhead" id="playhead">idle</span>
+  </div>
+  <div class="row">
+    <label>Load fixture: <input type="file" id="filePicker" accept="application/json,.json" /></label>
+    <button id="reloadDefault">Reload default (milestone)</button>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>Sections</h2>
+      <table id="sectionsTable"><thead>
+        <tr><th>Type</th><th>Label</th><th>startTick</th><th>endTick</th><th>energy</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>Tempo map</h2>
+      <table id="tempoTable"><thead>
+        <tr><th>tick</th><th>bpm</th><th>at (s, base)</th></tr>
+      </thead><tbody></tbody></table>
+      <h2 style="margin-top:.75rem">Buses</h2>
+      <div id="busMutes"></div>
+    </div>
+    <div class="panel">
+      <h2>Console</h2>
+      <div id="console"></div>
+    </div>
+  </div>
+
+  <!-- Q9: pinned exact current stable Tone.js 15.x (resolved 2026-07-14). Major 15 → matches meta.toneVersion "^15.1.0". -->
+  <script src="https://cdn.jsdelivr.net/npm/tone@15.1.22/build/Tone.js"></script>
+  <script>
+  "use strict";
+
+  // ---- Whitelist maps (§3.7 step 3 / §3.6) --------------------------------
+  // Instruments never resolved by raw string indexing into Tone.
+  const INSTRUMENT_WHITELIST = {
+    Synth: Tone.Synth, MonoSynth: Tone.MonoSynth, DuoSynth: Tone.DuoSynth,
+    FMSynth: Tone.FMSynth, AMSynth: Tone.AMSynth, MembraneSynth: Tone.MembraneSynth,
+    NoiseSynth: Tone.NoiseSynth, MetalSynth: Tone.MetalSynth, PluckSynth: Tone.PluckSynth,
+    PolySynth: Tone.PolySynth,
+  };
+  // PolySynth voices must be Monophonic subclasses (§3.6).
+  const VOICE_WHITELIST = {
+    Synth: Tone.Synth, MonoSynth: Tone.MonoSynth, FMSynth: Tone.FMSynth,
+    AMSynth: Tone.AMSynth, MembraneSynth: Tone.MembraneSynth, MetalSynth: Tone.MetalSynth,
+  };
+  const EFFECT_WHITELIST = {
+    Reverb: Tone.Reverb, Freeverb: Tone.Freeverb, JCReverb: Tone.JCReverb,
+    Chorus: Tone.Chorus, FeedbackDelay: Tone.FeedbackDelay, PingPongDelay: Tone.PingPongDelay,
+    Distortion: Tone.Distortion, Filter: Tone.Filter, EQ3: Tone.EQ3,
+    Compressor: Tone.Compressor, Limiter: Tone.Limiter, StereoWidener: Tone.StereoWidener,
+    AutoFilter: Tone.AutoFilter, Tremolo: Tone.Tremolo, Vibrato: Tone.Vibrato,
+  };
+  // Effects whose internal LFO must be .start()ed before playback (§3.7 step 5).
+  const AUTOSTART_EFFECTS = new Set(["Chorus", "Tremolo", "AutoFilter"]);
+
+  // Tone v15 prefers the getters over the deprecated Tone.Transport / Tone.Destination globals.
+  const transport = (typeof Tone.getTransport === "function") ? Tone.getTransport() : Tone.Transport;
+  const destination = (typeof Tone.getDestination === "function") ? Tone.getDestination() : Tone.Destination;
+
+  // ---- On-page console ----------------------------------------------------
+  const consoleEl = document.getElementById("console");
+  function log(msg, cls) {
+    const line = document.createElement("div");
+    if (cls) line.className = cls;
+    line.textContent = msg;
+    consoleEl.appendChild(line);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+  function showError(msg) {
+    const b = document.getElementById("errBanner");
+    b.textContent = msg; b.style.display = "block";
+    log(msg, "err");
+  }
+  function clearError() { document.getElementById("errBanner").style.display = "none"; }
+
+  // ---- Tempo-map tick→seconds (accumulating; never pre-flatten) -----------
+  // Walks the piecewise-constant tempo map so a tick's wall time is exact
+  // regardless of how many tempo changes precede it (§3.7 step 2).
+  function ticksToSecondsMap(tempos, ppq, targetTicks) {
+    let acc = 0, prevTick = 0, prevBpm = tempos[0].bpm;
+    for (let i = 1; i < tempos.length; i++) {
+      const t = tempos[i];
+      if (t.ticks >= targetTicks) break;
+      acc += ((t.ticks - prevTick) / ppq) * (60 / prevBpm);
+      prevTick = t.ticks; prevBpm = t.bpm;
+    }
+    return acc + ((targetTicks - prevTick) / ppq) * (60 / prevBpm);
+  }
+
+  // ---- Graph state (disposed & rebuilt on every load) ---------------------
+  let doc = null;
+  let graph = null; // { nodes:[], parts:[], busMutes:{id:Channel}, autoStart:[] }
+
+  function disposeGraph() {
+    transport.stop();
+    transport.cancel();
+    transport.position = 0;
+    if (!graph) return;
+    for (const p of graph.parts) { try { p.dispose(); } catch (e) {} }
+    for (const n of graph.nodes) { try { n.dispose(); } catch (e) {} }
+    graph = null;
+  }
+
+  // ---- Instantiate one instrument through the whitelist (§3.7 step 3) -----
+  function makeInstrument(patch) {
+    if (patch.type === "PolySynth") {
+      const VoiceCls = VOICE_WHITELIST[patch.voice];
+      if (!VoiceCls) throw new Error(`PolySynth voice not in whitelist: ${patch.voice}`);
+      // §3.7 step 3: new Tone.PolySynth(voice, options) with maxPolyphony set.
+      const poly = new Tone.PolySynth(VoiceCls, patch.options || {});
+      if (typeof patch.maxPolyphony === "number") poly.maxPolyphony = patch.maxPolyphony;
+      return poly;
+    }
+    const Cls = INSTRUMENT_WHITELIST[patch.type];
+    if (!Cls) throw new Error(`instrument type not in whitelist: ${patch.type}`);
+    return new Cls(patch.options || {});
+  }
+
+  function makeEffect(patch) {
+    const Cls = EFFECT_WHITELIST[patch.type];
+    if (!Cls) throw new Error(`effect type not in whitelist: ${patch.type}`);
+    return new Cls(patch.options || {});
+  }
+
+  // ---- Build the whole signal graph (§3.7 steps 1,2,3,4) ------------------
+  function buildGraph() {
+    disposeGraph();
+    const nodes = [], parts = [], busMutes = {}, autoStart = [], readyPromises = [];
+    const ppq = doc.header.ppq;
+
+    // Step 1: PPQ BEFORE any scheduled object exists.
+    transport.PPQ = ppq;
+    log(`Transport.PPQ = ${ppq}`, "dim");
+
+    // Step 2: schedule the tempo map at TRANSPORT tick positions, never
+    // pre-flattened to AudioContext seconds. Transport.bpm is a Param on
+    // context time; writing setValueAtTime(bpm, absoluteSeconds) pins the
+    // automation to a fixed context time, so once the context clock has run
+    // past it (any Stop→Play, or a reload after the context resumed) the event
+    // is in the past and never fires — the chorus step would silently vanish
+    // and playback would not be reload-identical (§9.6). Instead: set the base
+    // (ticks:0) bpm directly, then register one transport-scheduled callback
+    // per later entry. Transport.schedule fires at its tick position on EVERY
+    // pass (re-firing on each Stop→Play from position 0), and setting bpm at
+    // the callback's transport-resolved `time` yields a clean discrete step —
+    // Tone resolves the real context time lazily at playback. disposeGraph()
+    // ran transport.cancel() above, so these registrations don't accumulate
+    // across reloads.
+    transport.bpm.cancelScheduledValues(0);
+    const tempos = doc.header.tempos;
+    transport.bpm.value = tempos[0].bpm;
+    log(`tempo ${tempos[0].bpm} bpm @ tick 0 (base)`, "dim");
+    for (let i = 1; i < tempos.length; i++) {
+      const t = tempos[i];
+      transport.schedule((time) => {
+        transport.bpm.setValueAtTime(t.bpm, time);
+      }, `${t.ticks}i`);
+      log(`tempo ${t.bpm} bpm scheduled @ tick ${t.ticks} ("${t.ticks}i")`, "dim");
+    }
+
+    // Step 4 (master): master.effects chain → Destination.
+    let masterInput = destination;
+    const masterFx = (doc.master && doc.master.effects) ? doc.master.effects : [];
+    if (masterFx.length) {
+      const built = masterFx.map(makeEffect);
+      built.forEach((n) => nodes.push(n));
+      for (let i = 0; i < built.length - 1; i++) built[i].connect(built[i + 1]);
+      built[built.length - 1].connect(destination);
+      masterInput = built[0];
+      built.forEach((fx, i) => registerAutoStart(masterFx[i], fx, autoStart, readyPromises));
+      log(`master chain: ${masterFx.map((e) => e.type).join(" → ")} → Destination`, "ok");
+    } else {
+      log("master chain: (none) → Destination", "dim");
+    }
+
+    // Step 4 (buses): each bus is a Channel that receive()s its id, runs its
+    // effects, and terminates into the master input.
+    const busMuteContainer = document.getElementById("busMutes");
+    busMuteContainer.innerHTML = "";
+    for (const bus of (doc.buses || [])) {
+      const busInput = new Tone.Channel();
+      busInput.receive(bus.id);
+      nodes.push(busInput);
+      let tail = busInput;
+      const fxNames = [];
+      for (const efx of (bus.effects || [])) {
+        const fx = makeEffect(efx);
+        nodes.push(fx);
+        tail.connect(fx);
+        tail = fx;
+        fxNames.push(efx.type);
+        registerAutoStart(efx, fx, autoStart, readyPromises);
+      }
+      tail.connect(masterInput);
+      busMutes[bus.id] = busInput;
+      log(`bus "${bus.id}": receive → ${fxNames.join(" → ") || "(dry)"} → master`, "ok");
+
+      const lbl = document.createElement("label");
+      lbl.className = "mute";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.addEventListener("change", () => {
+        busInput.mute = cb.checked;
+        log(`bus "${bus.id}" ${cb.checked ? "MUTED (dry)" : "unmuted"}`, "warn");
+      });
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(` mute bus "${bus.id}"`));
+      busMuteContainer.appendChild(lbl);
+    }
+
+    // Step 4 (tracks) + step 6 (notes).
+    for (const track of doc.tracks) {
+      let inst;
+      try {
+        inst = makeInstrument(track.instrument);
+      } catch (e) {
+        showError(`track "${track.id}": ${e.message}`);
+        continue; // degrade gracefully; skip unknown/rejected type
+      }
+      nodes.push(inst);
+
+      // instrument → effects[] (in order) → Channel → master input
+      let tail = inst;
+      const fxNames = [];
+      for (const efx of (track.effects || [])) {
+        let fx;
+        try { fx = makeEffect(efx); }
+        catch (e) { showError(`track "${track.id}" effect: ${e.message}`); continue; }
+        nodes.push(fx);
+        tail.connect(fx);
+        tail = fx;
+        fxNames.push(efx.type);
+        registerAutoStart(efx, fx, autoStart, readyPromises);
+      }
+      const ch = new Tone.Channel({
+        volume: track.channel.volumeDb,
+        pan: track.channel.pan,
+        mute: track.channel.mute,
+      });
+      nodes.push(ch);
+      tail.connect(ch);
+      ch.connect(masterInput);
+
+      // sends → buses
+      const sendNames = [];
+      for (const s of (track.sends || [])) {
+        ch.send(s.bus, s.gainDb);
+        sendNames.push(`${s.bus}@${s.gainDb}dB`);
+      }
+
+      log(
+        `track "${track.id}" [${track.role}] ${track.instrument.type}` +
+        (track.instrument.voice ? `/${track.instrument.voice}` : "") +
+        (fxNames.length ? ` fx:[${fxNames.join(",")}]` : "") +
+        (sendNames.length ? ` sends:[${sendNames.join(",")}]` : "") +
+        ` notes:${track.notes.length}`,
+        "ok"
+      );
+
+      // Step 6: notes via Tone.Part at tick transport positions ("<n>i").
+      const isNoise = track.instrument.type === "NoiseSynth";
+      const events = track.notes.map((n) => ({
+        time: `${n.ticks}i`,
+        durTicks: n.durationTicks,
+        midi: n.midi,
+        velocity: n.velocity,
+      }));
+      const part = new Tone.Part((time, ev) => {
+        const dur = `${ev.durTicks}i`;
+        if (isNoise) {
+          // NoiseSynth is unpitched — no note argument (§3.5 / §3.7 step 6).
+          inst.triggerAttackRelease(dur, time, ev.velocity);
+        } else {
+          const freq = Tone.Frequency(ev.midi, "midi").toFrequency();
+          inst.triggerAttackRelease(freq, dur, time, ev.velocity);
+        }
+      }, events);
+      part.start(0);
+      parts.push(part);
+    }
+
+    graph = { nodes, parts, busMutes, autoStart, readyPromises };
+    document.getElementById("playBtn").disabled = false;
+  }
+
+  function registerAutoStart(patch, node, autoStart, readyPromises) {
+    if (AUTOSTART_EFFECTS.has(patch.type)) autoStart.push(node);
+    // Reverb (and convolution effects) generate their IR asynchronously.
+    if (node.ready && typeof node.ready.then === "function") readyPromises.push(node.ready);
+  }
+
+  // ---- Transport controls (§3.7 step 5 + user-gesture AudioContext start) --
+  async function play() {
+    if (!graph) return;
+    await Tone.start(); // must be inside a user gesture (autoplay policy)
+    // Step 5: await async effects (Reverb IR), then start LFO effects.
+    if (graph.readyPromises.length) {
+      log(`awaiting ${graph.readyPromises.length} async effect(s) (Reverb.ready)…`, "dim");
+      await Promise.all(graph.readyPromises);
+    }
+    // Guard against restarting an already-started LFO effect on replay: each
+    // graph rebuild makes fresh nodes (flag absent), but within one graph a
+    // Stop→Play must not re-.start() the same Chorus/Tremolo/AutoFilter LFO.
+    for (const fx of graph.autoStart) {
+      if (fx._tgStarted) continue;
+      try { fx.start(); fx._tgStarted = true; } catch (e) {}
+    }
+    transport.position = 0;
+    transport.start();
+    document.getElementById("playBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
+    log("▶ transport started", "ok");
+  }
+
+  function stop() {
+    transport.stop();
+    transport.position = 0;
+    document.getElementById("playBtn").disabled = false;
+    document.getElementById("stopBtn").disabled = true;
+    document.getElementById("playhead").textContent = "stopped";
+    clearActiveSection();
+    log("■ transport stopped", "dim");
+  }
+
+  // ---- UI rendering: sections + tempo map + playhead ----------------------
+  function renderTables() {
+    const sBody = document.querySelector("#sectionsTable tbody");
+    sBody.innerHTML = "";
+    for (const s of doc.sections) {
+      const tr = document.createElement("tr");
+      tr.dataset.start = s.startTick; tr.dataset.end = s.endTick;
+      tr.innerHTML =
+        `<td><span class="badge">${s.type}</span></td><td>${s.label}</td>` +
+        `<td>${s.startTick}</td><td>${s.endTick}</td><td>${s.energy}</td>`;
+      sBody.appendChild(tr);
+    }
+    const tBody = document.querySelector("#tempoTable tbody");
+    tBody.innerHTML = "";
+    for (const t of doc.header.tempos) {
+      const sec = ticksToSecondsMap(doc.header.tempos, doc.header.ppq, t.ticks);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${t.ticks}</td><td>${t.bpm}</td><td>${sec.toFixed(2)}</td>`;
+      tBody.appendChild(tr);
+    }
+  }
+
+  function clearActiveSection() {
+    document.querySelectorAll("#sectionsTable tr.active").forEach((r) => r.classList.remove("active"));
+  }
+
+  function tickPlayhead() {
+    if (doc && transport.state === "started") {
+      const ticks = transport.ticks;
+      const bpm = transport.bpm.value.toFixed(1);
+      let cur = "—";
+      clearActiveSection();
+      document.querySelectorAll("#sectionsTable tbody tr").forEach((r) => {
+        const st = +r.dataset.start, en = +r.dataset.end;
+        if (ticks >= st && ticks < en) { r.classList.add("active"); cur = r.children[1].textContent; }
+      });
+      document.getElementById("playhead").textContent =
+        `tick ${Math.floor(ticks)} · ${bpm} bpm · section: ${cur}`;
+      // auto-stop at song end
+      const endTick = doc.sections[doc.sections.length - 1].endTick;
+      if (ticks >= endTick) stop();
+    }
+    requestAnimationFrame(tickPlayhead);
+  }
+  requestAnimationFrame(tickPlayhead);
+
+  // ---- Loading fixtures ---------------------------------------------------
+  function loadDoc(parsed, source) {
+    try {
+      clearError();
+      consoleEl.innerHTML = "";
+      if (!parsed || !parsed.header || !parsed.tracks || !parsed.sections) {
+        throw new Error("not a TrackDocument (missing header/sections/tracks)");
+      }
+      doc = parsed;
+      log(`loaded: ${source}  · title="${(doc.meta && doc.meta.title) || "?"}"  ` +
+          `toneVersion=${(doc.meta && doc.meta.toneVersion) || "?"}`, "ok");
+      const declared = doc.meta && doc.meta.toneVersion;
+      if (declared && !/(^|\D)15\./.test(declared)) {
+        log(`WARNING: document toneVersion ${declared} may not match runtime Tone 15.x`, "warn");
+      }
+      renderTables();
+      buildGraph();
+      document.getElementById("stopBtn").disabled = true;
+    } catch (e) {
+      showError(`load failed: ${e.message}`);
+      document.getElementById("playBtn").disabled = true;
+    }
+  }
+
+  document.getElementById("filePicker").addEventListener("change", (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { loadDoc(JSON.parse(reader.result), file.name); }
+      catch (e) { showError(`invalid JSON in ${file.name}: ${e.message}`); }
+    };
+    reader.readAsText(file);
+  });
+
+  async function loadDefault() {
+    try {
+      const res = await fetch("../fixtures/milestone.trackdoc.json");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      loadDoc(await res.json(), "../fixtures/milestone.trackdoc.json");
+    } catch (e) {
+      showError(
+        `could not fetch default fixture (${e.message}). ` +
+        `Serve over HTTP (e.g. \`uv run python -m http.server\` from repo root) ` +
+        `or use the file picker above.`
+      );
+    }
+  }
+  document.getElementById("reloadDefault").addEventListener("click", loadDefault);
+  document.getElementById("playBtn").addEventListener("click", play);
+  document.getElementById("stopBtn").addEventListener("click", stop);
+
+  // Attempt to auto-load the milestone fixture (works when served over HTTP).
+  loadDefault();
+  </script>
+</body>
+</html>
