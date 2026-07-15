@@ -191,6 +191,15 @@ def test_rejects_phrase_quotient_below_four() -> None:
         FormsConfig.model_validate(bad)
 
 
+def test_rejects_spine_section_not_declared() -> None:
+    """F4 — every spine slot's `section` must be declared in `sections`
+    (a slot naming a valid-vocabulary but undeclared type is rejected)."""
+    bad = _mutated()
+    bad["templates"][0]["spine"].append({"section": "chorus"})  # not in sections
+    with pytest.raises(ValidationError, match="not declared in sections"):
+        FormsConfig.model_validate(bad)
+
+
 def test_rejects_duplicate_template_ids() -> None:
     """F4 — template ids must be unique (PHASE_3 §5.1)."""
     bad = _mutated()

@@ -50,6 +50,8 @@ def _assert_songform(sf: SongForm, rows: list[GoldenRow]) -> None:
         assert [(p.label, p.bars) for p in sec.phrases] == rphr
         assert sec.harmony_tag == rtag
         assert sec.energy == ren
+        # Both §7.4 reference forms carry no variant (§9 Q1: label-only in v1).
+        assert sec.variant is None
         assert section_label(sec.type, sec.index, sec.total_of_type, sec.variant) == (
             rlabel
         )
