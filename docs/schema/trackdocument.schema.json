@@ -1,0 +1,497 @@
+{
+  "$defs": {
+    "Bus": {
+      "description": "\u00a73.6 `buses[]`.",
+      "properties": {
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EffectPatch"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Bus",
+      "type": "object"
+    },
+    "Channel": {
+      "properties": {
+        "mute": {
+          "default": false,
+          "title": "Mute",
+          "type": "boolean"
+        },
+        "pan": {
+          "maximum": 1,
+          "minimum": -1,
+          "title": "Pan",
+          "type": "number"
+        },
+        "volumeDb": {
+          "maximum": 6,
+          "title": "Volumedb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "volumeDb",
+        "pan"
+      ],
+      "title": "Channel",
+      "type": "object"
+    },
+    "EffectPatch": {
+      "description": "\u00a73.6 `EffectPatch`.",
+      "properties": {
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        },
+        "type": {
+          "enum": [
+            "Reverb",
+            "Freeverb",
+            "JCReverb",
+            "Chorus",
+            "FeedbackDelay",
+            "PingPongDelay",
+            "Distortion",
+            "Filter",
+            "EQ3",
+            "Compressor",
+            "Limiter",
+            "StereoWidener",
+            "AutoFilter",
+            "Tremolo",
+            "Vibrato"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "EffectPatch",
+      "type": "object"
+    },
+    "Header": {
+      "description": "\u00a73.3 `header` \u2014 timing.",
+      "properties": {
+        "ppq": {
+          "default": 480,
+          "title": "Ppq",
+          "type": "integer"
+        },
+        "tempos": {
+          "items": {
+            "$ref": "#/$defs/Tempo"
+          },
+          "title": "Tempos",
+          "type": "array"
+        },
+        "timeSignatures": {
+          "items": {
+            "$ref": "#/$defs/TimeSignature"
+          },
+          "title": "Timesignatures",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tempos",
+        "timeSignatures"
+      ],
+      "title": "Header",
+      "type": "object"
+    },
+    "InstrumentPatch": {
+      "description": "\u00a73.6 `InstrumentPatch`.\n\nPolySynth-only `voice`/`max_polyphony` are modeled as optional fields; the\n\"PolySynth <=> has both, others <=> neither\" rule is validator V7, not\nenforced here.",
+      "properties": {
+        "maxPolyphony": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maxpolyphony"
+        },
+        "options": {
+          "additionalProperties": true,
+          "title": "Options",
+          "type": "object"
+        },
+        "type": {
+          "enum": [
+            "Synth",
+            "MonoSynth",
+            "DuoSynth",
+            "FMSynth",
+            "AMSynth",
+            "MembraneSynth",
+            "NoiseSynth",
+            "MetalSynth",
+            "PluckSynth",
+            "PolySynth"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "voice": {
+          "anyOf": [
+            {
+              "enum": [
+                "Synth",
+                "MonoSynth",
+                "FMSynth",
+                "AMSynth",
+                "MembraneSynth",
+                "MetalSynth"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Voice"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "InstrumentPatch",
+      "type": "object"
+    },
+    "Master": {
+      "description": "\u00a73.1 `master` \u2014 the master effects chain.",
+      "properties": {
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EffectPatch"
+          },
+          "title": "Effects",
+          "type": "array"
+        }
+      },
+      "title": "Master",
+      "type": "object"
+    },
+    "Meta": {
+      "description": "\u00a73.2 `meta` \u2014 regeneration identity.",
+      "properties": {
+        "generatorVersion": {
+          "title": "Generatorversion",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "string"
+        },
+        "seedOverrides": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Seedoverrides",
+          "type": "object"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "toneVersion": {
+          "title": "Toneversion",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generatorVersion",
+        "toneVersion",
+        "seed"
+      ],
+      "title": "Meta",
+      "type": "object"
+    },
+    "NoteEvent": {
+      "description": "\u00a73.5 `NoteEvent`.\n\n`midi` is `int | None` at the field layer; the \"required unless NoiseSynth\"\nrule is validator V5 (Task 3), not enforced here.",
+      "properties": {
+        "durationTicks": {
+          "minimum": 1,
+          "title": "Durationticks",
+          "type": "integer"
+        },
+        "midi": {
+          "anyOf": [
+            {
+              "maximum": 127,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Midi"
+        },
+        "ticks": {
+          "minimum": 0,
+          "title": "Ticks",
+          "type": "integer"
+        },
+        "velocity": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Velocity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "ticks",
+        "durationTicks",
+        "velocity"
+      ],
+      "title": "NoteEvent",
+      "type": "object"
+    },
+    "Section": {
+      "description": "\u00a73.4 `sections` \u2014 explicit ranges, not markers.\n\n`type` is deliberately a plain `str`: the vocabulary is owned by Phase 3.",
+      "properties": {
+        "endTick": {
+          "minimum": 0,
+          "title": "Endtick",
+          "type": "integer"
+        },
+        "energy": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Energy",
+          "type": "number"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "startTick": {
+          "minimum": 0,
+          "title": "Starttick",
+          "type": "integer"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "label",
+        "startTick",
+        "endTick",
+        "energy"
+      ],
+      "title": "Section",
+      "type": "object"
+    },
+    "Send": {
+      "properties": {
+        "bus": {
+          "title": "Bus",
+          "type": "string"
+        },
+        "gainDb": {
+          "title": "Gaindb",
+          "type": "number"
+        }
+      },
+      "required": [
+        "bus",
+        "gainDb"
+      ],
+      "title": "Send",
+      "type": "object"
+    },
+    "Tempo": {
+      "properties": {
+        "bpm": {
+          "exclusiveMinimum": 0,
+          "title": "Bpm",
+          "type": "number"
+        },
+        "ticks": {
+          "minimum": 0,
+          "title": "Ticks",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ticks",
+        "bpm"
+      ],
+      "title": "Tempo",
+      "type": "object"
+    },
+    "TimeSignature": {
+      "properties": {
+        "denominator": {
+          "enum": [
+            2,
+            4,
+            8,
+            16
+          ],
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "ticks": {
+          "minimum": 0,
+          "title": "Ticks",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ticks",
+        "numerator",
+        "denominator"
+      ],
+      "title": "TimeSignature",
+      "type": "object"
+    },
+    "Track": {
+      "description": "\u00a73.5 `tracks[]`.",
+      "properties": {
+        "channel": {
+          "$ref": "#/$defs/Channel"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/EffectPatch"
+          },
+          "title": "Effects",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "instrument": {
+          "$ref": "#/$defs/InstrumentPatch"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "$ref": "#/$defs/NoteEvent"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "role": {
+          "enum": [
+            "drums",
+            "bass",
+            "comping",
+            "pads"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sends": {
+          "items": {
+            "$ref": "#/$defs/Send"
+          },
+          "title": "Sends",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "name",
+        "instrument",
+        "channel"
+      ],
+      "title": "Track",
+      "type": "object"
+    }
+  },
+  "description": "\u00a73.1 top level.",
+  "properties": {
+    "buses": {
+      "items": {
+        "$ref": "#/$defs/Bus"
+      },
+      "title": "Buses",
+      "type": "array"
+    },
+    "header": {
+      "$ref": "#/$defs/Header"
+    },
+    "master": {
+      "$ref": "#/$defs/Master"
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
+    "schemaVersion": {
+      "default": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/Section"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "tracks": {
+      "items": {
+        "$ref": "#/$defs/Track"
+      },
+      "title": "Tracks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "meta",
+    "header",
+    "sections",
+    "master",
+    "tracks"
+  ],
+  "title": "TrackDocument",
+  "type": "object"
+}

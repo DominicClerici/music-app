@@ -11,6 +11,9 @@ dependencies = [
     "typer",
 ]
 
+[project.scripts]
+trackgen = "trackgen.cli:app"
+
 # Runtime deps carry lower bounds here; exact pins live in the committed uv.lock,
 # so a dependency bump is a deliberate, reviewed re-lock (PHASE_1 D16).
 
