@@ -1,0 +1,59 @@
+# PHASE_2 §4.1 mood anchors + §4.3 overrides.
+#
+# Engine-owned data (not a style pack): the 12-word mood vocabulary, each a
+# (valence, arousal) anchor in [-1, 1], plus the hand-authored overrides that
+# correct documented formula failures (§4.3). Order matches the §4.1 table.
+moods:
+  happy:
+    valence: 0.75
+    arousal: 0.40
+  energetic:
+    valence: 0.45
+    arousal: 0.80
+  triumphant:
+    valence: 0.80
+    arousal: 0.55
+  calm:
+    valence: 0.55
+    arousal: -0.65
+    overrides:
+      brightness: 0.45
+  dreamy:
+    valence: 0.35
+    arousal: -0.45
+    overrides:
+      space: 0.85
+  romantic:
+    valence: 0.65
+    arousal: -0.25
+    overrides:
+      brightness: 0.45
+  nostalgic:
+    valence: 0.30
+    arousal: -0.35
+  melancholic:
+    valence: -0.50
+    arousal: -0.45
+    overrides:
+      tempoCenter: 68.0
+  dark:
+    valence: -0.55
+    arousal: -0.15
+    overrides:
+      tempoCenter: 80.0
+  mysterious:
+    valence: -0.20
+    arousal: -0.30
+  tense:
+    valence: -0.45
+    arousal: 0.50
+    overrides:
+      dynamicsBase: 0.45
+      dynamicsRange: 0.35
+  aggressive:
+    valence: -0.60
+    arousal: 0.70
+    overrides:
+      tempoCenter: 146.0
+      brightness: 0.75
+      dynamicsBase: 0.80
