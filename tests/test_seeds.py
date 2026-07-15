@@ -114,6 +114,20 @@ def test_to_base36_rejects_out_of_range() -> None:
         to_base36(1 << 64)
 
 
+def test_from_base36_rejects_non_canonical() -> None:
+    # int(s, 36) alone would accept underscores, sign prefixes, and whitespace,
+    # aliasing distinct strings to the same seed; from_base36 must reject them.
+    for bad in ("1_2", "+5", "-5", "  12  ", "12\n", "1.2", "", "ab$"):
+        with pytest.raises(ValueError):
+            from_base36(bad)
+
+
+def test_from_base36_out_of_range_rejected() -> None:
+    # 36 base36 'z's is far above u64 max.
+    with pytest.raises(ValueError, match="out of u64 range"):
+        from_base36("z" * 14)
+
+
 def test_stream_seed_override_and_default() -> None:
     # No override -> derive(master, name).
     assert stream_seed(MASTER, {}, "drums") == derive(MASTER, "drums")

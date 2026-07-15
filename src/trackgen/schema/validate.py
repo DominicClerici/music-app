@@ -52,6 +52,13 @@ def _check_v2_sections(doc: TrackDocument) -> list[str]:
     if sections[0].start_tick != 0:
         violations.append("V2: sections must start contiguous from tick 0")
 
+    for sec in sections:
+        if sec.end_tick <= sec.start_tick:
+            violations.append(
+                f"V2: section {sec.label!r} has non-positive span "
+                f"(startTick={sec.start_tick}, endTick={sec.end_tick})"
+            )
+
     for prev, nxt in zip(sections, sections[1:], strict=False):
         if prev.end_tick != nxt.start_tick:
             violations.append(

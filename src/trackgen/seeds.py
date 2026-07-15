@@ -93,10 +93,20 @@ def to_base36(n: int) -> str:
     return "".join(reversed(out))
 
 
+_BASE36_DIGITS = frozenset("0123456789abcdefghijklmnopqrstuvwxyz")
+
+
 def from_base36(s: str) -> int:
-    """Decode a base36 string to a u64 (case-insensitive; PHASE_1 §5.5)."""
+    """Decode a base36 string to a u64 (case-insensitive; PHASE_1 §5.5).
+
+    Only canonical base36 digits are accepted. Bare `int(s, 36)` would also
+    swallow underscores (`"1_2"`), a sign prefix (`"+5"`), and surrounding
+    whitespace, aliasing distinct strings to the same seed and loosening the
+    `SEED_INVALID` contract."""
+    if not s or any(c not in _BASE36_DIGITS for c in s.lower()):
+        raise ValueError(f"not a canonical base36 string: {s!r}")
     n = int(s, 36)
-    if n < 0 or n > _U64_MAX:
+    if n > _U64_MAX:
         raise ValueError(f"seed out of u64 range: {n}")
     return n
 

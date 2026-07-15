@@ -254,6 +254,15 @@ class InterpreterConfig(PackModel):
                         f"{flavor_id!r} is not a declared flavor id for {role!r}"
                     )
 
+        # Rule 8: swingRatio, when set, is the final long:short ratio consumed
+        # by SwingSpec (ir.py, ge=0.5 le=0.75). Bound it here so an out-of-range
+        # pack fails at load with a PackLoadError instead of crashing later as a
+        # raw pydantic error inside interpret().
+        if self.swing_ratio is not None and not (0.5 <= self.swing_ratio <= 0.75):
+            raise ValueError(
+                f"swingRatio ({self.swing_ratio}) must be within [0.5, 0.75]"
+            )
+
         return self
 
 

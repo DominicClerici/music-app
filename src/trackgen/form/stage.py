@@ -19,6 +19,7 @@ from typing import Literal
 
 from trackgen.form.energy import section_energy
 from trackgen.packs.models import (
+    DegradeOp,
     FormsConfig,
     FormTemplate,
     RepeatBlock,
@@ -36,6 +37,94 @@ from trackgen.seeds import stream_rng, weighted_choice
 
 # A resolved section to emit: (type, length_bars, energy override, variant).
 _RawSection = tuple[str, int, float | None, str | None]
+
+
+def _slot_active(
+    slot: TemplateSlot,
+    slot_uid: int,
+    dropped: set[int],
+    optional_decision: dict[int, bool],
+) -> bool:
+    """A spine slot contributes bars iff it was not ladder-dropped and (when
+    optional) was drawn in (§7.1 steps 3/5)."""
+    if slot_uid in dropped:
+        return False
+    if slot.optional is not None and not optional_decision.get(slot_uid, False):
+        return False
+    return True
+
+
+def _fit_and_degrade(
+    *,
+    degrade: tuple[DegradeOp, ...],
+    top_level: list[tuple[TemplateSlot, int]],
+    repeat_inner: list[tuple[TemplateSlot, int]],
+    resolved_bars: dict[str, int],
+    optional_decision: dict[int, bool],
+    dropped_top: set[int],
+    dropped_repeat: set[int],
+    count_min: int,
+    count_max: int | None,
+    has_repeat: bool,
+    bar_budget: int,
+    rk: Callable[[str], str],
+    smallest: Callable[[str], int],
+) -> tuple[int, int]:
+    """PHASE_3 §7.1 steps 4-5: the arithmetic repeat count + the degrade ladder.
+
+    Mutates `resolved_bars` / `dropped_top` / `dropped_repeat` in place and
+    returns `(count, total)`.
+
+    The step-5 ladder (`while total > bar_budget`) is retained **defensive,
+    unreachable** code: for any template *selected* by `form()`, the §5.2
+    eligibility gate and the §7.1 step-3 feasibility filter already guarantee
+    `total <= bar_budget`, so the loop body never runs through the public API
+    (proof in CAVEATS C-02). It is kept for robustness against a future pack
+    rule that could select an over-budget template, and its drop / shrink /
+    dropFromRepeat semantics are locked by a direct white-box unit test
+    (`tests/test_form.py`)."""
+
+    def recompute() -> tuple[int, int]:
+        fixed = sum(
+            resolved_bars[rk(slot.section)]
+            for slot, slot_uid in top_level
+            if _slot_active(slot, slot_uid, dropped_top, optional_decision)
+        )
+        if not has_repeat:
+            return 0, fixed
+        block = sum(
+            resolved_bars[rk(slot.section)]
+            for slot, slot_uid in repeat_inner
+            if _slot_active(slot, slot_uid, dropped_repeat, optional_decision)
+        )
+        if block == 0:
+            return count_min, fixed
+        raw = (bar_budget - fixed) // block
+        count = max(count_min, raw)
+        if count_max is not None:
+            count = min(count, count_max)
+        return count, fixed + count * block
+
+    count, total = recompute()
+    ladder = iter(degrade)
+    while total > bar_budget:
+        op = next(ladder, None)
+        if op is None:
+            break
+        if op.drop is not None:
+            dropped_top.update(
+                slot_uid for slot, slot_uid in top_level if slot.section == op.drop
+            )
+        elif op.shrink is not None:
+            resolved_bars[rk(op.shrink)] = smallest(op.shrink)
+        else:  # drop_from_repeat
+            dropped_repeat.update(
+                slot_uid
+                for slot, slot_uid in repeat_inner
+                if slot.section == op.drop_from_repeat
+            )
+        count, total = recompute()
+    return count, total
 
 
 def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
@@ -187,54 +276,21 @@ def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
     # --- Steps 4 & 5: repeat count + degradation ladder (arithmetic) ----------
     dropped_top: set[int] = set()
     dropped_repeat: set[int] = set()
-
-    def slot_active(slot: TemplateSlot, slot_uid: int, dropped: set[int]) -> bool:
-        if slot_uid in dropped:
-            return False
-        if slot.optional is not None and not optional_decision.get(slot_uid, False):
-            return False
-        return True
-
-    def recompute() -> tuple[int, int]:
-        fixed = sum(
-            resolved_bars[rk(slot.section)]
-            for slot, slot_uid in top_level
-            if slot_active(slot, slot_uid, dropped_top)
-        )
-        if not has_repeat:
-            return 0, fixed
-        block = sum(
-            resolved_bars[rk(slot.section)]
-            for slot, slot_uid in repeat_inner
-            if slot_active(slot, slot_uid, dropped_repeat)
-        )
-        if block == 0:
-            return count_min, fixed
-        raw = (bar_budget - fixed) // block
-        count = max(count_min, raw)
-        if count_max is not None:
-            count = min(count, count_max)
-        return count, fixed + count * block
-
-    count, total = recompute()
-    ladder = iter(template.degrade)
-    while total > bar_budget:
-        op = next(ladder, None)
-        if op is None:
-            break
-        if op.drop is not None:
-            dropped_top.update(
-                slot_uid for slot, slot_uid in top_level if slot.section == op.drop
-            )
-        elif op.shrink is not None:
-            resolved_bars[rk(op.shrink)] = smallest(op.shrink)
-        else:  # drop_from_repeat
-            dropped_repeat.update(
-                slot_uid
-                for slot, slot_uid in repeat_inner
-                if slot.section == op.drop_from_repeat
-            )
-        count, total = recompute()
+    count, total = _fit_and_degrade(
+        degrade=template.degrade,
+        top_level=top_level,
+        repeat_inner=repeat_inner,
+        resolved_bars=resolved_bars,
+        optional_decision=optional_decision,
+        dropped_top=dropped_top,
+        dropped_repeat=dropped_repeat,
+        count_min=count_min,
+        count_max=count_max,
+        has_repeat=has_repeat,
+        bar_budget=bar_budget,
+        rk=rk,
+        smallest=smallest,
+    )
 
     # --- Step 6: fallback when the ladder cannot fit it -----------------------
     if total > bar_budget:
@@ -247,7 +303,7 @@ def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
             block_slots = [
                 (slot, slot_uid)
                 for slot, slot_uid in repeat_inner
-                if slot_active(slot, slot_uid, dropped_repeat)
+                if _slot_active(slot, slot_uid, dropped_repeat, optional_decision)
             ]
             for _ in range(count):
                 for slot, _slot_uid in block_slots:
@@ -261,7 +317,7 @@ def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
                     )
         else:
             top_uid = next(u for s, u in top_level if s is element)
-            if slot_active(element, top_uid, dropped_top):
+            if _slot_active(element, top_uid, dropped_top, optional_decision):
                 raw_sections.append(
                     (
                         element.section,

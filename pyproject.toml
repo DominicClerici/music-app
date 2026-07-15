@@ -47,9 +47,14 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 # this is the declarative import-level layer.
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "random".msg = "Use the seed streams API (trackgen.seeds); direct `random` breaks determinism (invariant 5)."
+"secrets".msg = "Entropy may enter only at the seed API boundary (trackgen.seeds)."
+"uuid".msg = "Non-deterministic identifiers break reproducibility (invariant 5)."
 "os.urandom".msg = "Entropy may enter only at the seed API boundary (trackgen.seeds)."
 "time".msg = "No wall-clock in a deterministic pipeline (invariant 5)."
 "datetime.datetime.now".msg = "No wall-clock in a deterministic pipeline (invariant 5)."
+"datetime.datetime.utcnow".msg = "No wall-clock in a deterministic pipeline (invariant 5)."
+"datetime.datetime.today".msg = "No wall-clock in a deterministic pipeline (invariant 5)."
+"datetime.date.today".msg = "No wall-clock in a deterministic pipeline (invariant 5)."
 
 [tool.ruff.lint.per-file-ignores]
 # seeds.py is the single entropy boundary: it may read os.urandom and use random.

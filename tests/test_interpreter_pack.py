@@ -184,6 +184,13 @@ def test_rejects_expression_range_value_out_of_unit_interval() -> None:
         InterpreterConfig.model_validate(bad)
 
 
+def test_rejects_swing_ratio_out_of_range() -> None:
+    # swingRatio feeds SwingSpec (ge=0.5 le=0.75); an out-of-range pack must
+    # fail at load, not crash later inside interpret().
+    with pytest.raises(ValidationError, match=r"swingRatio .* within \[0.5, 0.75\]"):
+        InterpreterConfig.model_validate(_mutated(swingRatio=0.9))
+
+
 def test_rejects_role_missing_from_flavors() -> None:
     bad = _mutated()
     del bad["flavors"]["pads"]

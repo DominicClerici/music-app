@@ -229,6 +229,45 @@ def test_v2_valid_sections_pass() -> None:
     assert not any(v.startswith("V2:") for v in violations)
 
 
+def test_v2_backwards_section_reported() -> None:
+    # A section that runs backwards (end < start) whose boundaries still match
+    # its neighbors' — adjacency alone would pass it; the span check must catch
+    # it. (endTick 480 < startTick INTRO_END, but 480 == the next start.)
+    sections = [
+        Section(
+            type="intro", label="Intro", start_tick=0, end_tick=INTRO_END, energy=0.3
+        ),
+        Section(
+            type="verse", label="Verse", start_tick=INTRO_END, end_tick=480, energy=0.5
+        ),
+        Section(
+            type="chorus", label="Chorus", start_tick=480, end_tick=SONG_END, energy=0.9
+        ),
+    ]
+    violations = validate_document(make_document(sections=sections))
+    assert any(v.startswith("V2:") and "non-positive span" in v for v in violations)
+
+
+def test_v2_zero_length_section_reported() -> None:
+    # A zero-length section (end == start) inserted with intact adjacency, so
+    # only the span check can flag it.
+    sections = make_sections()
+    ghost = Section(
+        type="verse",
+        label="Ghost",
+        start_tick=sections[1].end_tick,
+        end_tick=sections[1].end_tick,
+        energy=0.5,
+    )
+    sections.insert(2, ghost)
+    violations = validate_document(make_document(sections=sections))
+    v2 = [v for v in violations if v.startswith("V2:")]
+    assert v2 == [
+        f"V2: section 'Ghost' has non-positive span "
+        f"(startTick={ghost.start_tick}, endTick={ghost.end_tick})"
+    ]
+
+
 # ---------------------------------------------------------------------------
 # V3 - note ordering / duration / velocity
 # ---------------------------------------------------------------------------

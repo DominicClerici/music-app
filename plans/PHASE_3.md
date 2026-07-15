@@ -412,6 +412,8 @@ Properties: `totalBars × ticksPerBar ≤ maxLengthTicks` always (hard ceiling h
 
 The ladder (§5.1 `degrade`) exists for budgets too small for the template's drawn/minimal configuration; ops apply in authored order, deterministically, each followed by a count/total recompute. The ladder's *order* is pack data; the reference order drops the outro before the bridge — corpus presence says outros (44%) are more expendable than bridges (67%) — refining ROADMAP §4's "(bridge first)" sketch (D11, ROADMAP amendment §10).
 
+> **Implementation note (v1, defensive/unreachable — see CAVEATS C-02).** Under v1's pinned rules the ladder is provably never entered for a *selected* template: the §5.2 eligibility gate (`minBars ≤ barBudget`) and the §7.1 step-3 feasibility filter (each resolution keeps `minimalTotal ≤ barBudget`, and the smallest option is always feasible) together guarantee `total ≤ barBudget` before step 5 runs; the only over-budget path is "no template eligible", which routes to the §7.1 step-6 fallback, not the ladder. The `degrade` ladder is therefore retained as defensive code — correct if a future pack/rule change (e.g. loosened eligibility) ever makes an over-budget template selectable — and its op semantics are locked by a direct white-box unit test rather than an end-to-end fixture (DoD §11.7 satisfied via that substitute, since no public-API input can reach the ladder). This is a documentation of a proven property, not an algorithm change.
+
 The fallback guarantees output for any `barBudget ≥ 4` (guaranteed in turn by F11): one canonical section, minimum 4 bars. A 30 s request at a pack's slowest tempo always produces a playable form.
 
 ### 7.4 Worked examples (normative golden fixtures)

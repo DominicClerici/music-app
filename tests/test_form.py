@@ -14,11 +14,12 @@ from functools import cache
 
 import pytest
 
-from trackgen.form.stage import form, section_label
+from trackgen.form.stage import _fit_and_degrade, form, section_label
 from trackgen.interpreter.params import Params
 from trackgen.interpreter.stage import generate_plan, interpret
 from trackgen.packs import resolve_pack
 from trackgen.packs.models import (
+    DegradeOp,
     Fallback,
     FormEnding,
     FormsConfig,
@@ -617,3 +618,138 @@ def test_form_requires_forms_config() -> None:
     plan = generate_plan({"styleFamily": "pop_rock", "seed": "1ps9wxb"})
     with pytest.raises(ValueError, match="requires a non-null FormsConfig"):
         form(plan, None)  # type: ignore[arg-type]
+
+
+# --- white-box degrade-ladder semantics (CAVEATS C-02) -----------------------
+# The ladder is unreachable through the public `form()` API (proven in
+# `test_degrade_ladder_is_unreachable` + CAVEATS C-02), so its drop / shrink /
+# dropFromRepeat op semantics can't be exercised end-to-end. These tests drive
+# `_fit_and_degrade` directly with a synthetic over-budget state — the substitute
+# coverage DoD §11.7 is satisfied by — locking each op class's effect and the
+# authored-order + exhaustion control flow.
+
+
+def _smallest_of(table: dict[str, int]) -> Callable[[str], int]:
+    return lambda section: table[section]
+
+
+def test_ladder_drop_removes_top_level_slots() -> None:
+    intro, verse, outro = (TemplateSlot(section=s) for s in ("intro", "verse", "outro"))
+    resolved = {"intro": 8, "verse": 16, "outro": 8}  # total 32
+    dropped_top: set[int] = set()
+    dropped_repeat: set[int] = set()
+    count, total = _fit_and_degrade(
+        degrade=(DegradeOp(drop="outro"),),
+        top_level=[(intro, 0), (verse, 1), (outro, 2)],
+        repeat_inner=[],
+        resolved_bars=resolved,
+        optional_decision={},
+        dropped_top=dropped_top,
+        dropped_repeat=dropped_repeat,
+        count_min=0,
+        count_max=None,
+        has_repeat=False,
+        bar_budget=24,
+        rk=lambda s: s,
+        smallest=_smallest_of({"intro": 4, "verse": 8, "outro": 4}),
+    )
+    assert dropped_top == {2}  # only the outro slot dropped
+    assert count == 0
+    assert total == 24  # 8 + 16
+
+
+def test_ladder_shrink_sets_type_to_smallest() -> None:
+    intro, verse = TemplateSlot(section="intro"), TemplateSlot(section="verse")
+    resolved = {"intro": 8, "verse": 16}  # total 24
+    count, total = _fit_and_degrade(
+        degrade=(DegradeOp(shrink="verse"),),
+        top_level=[(intro, 0), (verse, 1)],
+        repeat_inner=[],
+        resolved_bars=resolved,
+        optional_decision={},
+        dropped_top=set(),
+        dropped_repeat=set(),
+        count_min=0,
+        count_max=None,
+        has_repeat=False,
+        bar_budget=16,
+        rk=lambda s: s,
+        smallest=_smallest_of({"intro": 4, "verse": 8}),
+    )
+    assert resolved["verse"] == 8  # shrunk to its smallest option
+    assert total == 16  # 8 + 8
+
+
+def test_ladder_drop_from_repeat_shrinks_the_cycle() -> None:
+    intro = TemplateSlot(section="intro")
+    chorus, verse = TemplateSlot(section="chorus"), TemplateSlot(section="verse")
+    resolved = {"intro": 8, "chorus": 8, "verse": 8}
+    dropped_repeat: set[int] = set()
+    # block=16, count clamped to [1,1]: total = 8 + 1*16 = 24 > 16 → ladder fires.
+    count, total = _fit_and_degrade(
+        degrade=(DegradeOp(drop_from_repeat="verse"),),
+        top_level=[(intro, 0)],
+        repeat_inner=[(chorus, 1), (verse, 2)],
+        resolved_bars=resolved,
+        optional_decision={},
+        dropped_top=set(),
+        dropped_repeat=dropped_repeat,
+        count_min=1,
+        count_max=1,
+        has_repeat=True,
+        bar_budget=16,
+        rk=lambda s: s,
+        smallest=_smallest_of({"intro": 4, "chorus": 4, "verse": 4}),
+    )
+    assert dropped_repeat == {2}  # verse removed from the repeat cycle
+    assert count == 1
+    assert total == 16  # 8 + 1*8 (cycle now just chorus)
+
+
+def test_ladder_applies_ops_in_authored_order() -> None:
+    intro, verse, outro = (TemplateSlot(section=s) for s in ("intro", "verse", "outro"))
+    resolved = {"intro": 8, "verse": 16, "outro": 8}  # total 32
+    dropped_top: set[int] = set()
+    count, total = _fit_and_degrade(
+        degrade=(DegradeOp(drop="outro"), DegradeOp(shrink="verse")),
+        top_level=[(intro, 0), (verse, 1), (outro, 2)],
+        repeat_inner=[],
+        resolved_bars=resolved,
+        optional_decision={},
+        dropped_top=dropped_top,
+        dropped_repeat=set(),
+        count_min=0,
+        count_max=None,
+        has_repeat=False,
+        bar_budget=16,
+        rk=lambda s: s,
+        smallest=_smallest_of({"intro": 4, "verse": 8, "outro": 4}),
+    )
+    # drop(outro) → 24 (still > 16), then shrink(verse) → 16. Both applied.
+    assert dropped_top == {2}
+    assert resolved["verse"] == 8
+    assert total == 16
+    assert count == 0
+
+
+def test_ladder_exhausted_leaves_total_over_budget() -> None:
+    """When the ladder runs dry still over budget, `_fit_and_degrade` returns a
+    total > bar_budget — the signal form() uses to route to the fallback."""
+    verse = TemplateSlot(section="verse")
+    count, total = _fit_and_degrade(
+        degrade=(),  # no ops
+        top_level=[(verse, 0)],
+        repeat_inner=[],
+        resolved_bars={"verse": 16},
+        optional_decision={},
+        dropped_top=set(),
+        dropped_repeat=set(),
+        count_min=0,
+        count_max=None,
+        has_repeat=False,
+        bar_budget=8,
+        rk=lambda s: s,
+        smallest=_smallest_of({"verse": 4}),
+    )
+    assert count == 0
+    assert total == 16  # unchanged; > budget → form() falls back

@@ -6,7 +6,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** Phase 4 (Harmony engine), fresh phase. Phase 3 is **complete** (session 03, all 8 DoD items proven, 339 tests, all four gates green at commit 0122149). No chunk plans exist yet. **One open item needs the user before/at Phase 4 start:** sign-off on caveat [C-02](CAVEATS.md) (degradation ladder proven unreachable; DoD §11.7 satisfied via substitute coverage; optional one-line PHASE_3 §7.3 doc note not yet applied).
+> **Next:** Phase 4 (Harmony engine), fresh phase. Phase 3 is **complete** (session 03, all 8 DoD items proven). No chunk plans exist yet. A **post-Phase-3 code review** (2026-07-15) of Phases 1–3 landed a review-fix batch (349 tests, all four gates green): C-02 resolved (ladder kept + white-box tested + PHASE_3 §7.3 doc note); V2 validator now catches backwards/zero-length sections; pack `swingRatio` bounds moved to load-time; determinism hardening (`from_base36` canonical-only + TID251 bans on `secrets`/`uuid`/extra `datetime` clocks). No open items block Phase 4.
 > **Phase 4 builds on (now-pinned) Phase 3 contracts:** the Form generator `form(plan, forms) -> SongForm` (`src/trackgen/form/stage.py`) emits a complete `SongForm` — `sections[{id, type, index, total_of_type, start_bar, length_bars, energy, phrases:[{label,bars}], harmony_tag, variant, ending}]`, `total_bars`, `template_id`. Phase 4 (Harmony engine) consumes `SongForm` → produces `HarmonicPlan` (pinned core already in `schema/ir.py`: `ChordEvent`/`ChordSpec`). **Key hooks:** `harmony_tag` is the key into the pack's Phase-4 progression pools (PHASE_3 §4.1); same phrase `label` ⇒ same harmonic material; the §3.2 semantics table (PHASE_3) documents the cadence tendencies Phase 4 must implement (verses open on V, choruses close on I, deceptive before repeated final chorus); `ending.tag_bars` marks where Phase 4 places the tag cadence; `SongForm` carries **no cadence field** by design (D8 — Phase 4 owns all cadence logic). Read `PHASE_4.md` in full + PHASE_3 §3.2 (semantics table) + §4 (SongForm fields).
 > **Pack `progressions.yaml` schema is owned by Phase 4** (PHASE_1 §6 layout; not yet created — `load_pack` treats it as absent today, mirror the optional `forms.yaml`/`interpreter.yaml` pattern). The deferred cross-file check lands here: every `SongForm.harmony_tag` (and every `forms.yaml` `harmonyTag`) must be served by a pool in `progressions.yaml` — wire this into Phase 4's loader (PHASE_2 D14 pattern). Reference packs `styles/{pop_rock,jazz}/` now have `manifest.yaml` + `interpreter.yaml` + `forms.yaml` + empty pattern banks; they will need `progressions.yaml` in Phase 4.
 > **Phase 4 also owns the shared theory library** (chord symbol → pitches, voicing candidates, integer-cost Viterbi voice-leading) used by Phase 5 part generators (ROADMAP §4, PHASE_4 §? — read the doc). `src/trackgen/theory/` exists as an empty package.
@@ -29,7 +29,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | --- | --- | --- | --- | --- |
 | 1 | Foundations & contracts | done¹ | 01 | ¹Code/automated DoD complete; §9.6 manual listening check awaits user audition of the playground |
 | 2 | Parameter & mood model | done | 02 | All 8 DoD items proven; 245 tests green. Caveat C-01 (PARAM_MALFORMED) |
-| 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable — sign-off pending) |
+| 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | not started | — | Includes shared theory library used by Phase 5 |
 | 5 | Rhythm-section part generators | not started | — | Expect ~4 chunks: loaders/foundations → arrangement → generators/walker/voicing → orchestrator+Serializer+milestone |
 | 6 | Transitions, variation & humanization | not started | — | |
@@ -71,10 +71,10 @@ DoD (§11) — **all 8 items PROVEN** (both whole-session lenses graded 1–7 PR
 - [x] §11.4 §7.2 form-stream RNG vectors asserted exactly — `test_form_stream_seed_vectors` (5c47b75).
 - [x] §11.5 same plan → identical form; counting-RNG shim asserts 8 / 1 / 0 draws; budget-shift (90→8, 55→4) proves draws-only-when-≥2-feasible — `tests/test_form.py` (5c47b75).
 - [x] §11.6 property matrix pop_rock/jazz × supported moods × maxLengthSec {30..600 step 15} × 25 seeds (~20k forms); all invariants incl. contiguity, 4-bar grid, hard ceiling, energies∈[0,1]@3dp, phrases-sum, index/total, ending-on-final-only, labels (independent §3.3 reimpl), variant None, tag≤length — `test_property_valid_songform` (5c47b75, 0122149).
-- [x] §11.7 ladder & fallback: 30s@tempoRange.lo valid ≥4-bar form (both packs); tiny-budget fallback validates; degrade-op-class + D11 order asserted at config level; ladder-never-fires regression guard. **Ladder proven unreachable — see [C-02](../CAVEATS.md); §11.7 satisfied via substitute coverage, awaiting sign-off.**
+- [x] §11.7 ladder & fallback: 30s@tempoRange.lo valid ≥4-bar form (both packs); tiny-budget fallback validates; degrade-op-class + D11 order asserted at config level; ladder-never-fires regression guard. **Ladder proven unreachable — see [C-02](../CAVEATS.md) (resolved); §11.7 satisfied via substitute coverage + post-review white-box tests on `_fit_and_degrade` (`test_ladder_*`).**
 - [x] §11.8 §10 amendments verified present in PHASE_1 §3.4/§4.2/§7 Q4, PHASE_2 §9 Q4, ROADMAP §2/§4 (no edits needed).
 
-CAVEATS: [C-02](../CAVEATS.md) — degradation ladder unreachable under pinned §5.2+§7.1 rules (open, sign-off pending).
+CAVEATS: [C-02](../CAVEATS.md) — degradation ladder unreachable under pinned §5.2+§7.1 rules (**resolved** post-review: ladder kept as defensive code + white-box tested + §7.3 doc note).
 
 ### Phase 2 — session 02 (plan: `plans/sessions/SESSION_02.md`)
 
