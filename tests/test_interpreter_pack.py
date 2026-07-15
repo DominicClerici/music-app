@@ -163,6 +163,13 @@ def test_rejects_mode_with_no_tonics_entry() -> None:
         InterpreterConfig.model_validate(bad)
 
 
+def test_rejects_unparseable_tonic_name() -> None:
+    bad = _mutated()
+    bad["tonics"]["major"] = ["H"]  # not a note name A-G
+    with pytest.raises(ValidationError, match="unparseable note name"):
+        InterpreterConfig.model_validate(bad)
+
+
 def test_rejects_expression_range_lo_greater_than_hi() -> None:
     bad = _mutated()
     bad["expressionRanges"]["density"] = [0.9, 0.2]

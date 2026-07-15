@@ -17,6 +17,7 @@ from hypothesis import strategies as st
 from trackgen.interpreter.params import Params
 from trackgen.interpreter.stage import (
     ParamsInvalid,
+    _resolve_mode,
     _resolve_swing,
     _swing_ratio_from_table,
     generate_plan,
@@ -245,6 +246,55 @@ def test_generate_plan_raises_on_invalid_params() -> None:
     assert "STYLE_UNKNOWN" in codes
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        {"styleFamily": "jazz", "tempoBpm": 120.5},  # fractional int field
+        {"styleFamily": "jazz", "key": "Dm"},  # key not a mapping
+        {"styleFamily": "jazz", "roleFlavors": ["piano"]},  # not a mapping
+    ],
+)
+def test_generate_plan_wraps_malformed_types_as_params_invalid(
+    raw: dict[str, object],
+) -> None:
+    """A malformed field TYPE is not a §3.1 semantic condition, but it must
+    still surface as a structured ParamsInvalid, never a raw pydantic error."""
+    with pytest.raises(ParamsInvalid) as excinfo:
+        generate_plan(raw)
+    assert all(e.code == "PARAM_MALFORMED" for e in excinfo.value.errors)
+    assert excinfo.value.errors  # non-empty
+
+
+def test_resolve_mode_nearest_rung_and_tie_break() -> None:
+    """§6.3 auto mode selection: nearest rung wins; ties break brighter (lower).
+    The pinned example — mysterious V=-0.20 (ideal dorian) on [major, minor] →
+    minor (distance 1 < 2)."""
+    assert _resolve_mode(None, -0.20, ["major", "minor"]) == "minor"
+    # Tie at ideal rung 1 (mixolydian) between major(0) and dorian(2) → brighter.
+    assert _resolve_mode(None, 0.10, ["major", "dorian"]) == "major"
+    # A user-supplied mode is used verbatim (bypasses the ladder).
+    assert _resolve_mode("phrygian", 0.9, ["major", "phrygian"]) == "phrygian"
+
+
+def test_degenerate_tempo_window_clamps_without_drawing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """§6.2 — when [0.9c,1.1c] ∩ packRange is empty, tempo is clamped and the
+    RNG stream is never consumed."""
+    pack = resolve_pack("pop_rock")
+    assert pack is not None
+    narrow_manifest = pack.manifest.model_copy(update={"tempo_range": (200, 205)})
+    narrow_pack = pack.model_copy(update={"manifest": narrow_manifest})
+
+    def fail_factory(*args: object, **kwargs: object) -> object:
+        raise AssertionError("stream_rng must not be built on the degenerate path")
+
+    monkeypatch.setattr("trackgen.interpreter.stage.stream_rng", fail_factory)
+    # happy center 118.1 → window [106,130]; ∩ [200,205] empty → clamp to 200.
+    plan = interpret(Params(style_family="pop_rock"), narrow_pack, MASTER, {})
+    assert plan.tempo_bpm == 200
+
+
 # --- §11.6 property tests: pack × supported mood × auto-everything ------------
 
 
@@ -281,6 +331,12 @@ def test_plan_invariants_every_pack_mood(pack_id: str, mood: str) -> None:
         b.articulation_legato,
     ):
         assert 0.0 <= field <= 1.0
+    # §11.6 — the two pack-scaled budgets must land inside the pack's declared
+    # expression range (not merely [0,1], which pydantic already guarantees).
+    d_lo, d_hi = pack.interpreter.expression_ranges.density
+    x_lo, x_hi = pack.interpreter.expression_ranges.dissonance
+    assert d_lo <= b.note_density <= d_hi
+    assert x_lo <= b.dissonance <= x_hi
     assert -1.0 <= b.register_bias <= 1.0
     assert b.harmonic_rhythm_base in (0.5, 1.0)
     assert b.layers_max in (2, 3, 4)

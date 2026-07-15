@@ -161,6 +161,7 @@ class InterpreterConfig(PackModel):
         # into this validator body (only run at instance-construction time,
         # well after both modules have finished loading) breaks the cycle.
         from trackgen.interpreter.moods import MODE_LADDER, MOOD_VOCABULARY
+        from trackgen.interpreter.params import parse_tonic
 
         mood_vocab = set(MOOD_VOCABULARY)
 
@@ -194,10 +195,19 @@ class InterpreterConfig(PackModel):
                 f"modes must be in mode-ladder order {MODE_LADDER}; got {self.modes}"
             )
 
-        # Rule 4: every mode has a non-empty tonics entry.
+        # Rule 4: every mode has a non-empty tonics entry, and every tonic is a
+        # parseable note name (the Interpreter takes tonics[mode][0] as the
+        # auto-key root, so an unparseable entry must fail at pack load, not at
+        # interpret time).
         for mode in self.modes:
-            if not self.tonics.get(mode):
+            tonics = self.tonics.get(mode)
+            if not tonics:
                 raise ValueError(f"tonics[{mode!r}] must be a non-empty list")
+            bad = [t for t in tonics if parse_tonic(t) is None]
+            if bad:
+                raise ValueError(
+                    f"tonics[{mode!r}] has unparseable note name(s): {bad}"
+                )
 
         # Rule 5 (expression_ranges [0,1] & lo<=hi) is enforced by
         # ExpressionRanges itself.

@@ -14,7 +14,14 @@ entropy entry and lives only here, at the API boundary), and calls `interpret`.
 import math
 from typing import Any, Literal, cast
 
-from trackgen.interpreter.moods import apply_overrides, formulas, load_moods
+from pydantic import ValidationError
+
+from trackgen.interpreter.moods import (
+    MODE_LADDER,
+    apply_overrides,
+    formulas,
+    load_moods,
+)
 from trackgen.interpreter.params import (
     ParamError,
     Params,
@@ -41,10 +48,10 @@ from trackgen.seeds import (
     stream_rng,
 )
 
-# PHASE_2 §6.3 — the engine mode ladder and per-rung valence bands. Rung index
-# is the position in this tuple; the ideal rung for a valence is the first band
-# (scanned brightest-first) that contains it.
-_MODE_LADDER: tuple[str, ...] = ("major", "mixolydian", "dorian", "minor", "phrygian")
+# PHASE_2 §6.3 — the engine mode ladder (imported from moods so pack validation
+# and interpreter resolution index against one canonical order) with per-rung
+# valence bands. The ideal rung for a valence is the first band, scanned
+# brightest-first, that contains it.
 
 # PHASE_2 §6.4 — swing long:short ratio vs effective BPM (piecewise-linear;
 # clamped flat below 90 and above 240). Ordered ascending by BPM.
@@ -93,9 +100,9 @@ def _resolve_mode(user_mode: str | None, valence: float, modes: list[str]) -> st
     # `modes` is the ordered pack menu (ascending ladder order); scanning it and
     # keeping the strict minimum makes the lower (brighter) rung win ties.
     best_mode = modes[0]
-    best_distance = abs(_MODE_LADDER.index(best_mode) - ideal)
+    best_distance = abs(MODE_LADDER.index(best_mode) - ideal)
     for mode in modes[1:]:
-        distance = abs(_MODE_LADDER.index(mode) - ideal)
+        distance = abs(MODE_LADDER.index(mode) - ideal)
         if distance < best_distance:
             best_mode = mode
             best_distance = distance
@@ -265,7 +272,23 @@ def generate_plan(raw_params: dict[str, Any]) -> GenerationPlan:
 
     assert pack is not None  # a resolved-pack failure would have raised above
 
-    params = Params.model_validate(raw_params)
+    # The §3.1 catalog covers semantic validity; the Params model is the
+    # structural/type gate. A malformed field type (e.g. a fractional tempoBpm
+    # or a non-dict key) is not a §3.1 condition, so surface it as a structured
+    # ParamsInvalid too rather than letting a raw pydantic error escape the API.
+    try:
+        params = Params.model_validate(raw_params)
+    except ValidationError as exc:
+        raise ParamsInvalid(
+            [
+                ParamError(
+                    code="PARAM_MALFORMED",
+                    field=".".join(str(p) for p in err["loc"]),
+                    message=err["msg"],
+                )
+                for err in exc.errors()
+            ]
+        ) from exc
 
     if params.seed is not None:
         master = from_base36(params.seed)
