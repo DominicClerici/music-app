@@ -6,7 +6,8 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** Phase 3 (Form & Structure), fresh phase. Phase 2 is **complete** (session 02, all 8 DoD items proven, 245 tests, all four gates green at commit eb00804). No chunk plans exist yet.
+> **Next:** Phase 3 (Form & Structure) — **session 03 is in `planning`, awaiting user approval of `plans/sessions/SESSION_03.md`. No implementation agent dispatched yet.** Not split into chunks (single session). On approval, dispatch T1∥T2∥T3 (disjoint files), then T4 (opus, integrates all), then T5 + whole-session review. Phase 2 is **complete** (session 02, all 8 DoD items proven, 245 tests, all four gates green at commit eb00804).
+> **Orchestrator golden pre-verification (done):** every load-bearing PHASE_3 sample reproduces exactly — `derive(M,"form")=7567330889165579844`, both RNG vectors (§7.2), all 13 energy cells (§7.4), both fitting totals (76/64 bars), and the full draw sequences (8 draws ex.1 / 1 draw ex.2). No doc amendment expected. Pinned: `weighted_choice(items=["include","exclude"], weights=[incW,excW])` is the ordering that reproduces the goldens (SESSION_03 D-S2).
 > **Phase 3 builds on (now-pinned) Phase 2 contracts:** the Interpreter emits a complete `GenerationPlan` (`src/trackgen/interpreter/stage.py::interpret` / `generate_plan`) with `mood_vector` (raw anchor V/A), `budgets` (incl. `layers_max`, `harmonic_rhythm_base`, `register_bias`), `timbre_directives`, resolved `key`/`tempo_bpm`/`swing`/`time_signature`/`max_length_ticks`/`role_flavors`. Phase 3 (Form generator) consumes `GenerationPlan` → produces `SongForm` (pinned core already in `schema/ir.py`). Read `PHASE_3.md` in full + `PHASE_2.md` §7 (budget semantics: `moodVector.arousal` drives section energy; `layersMax` caps layering) + PHASE_1 §4.2 (`SongForm`). Pack `forms.yaml` schema is owned by Phase 3 (PHASE_1 §6 layout; not yet created — `load_pack` treats it as absent today, mirror the optional `interpreter.yaml` pattern D-S1 if extending the loader).
 > **Reference packs:** `styles/pop_rock/` and `styles/jazz/` exist with `manifest.yaml` + `interpreter.yaml` + empty pattern banks; they will need `forms.yaml` added in Phase 3.
 > **New this session — read before extending:** [C-01](CAVEATS.md) — `generate_plan` emits a 15th structural error code `PARAM_MALFORMED` (beyond the §3.1 semantic catalog) for malformed field types; a future client-contract layer must enumerate it.
@@ -24,7 +25,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | --- | --- | --- | --- | --- |
 | 1 | Foundations & contracts | done¹ | 01 | ¹Code/automated DoD complete; §9.6 manual listening check awaits user audition of the playground |
 | 2 | Parameter & mood model | done | 02 | All 8 DoD items proven; 245 tests green. Caveat C-01 (PARAM_MALFORMED) |
-| 3 | Form & structure | not started | — | |
+| 3 | Form & structure | planning | 03 | Plan `SESSION_03.md` awaiting approval; single session, not chunked |
 | 4 | Harmony engine | not started | — | Includes shared theory library used by Phase 5 |
 | 5 | Rhythm-section part generators | not started | — | Expect ~4 chunks: loaders/foundations → arrangement → generators/walker/voicing → orchestrator+Serializer+milestone |
 | 6 | Transitions, variation & humanization | not started | — | |
@@ -43,6 +44,20 @@ One row per implementation session, appended at close-out. Session plan files li
 ## Phase detail
 
 When a phase enters `planning`, the orchestrator adds a `### Phase N` section here containing: the approved chunk plan (if split), the task checklist with per-task status and commit hashes, DoD checklist with evidence as items are proven, and links to relevant CAVEATS entries. Keep entries terse — evidence pointers, not narrative.
+
+### Phase 3 — session 03 (plan: `plans/sessions/SESSION_03.md`)
+
+Not split into chunks (single session). **Awaiting approval — no task dispatched.** Task list:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | `SongForm` extension fields (`total_of_type`/`phrases`/`harmony_tag`/`variant`/`ending`/`template_id`) | sonnet | not started | — |
+| T2 | `forms.yaml` schema + F1–F13 loader + `pop_rock`/`jazz` reference files + rejection fixtures | sonnet | not started | — |
+| T3 | Energy model (`form/energy.yaml` §6.1 + §6.2–§6.4 rules) + energy-column test | sonnet | not started | — |
+| T4 | Form generator stage (§7.1) + goldens/determinism/property/ladder tests | opus | not started | — |
+| T5 | §10 doc-amendment consistency check | orchestrator | not started | — |
+
+DoD (§11) — evidence collected as tasks land (all 8 items TBD).
 
 ### Phase 2 — session 02 (plan: `plans/sessions/SESSION_02.md`)
 
