@@ -18,11 +18,11 @@ All planning documents live in `plans/` — `plans/ROADMAP.md`, `plans/PHASE_N.m
 
 ## Subagent model rules (binding)
 
-- **Never use a Fable 5 subagent.** Every single `Agent` dispatch MUST set the `model` field explicitly to `opus` or `sonnet`. An omitted `model` field silently inherits Fable 5 — treat omission as a rule violation, not a default.
-- **Allocation policy — Opus thinks, both build:**
-  - `opus` — research, planning/debate, code exploration for scoping, **all** review and validation agents, and implementation of genuinely hard logic (theory library, Viterbi voice-leading, walking bass, humanizer math).
-  - `sonnet` — well-scoped implementation against a firm written spec: pydantic schemas, YAML loaders, serializers, CLI wiring, tests written from an explicit plan.
-  - Judge per task within this guidance; when unsure, use `opus`.
+- **Never use a Fable 5 subagent.** Every single `Agent` dispatch MUST set the `model` field explicitly to `opus` (Opus 4.8) or `sonnet` (Sonnet 5). An omitted `model` field silently inherits Fable 5 — treat omission as a rule violation, not a default.
+- **Allocation policy — Opus 4.8 by default, Sonnet 5 only for the truly trivial:**
+  - `opus` (Opus 4.8) is the default for **every** subagent. Use it for research, planning/debate, code exploration for scoping, **all** review and validation agents, all implementation of non-trivial logic (theory library, Viterbi voice-leading, walking bass, humanizer math), and any well-scoped implementation that still involves real judgment (pydantic schemas, YAML loaders, serializers, CLI wiring, tests written from a plan).
+  - `sonnet` (Sonnet 5) is permitted **only when the task is truly trivial** — mechanical, fully specified, with no design latitude (e.g. a rote rename, a boilerplate stub from an exact template, a one-line fixup, a mechanical test transcription from an explicit line-by-line plan).
+  - When in any doubt about whether a task clears the "truly trivial" bar, use `opus`. The cost of an under-powered subagent on real work far exceeds the token savings.
 - **Parallel dispatches only on disjoint file sets.** Two agents editing the same file concurrently will clobber each other. Otherwise serialize.
 
 ## Session workflow
