@@ -6,9 +6,13 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** Phase 1, fresh start. No session in progress; no chunk plans exist yet.
-> Scaffold is committed (uv project, `src/trackgen` skeleton, gates configured in `pyproject.toml`).
-> Session 1 must also settle the version pins flagged pre-implementation: Tone.js exact minor (PHASE_1 Q9), music21 exact pin (PHASE_4's defect-exclusion list is version-sensitive), and confirm the `trackgen` package name (PHASE_1 Q10).
+> **Next:** Phase 2 (Parameter & Mood Model), fresh phase. Phase 1 is complete (session 01, code/automated DoD green at commit e27f704); no chunk plans exist yet.
+> **Before starting Phase 2:** the user should run the §9.6 manual listening check — open `playground/index.html` (via a static server: `uv run python -m http.server` from repo root, then `http://localhost:8000/playground/`) and audition `fixtures/milestone.trackdoc.json` against the six checklist items. If it surfaces a fixture/playground defect, that's a short Phase-1 follow-up before Phase 2.
+> **Phase 2 builds on (now-pinned) Phase 1 contracts:** `GenerationPlan` pinned core + its extension points `moodVector`/`budgets`/`timbreDirectives` (Phase 2 owns these — add them inside `src/trackgen/schema/ir.py`'s `GenerationPlan` without touching pinned fields); `meta.params` opaque dict becomes Phase 2's parameter schema; stream registry already includes `interpreter`. Read `PHASE_2.md` in full + `PHASE_1.md` §4.1.
+> **Carry-forward notes for later phases:**
+>  - **Phase 5 serializer:** document models' `model_dump` currently emits `null` for absent `midi`/`voice`/`maxPolyphony`; §3.5/§3.6 require these ABSENT. The Phase 5 Serializer must dump with `exclude_none=True` (or per-field exclusion) so emitted `TrackDocument` JSON matches the contract. (Latent now — no document serializer ships in Phase 1; the hand fixture has no nulls.)
+>  - **Pack models enforce `extra="forbid"`:** later phases adding envelope/event fields (e.g. Phase 5's `push`/`minDensity`, `sixth`/`chord` degrees) must add them to the pydantic models in `packs/models.py` explicitly — unknown YAML keys are rejected by design.
+>  - **Env:** `uv` at `C:\Users\Dominic\scoop\shims` (not on PATH — prepend it); `uv` manages Python 3.12.13. All four gates green.
 
 *(The orchestrator rewrites this block at every close-out — and mid-session on any pause — stating: current phase/chunk, last completed task + commit, and the exact next action.)*
 
@@ -16,7 +20,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 | Phase | Scope | Status | Sessions | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | Foundations & contracts | not started | — | Milestone: hand-written TrackDocument plays in throwaway Tone.js page |
+| 1 | Foundations & contracts | done¹ | 01 | ¹Code/automated DoD complete; §9.6 manual listening check awaits user audition of the playground |
 | 2 | Parameter & mood model | not started | — | |
 | 3 | Form & structure | not started | — | |
 | 4 | Harmony engine | not started | — | Includes shared theory library used by Phase 5 |
@@ -31,7 +35,33 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 01 | 2026-07-14 | Phase 1 (all) | All 6 tasks built, reviewed, gates green (125 tests). DoD §9.1–§9.5 + §9.7 proven; §9.6 manual audition pending user. No CAVEATS (all §5.6 goldens reproduced exactly; no doc amendments). | e0643ee seeds · 5d32e8c schema · 41e3af8 packs · 7fc3a5f validator+export · 6fbaa7c fixture · cf2b490 playground · e27f704 review-fixes |
 
 ## Phase detail
 
 When a phase enters `planning`, the orchestrator adds a `### Phase N` section here containing: the approved chunk plan (if split), the task checklist with per-task status and commit hashes, DoD checklist with evidence as items are proven, and links to relevant CAVEATS entries. Keep entries terse — evidence pointers, not narrative.
+
+### Phase 1 — session 01 (plan: `plans/sessions/SESSION_01.md`)
+
+Not split into chunks (single session). Task status — awaiting approval, none dispatched:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| 1 | Seed system (`seeds.py`) + golden/determinism tests | opus | done | e0643ee |
+| 2 | Schema models: TrackDocument + 5 IR cores | sonnet | done | 5d32e8c |
+| 3 | Document validator V1–V8 + JSON Schema export | sonnet | done | 7fc3a5f |
+| 4 | Pack loader + `styles/_stub/` + violation tests | sonnet | done | 41e3af8 |
+| 5 | Milestone fixture + validation test | opus | done | 6fbaa7c |
+| 6 | Playground Tone.js player (`playground/index.html`) | opus | done | cf2b490 |
+
+DoD (§9) evidence collected as tasks land:
+- §9.2 seed module — golden-vector + determinism tests green (`tests/test_seeds.py`, commit e0643ee); every §5.6 value independently recomputed by review.
+- §9.7 determinism guard — two-RNG-same-seed test in `tests/test_seeds.py`; Ruff TID251 rule live in `pyproject.toml`.
+- §9.1 schema package — frozen models for TrackDocument + 5 IR cores (`src/trackgen/schema/`, commit 5d32e8c); §3.8 validator V1–V8 + committed `docs/schema/trackdocument.schema.json` with drift-guard test (commit 7fc3a5f).
+- §9.3 pack loader — stub pack loads, all 8 envelope-violation classes rejected (`tests/test_packs.py`, commit 41e3af8).
+- §9.4 milestone fixture — `fixtures/milestone.trackdoc.json` validates with zero violations, exercises every schema feature; test pins concrete facts (commit 6fbaa7c). Independently re-validated by review.
+- §9.5 playground — `playground/index.html` implements the §3.7 six-step contract; tone@15.1.22 pinned (Q9 resolved, major 15 covered by fixture `^15.1.0`); tempo scheduled on the transport timeline so it survives replay/reload (commit cf2b490). Per-task review found + fixed the AudioContext-time tempo bug.
+- §9.6 listening checklist — **MANUAL, pending user.** The six audio checks require the user to open the playground and audition the milestone fixture. Not automatable.
+- §9.7 determinism guard — two-RNG-same-seed test (`tests/test_seeds.py`) + Ruff TID251 banned-api rule verified firing on `random`/`time`/`os.urandom`/`datetime.now` outside `seeds.py` (probe confirmed at close-out).
+- Whole-session review (4 opus lenses) found no blocking defects; 5 confirmed minor/major findings fixed in e27f704 (loader error-wrapping, dead-code/duplicate-whitelist removal in validator, `ppq` Literal pin, test gaps).
+- Q9 resolved: tone@15.1.22 (major 15). Q10: package `trackgen` confirmed. music21 pinned 10.5.0 in uv.lock.
