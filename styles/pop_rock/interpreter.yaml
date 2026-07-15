@@ -1,0 +1,22 @@
+# pop_rock interpreter config (PHASE_2 §5.1, transcribed verbatim).
+supportedMoods: [happy, energetic, triumphant, calm, dreamy, romantic,
+                 nostalgic, melancholic, dark, tense, aggressive]
+defaultMood: happy
+modes: [major, minor]
+tonics:
+  major: [E, A, G, C, D]
+  minor: [A, E, B, D]
+feel: straight8
+expressionRanges:
+  density:    [0.20, 0.85]
+  dissonance: [0.05, 0.40]
+flavors:
+  drums:   [acoustic_kit, tight_kit]
+  bass:    [electric_fingered, electric_picked]
+  comping: [clean_electric, crunch_electric, piano]
+  pads:    [warm_analog, airy_strings]
+ensembles:
+  default: { drums: acoustic_kit, bass: electric_fingered,
+             comping: clean_electric, pads: warm_analog }
+  driven:  { drums: tight_kit, bass: electric_picked,
+             comping: crunch_electric, pads: airy_strings }

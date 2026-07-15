@@ -1,0 +1,21 @@
+# jazz interpreter config (PHASE_2 §5.1, transcribed verbatim).
+supportedMoods: [happy, energetic, calm, dreamy, romantic, nostalgic,
+                 melancholic, dark, mysterious, tense]
+defaultMood: nostalgic
+modes: [major, mixolydian, dorian, minor]
+tonics:
+  major:      [Bb, F, Eb, C]
+  mixolydian: [Bb, F]
+  dorian:     [D, G, C]
+  minor:      [D, G, C]
+feel: swing8
+expressionRanges:
+  density:    [0.25, 0.90]
+  dissonance: [0.35, 0.90]
+flavors:
+  drums:   [brush_kit, ride_kit]
+  bass:    [upright]
+  comping: [piano, guitar_hollow]
+  pads:    [airy_strings, organ_soft]
+ensembles:
+  default: { drums: brush_kit, bass: upright, comping: piano, pads: airy_strings }

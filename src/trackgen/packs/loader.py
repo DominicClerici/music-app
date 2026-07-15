@@ -11,9 +11,16 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from trackgen.packs.models import Manifest, PatternEnvelope, StylePack
+from trackgen.packs.models import (
+    InterpreterConfig,
+    Manifest,
+    PatternEnvelope,
+    StylePack,
+)
 
 PATTERN_ROLES = ("drums", "bass", "comping", "pads")
+
+STYLES_ROOT = Path(__file__).resolve().parents[3] / "styles"
 
 
 class PackLoadError(Exception):
@@ -63,4 +70,38 @@ def load_pack(path: str | Path) -> StylePack:
         except ValidationError as exc:
             raise PackLoadError(f"{bank_path}: invalid pattern bank\n{exc}") from exc
 
-    return StylePack(manifest=manifest, patterns=patterns)
+    interpreter: InterpreterConfig | None = None
+    interpreter_path = pack_dir / "interpreter.yaml"
+    if interpreter_path.exists():
+        raw_interpreter = _read_yaml(interpreter_path)
+        if not isinstance(raw_interpreter, dict):
+            raise PackLoadError(f"{interpreter_path}: interpreter must be a mapping")
+        try:
+            interpreter = InterpreterConfig.model_validate(raw_interpreter)
+        except ValidationError as exc:
+            raise PackLoadError(
+                f"{interpreter_path}: invalid interpreter config\n{exc}"
+            ) from exc
+
+    return StylePack(manifest=manifest, patterns=patterns, interpreter=interpreter)
+
+
+def registered_styles() -> set[str]:
+    """PHASE_2 D-S3 — registered `styleFamily` ids: `styles/` subdirs with a
+    `manifest.yaml`, excluding `_stub`."""
+    if not STYLES_ROOT.is_dir():
+        return set()
+    return {
+        entry.name
+        for entry in STYLES_ROOT.iterdir()
+        if entry.is_dir()
+        and entry.name != "_stub"
+        and (entry / "manifest.yaml").is_file()
+    }
+
+
+def resolve_pack(style_family: str) -> StylePack | None:
+    """PHASE_2 D-S3 — load a registered style pack by id, or `None`."""
+    if style_family not in registered_styles():
+        return None
+    return load_pack(STYLES_ROOT / style_family)

@@ -1,0 +1,8 @@
+# pop_rock reference pack manifest (PHASE_1 §6.1, PHASE_2 D-S5).
+formatVersion: 1
+id: pop_rock
+name: Pop / Rock
+version: 0.1.0
+engine: ">=0.1"
+timeSignatures: [[4, 4]]
+tempoRange: [70, 180]
