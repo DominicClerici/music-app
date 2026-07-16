@@ -14,12 +14,14 @@ from trackgen.schema import (
     ChordEvent,
     ChordSpec,
     EffectPatch,
+    EventScale,
     FormSection,
     GenerationPlan,
     HarmonicPlan,
     Header,
     InstrumentPatch,
     Key,
+    KeyRegion,
     Master,
     Meta,
     MoodVector,
@@ -380,10 +382,105 @@ def test_harmonic_plan_valid() -> None:
                 duration_ticks=1920,
                 section_id="intro-1",
                 chord=ChordSpec(root_pc=0, quality="maj", symbol="C"),
+                scale=EventScale(root_pc=0, name="ionian"),
+                function="T",
             )
-        ]
+        ],
+        keys=[KeyRegion(start_tick=0, tonic_pc=0, mode="major")],
     )
     assert plan.chords[0].chord.quality == "maj"
+
+
+def test_harmonic_plan_phase4_extension_defaults() -> None:
+    """PHASE_4 §7 — a plan built without `tags`/`pool_selections` fires their
+    defaults; the required `scale`/`function`/`keys` round-trip.
+    """
+    plan = HarmonicPlan(
+        chords=[
+            ChordEvent(
+                start_tick=0,
+                duration_ticks=1920,
+                section_id="verse-1",
+                chord=ChordSpec(root_pc=4, quality="maj", symbol="E"),
+                scale=EventScale(root_pc=4, name="ionian"),
+                function="T",
+            )
+        ],
+        keys=[KeyRegion(start_tick=0, tonic_pc=4, mode="major")],
+    )
+    event = plan.chords[0]
+    assert event.tags == []
+    assert plan.pool_selections == {}
+    assert event.scale.name == "ionian"
+    assert event.function == "T"
+    assert plan.keys[0].tonic_pc == 4
+    assert plan.keys[0].mode == "major"
+
+
+def test_harmonic_plan_phase4_extension_explicit_round_trip() -> None:
+    """PHASE_4 §7 — explicit `tags` and `pool_selections` round-trip unchanged."""
+    plan = HarmonicPlan(
+        chords=[
+            ChordEvent(
+                start_tick=0,
+                duration_ticks=1920,
+                section_id="chorus-1",
+                chord=ChordSpec(root_pc=7, quality="dom7", symbol="G7"),
+                scale=EventScale(root_pc=7, name="mixolydian"),
+                function="D",
+                tags=["final"],
+            )
+        ],
+        keys=[KeyRegion(start_tick=0, tonic_pc=0, mode="major")],
+        pool_selections={"chorus": "axis"},
+    )
+    assert plan.chords[0].tags == ["final"]
+    assert plan.pool_selections == {"chorus": "axis"}
+
+
+def test_key_region_frozen() -> None:
+    """PHASE_4 §7.1 — `KeyRegion` is a frozen IR model."""
+    region = KeyRegion(start_tick=0, tonic_pc=4, mode="major")
+    with pytest.raises(ValidationError):
+        region.tonic_pc = 5
+
+
+def test_event_scale_frozen() -> None:
+    """PHASE_4 §7.2 — `EventScale` is a frozen IR model."""
+    scale = EventScale(root_pc=0, name="ionian")
+    with pytest.raises(ValidationError):
+        scale.name = "dorian"
+
+
+def test_key_region_tonic_pc_out_of_range_rejected() -> None:
+    """PHASE_4 §7.1 — `tonic_pc` is bounded to 0–11."""
+    with pytest.raises(ValidationError):
+        KeyRegion(start_tick=0, tonic_pc=12, mode="major")
+
+
+def test_key_region_start_tick_negative_rejected() -> None:
+    """PHASE_4 §7.1 — `start_tick` must be >= 0."""
+    with pytest.raises(ValidationError):
+        KeyRegion(start_tick=-1, tonic_pc=0, mode="major")
+
+
+def test_event_scale_root_pc_out_of_range_rejected() -> None:
+    """PHASE_4 §7.2 — `root_pc` is bounded to 0–11."""
+    with pytest.raises(ValidationError):
+        EventScale(root_pc=-1, name="ionian")
+
+
+def test_chord_event_bad_function_rejected() -> None:
+    """PHASE_4 §7.2 — `function` is restricted to {T, S, D, O}."""
+    with pytest.raises(ValidationError):
+        ChordEvent(
+            start_tick=0,
+            duration_ticks=1920,
+            section_id="verse-1",
+            chord=ChordSpec(root_pc=0, quality="maj", symbol="C"),
+            scale=EventScale(root_pc=0, name="ionian"),
+            function="X",  # type: ignore[arg-type]
+        )
 
 
 def test_arrangement_plan_valid() -> None:

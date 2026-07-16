@@ -159,17 +159,38 @@ class ChordSpec(IRModel):
     roman: str | None = None
 
 
+class KeyRegion(IRModel):
+    """§7.1 — a keyed span; every ChordSpec resolves against the region
+    containing its `start_tick`. Exactly one region at tick 0 in v1."""
+
+    start_tick: int = Field(ge=0)
+    tonic_pc: int = Field(ge=0, le=11)
+    mode: str
+
+
+class EventScale(IRModel):
+    """§7.2 — the per-event chord-scale hint (§7.4): a scale `name` on `root_pc`."""
+
+    root_pc: int = Field(ge=0, le=11)
+    name: str
+
+
 class ChordEvent(IRModel):
     start_tick: int = Field(ge=0)
     duration_ticks: int = Field(ge=1)
     section_id: str
     chord: ChordSpec
+    scale: EventScale
+    function: Literal["T", "S", "D", "O"]
+    tags: list[str] = Field(default_factory=list)
 
 
 class HarmonicPlan(IRModel):
     """§4.3 — produced by Harmony engine."""
 
     chords: list[ChordEvent]
+    keys: list[KeyRegion]
+    pool_selections: dict[str, str] = Field(default_factory=dict)
 
 
 # --- 4.4 ArrangementPlan -------------------------------------------------------
