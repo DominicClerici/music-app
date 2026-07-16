@@ -638,17 +638,106 @@ def test_draw_sequence_is_append_only_under_added_section() -> None:
     assert len(rng_b.log) == len(rng_a.log) + 1
 
 
+def test_draw_sequence_is_append_only_under_budget_change() -> None:
+    """§5.6 (append-only under a *budget* change; §14.6) — raising the plan's
+    `dissonance` budget 0.10 → 0.12 (both tier 0, so §6 dressing is unchanged
+    everywhere) flips one `chorus` pool entry OUT of eligibility through its
+    per-entry dissonance gate [0.0, 0.11]. The `intro`/`verse` pools carry no
+    dissonance gate, so their candidate sets — hence their select draws — are
+    identical across both budgets; the first tag whose eligibility differs is
+    `chorus`. Draw order is tag-first-appearance, so append-only discipline
+    requires the two draws BEFORE the divergent `chorus` set to be bit-identical
+    (same randrange arg AND result): the lower-dissonance run simply carries one
+    extra draw (the chorus select, skipped by the higher-dissonance run since
+    only one chorus entry survives). Tier 0 + T/S-only tokens ⇒ selects are the
+    only draws, so the prefix comparison is clean."""
+    progs = _progs(
+        {
+            "pools": {
+                "intro": [
+                    {
+                        "id": "i1",
+                        "weight": 1,
+                        "modes": ["major"],
+                        "phrases": {"a": [["I"], ["IV"], ["I"], ["IV"]]},
+                    },
+                    {
+                        "id": "i2",
+                        "weight": 1,
+                        "modes": ["major"],
+                        "phrases": {"a": [["I"], ["vi"], ["IV"], ["vi"]]},
+                    },
+                ],
+                "verse": [
+                    {
+                        "id": "v1",
+                        "weight": 1,
+                        "modes": ["major"],
+                        "phrases": {"a": [["I"], ["IV"], ["vi"], ["IV"]]},
+                    },
+                    {
+                        "id": "v2",
+                        "weight": 1,
+                        "modes": ["major"],
+                        "phrases": {"a": [["I"], ["vi"], ["IV"], ["I"]]},
+                    },
+                ],
+                "chorus": [
+                    {
+                        "id": "c1",
+                        "weight": 1,
+                        "modes": ["major"],
+                        "phrases": {"a": [["I"], ["vi"], ["IV"], ["vi"]]},
+                    },
+                    {
+                        "id": "c2",
+                        "weight": 1,
+                        "modes": ["major"],
+                        # eligible only while dissonance <= 0.11 — the lever.
+                        "dissonance": [0.0, 0.11],
+                        "phrases": {"a": [["vi"], ["IV"], ["I"], ["IV"]]},
+                    },
+                ],
+            },
+            "turnarounds": [],
+            "finals": [
+                {"id": "f1", "weight": 2, "modes": ["major"], "bars": [["IV"], ["I"]]},
+                {"id": "f2", "weight": 1, "modes": ["major"], "bars": [["vi"], ["I"]]},
+            ],
+        }
+    )
+    sf = _form(
+        [
+            _section("intro-1", "intro", 0, [("a", 4)], section_type="intro"),
+            _section("verse-1", "verse", 4, [("a", 4)]),
+            _section("chorus-1", "chorus", 8, [("a", 4)], ending=True),
+        ]
+    )
+    rng_lo = _LoggingRandom(1234)
+    harmony(_plan(dissonance=0.10), sf, progs, rng_lo)
+    rng_hi = _LoggingRandom(1234)
+    harmony(_plan(dissonance=0.12), sf, progs, rng_hi)
+
+    # intro_sel + verse_sel precede the divergent `chorus` candidate set and are
+    # bit-identical (arg AND result) across the two budgets — the eligibility
+    # shift did not move any draw before it. Index 2 genuinely diverges (chorus
+    # select on randrange(2) at 0.10 vs the finals select on randrange(3) at
+    # 0.12), so the prefix assertion is non-vacuous; the low run has exactly one
+    # extra draw, the chorus select the high run skips.
+    assert rng_lo.log[:2] == rng_hi.log[:2]
+    assert rng_lo.log[2] != rng_hi.log[2]
+    assert len(rng_lo.log) == len(rng_hi.log) + 1
+
+
 # =============================================================================
 # DoD 7 — property matrix
 # =============================================================================
 
-# The full test_form grid (2 packs × supported moods × 39 lengths) subsampled to
-# 8 seeds per cell (down from 25): harmony is heavier than form, and every cell
-# already re-exercises selection/dressing/all three transforms across the whole
-# reference corpus, so 8 seeds keeps coverage broad while bounding runtime.
-# ~21 (pack×mood) × 39 lengths × 8 seeds ≈ 6.5k end-to-end runs.
+# The full grid: 2 packs × supported moods × 39 lengths × 25 seeds, matching the
+# Phase-3 form property test (test_form.py) seed count and generation formula
+# (§14.7 pins "× 25 seeds"). ~21 (pack×mood) × 39 lengths × 25 seeds ≈ 20k runs.
 _LENGTHS = list(range(30, 601, 15))
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(8)]
+_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
 _QUALITIES = frozenset(get_args(ChordQuality))
 
 
@@ -677,7 +766,7 @@ def _property_params() -> list[Any]:
 
 @pytest.mark.parametrize(("style", "mood"), _property_params())
 def test_property_valid_harmonic_plan(style: str, mood: str) -> None:
-    """PHASE_4 §14 DoD 7 — every pack × supported mood × length grid × seeds
+    """PHASE_4 §14 DoD 7 — every pack × supported mood × length grid × 25 seeds
     yields a HarmonicPlan validating every §5/§7 structural invariant."""
     pack = _cached_pack(style)
     assert pack.forms is not None and pack.progressions is not None
