@@ -1,0 +1,15 @@
+# PHASE_5 §3.1 energy -> intensity thresholds (normative).
+#
+# Engine-owned data (not a style pack): the global energy quantization ladder.
+# One ladder for all packs -- pack energyRange envelopes (PHASE_3 §6.4) already
+# position each style's dramaturgy on it. Recalibratable without a code change.
+#
+# `thresholds` are the three ascending boundaries between the four rungs. The
+# bands are half-open on the low side, so an exact boundary opens the higher
+# rung (0.30 -> 2, 0.55 -> 3, 0.80 -> 4):
+#
+#   rung 1: e < 0.30
+#   rung 2: 0.30 <= e < 0.55
+#   rung 3: 0.55 <= e < 0.80
+#   rung 4: e >= 0.80
+thresholds: [0.30, 0.55, 0.80]
