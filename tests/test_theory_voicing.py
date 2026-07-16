@@ -66,7 +66,12 @@ def test_lane_ceiling_hard_prune_at_71() -> None:
         "fifths",
     ):
         for spec in (DM7, G7, CMAJ7):
-            for voicing in voicing_candidates(spec, cls, lane):
+            cands = voicing_candidates(spec, cls, lane)
+            # Guard the ceiling assertions below against vacuously passing:
+            # every class must actually yield ≥1 candidate in this lane, else
+            # a future formula change emitting nothing would slip through.
+            assert cands, f"{cls} produced no candidates for {spec.symbol} in {lane}"
+            for voicing in cands:
                 assert voicing[0] >= 48
                 assert voicing[-1] <= 71
                 assert max(voicing) <= 71
