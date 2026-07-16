@@ -12,13 +12,23 @@ from trackgen.parts.dynamics import (
     is_event_active,
 )
 from trackgen.parts.retarget import RetargetedNote, resolve_degree_pc, retarget_event
+from trackgen.parts.selection import (
+    SelectionKey,
+    SelectionResult,
+    section_kind,
+    select_patterns,
+)
 
 __all__ = [
     "RetargetedNote",
+    "SelectionKey",
+    "SelectionResult",
     "apply_articulation",
     "apply_velocity",
     "articulation_scales",
     "is_event_active",
     "resolve_degree_pc",
     "retarget_event",
+    "section_kind",
+    "select_patterns",
 ]
