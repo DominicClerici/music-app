@@ -6,9 +6,12 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 5, Chunk 2 — arrangement + selection** (`@PROMPT.md - Phase 5`, resume mid-phase). **Chunk 1 is COMPLETE** (session 06; DoD 1+2 PROVEN; 735 tests, four gates green; whole-chunk 2-lens review clean). No approved plan for Chunk 2 yet — the orchestrator writes `plans/sessions/SESSION_07.md` and gets user approval before dispatching. Read `PHASE_5.md` §4 (the Arrangement planner) + §3.2 (pattern selection) + §3.1 (intensity, built) + §3.6 (seeds/draw discipline) in full.
+> **Next:** **Phase 5, Chunk 3 — generators / walker / voicing** (`@PROMPT.md - Phase 5`, resume mid-phase). **Chunks 1+2 are COMPLETE** (sessions 06+07; DoD 1/2/3/4 PROVEN; 816 tests, four gates green; both chunks whole-review clean). No approved plan for Chunk 3 yet — the orchestrator writes `plans/sessions/SESSION_08.md` and gets user approval before dispatching. Read `PHASE_5.md` §6 (part generators — §6.1 drums, §6.2 pattern-bass, §6.3 the walker, §6.4 comping, §6.5 pads) + §3.3 (retargeting, built) + §9.2/§9.3 (walker + voicing goldens) in full; resolves **[C-04]** (voicing API). Proves **DoD 5** (walker §9.2), **DoD 6** (voicing §9.3), **DoD 7** (generators end-to-end).
 >
-> **Chunk 2 scope:** `arrange(plan, form, pack, rng) -> ArrangementPlan` (§4 — role activation §4.1, density budget §4.2, register lanes + registerBias §4.3, all deterministic — the `rng` is accepted but **never consumed** in v1, "arrangement" stream reserved to zero draws) + the pattern-selection machinery (§3.2 — cache one draw per (role,kind,rung) per song, kind mapping intro→intro/outro→ending/else→main, eligibility tempo band, `weighted_choice` draw-iff-≥2 on the role's `select` sub-stream). New engine data: `arrangement/lanes.yaml` (§4.3 lane table). Proves **DoD 3** (arrangement goldens §4.5 + zero-draw + property) and **DoD 4** (selection §9.1 draw narratives: pop 1 draw, jazz 3; completeness property). Golden anchors: §4.5 tables (pop 7 sections, jazz 6) + §9.1 draw counts.
+> **What Chunk 2 hands Chunk 3 (all committed, tested — commits `d52a00e`/`71ac7a7`/`cbfaa19`/`eecb17b`):**
+>  - **`arrange(plan, form, pack, rng) -> ArrangementPlan`** (`trackgen.arrangement`) — one `ArrangementEntry` per `(section, role)`: `.active`, `.intensity` (the 1–4 rung), `.density_budget`, `.register` (the role's arrangement lane, already registerBias-shifted + ≤71-clamped). Chunk-3 generators consume: `.register` as the retarget/voicing lane (pass to `retarget_event`'s `lane` and as the voicing-candidate prune lane / `optimal_voicing_path` anchor `lane.high−6`), `.density_budget` for §3.5 gating + the walker's embellishment rate (§6.3), `.intensity` for walker feel-by-intensity + the voicing class per rung. `arrange` consumes **zero** draws (the `arrangement` stream stays reserved).
+>  - **`select_patterns(plan, form, arrangement, pack, master, overrides, *, rng_factory=None) -> SelectionResult`** (`trackgen.parts`) — `.by_section[(section_id, role)] -> PatternEnvelope` is the chosen pattern for every **active, pattern-mode** `(section, role)`; `.by_key[(role, kind, rung)] -> PatternEnvelope` is the per-song cache. **Walking-mode bass has NO entry** (the walker serves every section/kind — bass generation reads `pack.walking`, not selection). Dormant/inactive roles (jazz pads) have no entry. Chunk-3 generators tile the selected pattern **per phrase** (§3.2 tiling; phrase starts are the pinned alignment points) and retarget each event via `parts/retarget.py`.
+>  - **Non-reachable latent notes (not caveats — no pinned value changed):** (a) `arrange`'s intro rule reads the successor's *provisional* (pre-intro) count, so an intro **immediately followed by another intro** could read thicker-than-successor; unreachable because both reference form templates declare `intro` once as the first spine slot (the DoD-3 property matrix guards it). If Phase 8 form vocabulary ever admits adjacent/trailing intros, resolve counts right-to-left. (b) the registerBias lane shift re-checks only `≤71` post-shift (per §4.3 / PHASE_1 §4.4); at an extreme `|bias|→1.0` a comping/pads lane could narrow to span 11 (still covers 12 pcs, so §3.3 folding stays total) — unreachable because the interpreter bounds derived `registerBias = round(0.25×valence, 3)` to ±0.25 (max shift ±3 → span ≥20).
 >
 > **What Chunk 1 hands Chunk 2/3 (all committed, tested — commits `60c6289`/`4299062`/`095d0e1`/`4e131c2`/`5edb8d3`):**
 >  - **Loaded pack surface** (`StylePack`, `packs/models.py`): `pack.layering_order: tuple[Role,...]|None` (§4.1 activation order), `pack.patterns[role]: list[PatternEnvelope]` with `.kind`/`.energy_level`/`.weight`/`.eligibility`/`is_gated` (selection filters per (role,kind,rung)), `pack.bass_mode` + `pack.walking: WalkingConfig` (`.feel_by_intensity`/`.approach_weights`/`.beat1_repeat_weights` — the walker, Chunk 3), `pack.voicing[role].classes[rung]` (comping/pads voicing pass, Chunk 3). Event vocab extended: `sixth`/`chord` degrees, `push`/`min_density` fields, `octave` now optional (`=0`).
@@ -19,7 +22,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 >
 > **Open items for Chunk 2/3 (decide, don't re-pin):**
 >  - **[C-04]** (open) — Chunk-3 voicing pass: confirm keyless `quartal`=perfect-4ths (or widen `voicing_candidates` to pass a key); pass the **real lane anchor** to `optimal_voicing_path` (§6.4 anchor = `lane.high−6`); candidate-class-per-role so triads never hit 4-note seventh-chord classes.
->  - **[C-06]** (open) — Chunk 2's `arrange()` + `lanes.yaml` owns the ≤71 ceiling + registerBias clamp (§4.3); retarget folds within whatever lane it is handed and trusts it.
+>  - **[C-06]** — Chunk 2's `arrange()` + `lanes.yaml` now owns the ≤71 ceiling + registerBias clamp (§4.3), enforced on every non-drum entry (`test_arrange.py`); retarget folds within whatever lane it is handed and trusts it. Marker-gating half of C-06 (loader PT enforcement) stays open.
 >  - **Serializer (Chunk 4)** — dump `TrackDocument` with `exclude_none=True` (§3.5/§3.6 require absent midi/voice/maxPolyphony).
 >
 > **Phase 4 is COMPLETE** (sessions 04+05; §14 DoD 1–10 PROVEN; harmony stage committed). Env/gates unchanged: `uv`, four gates, TID251 determinism. **CAVEATS:** C-01…C-04 (prior), C-05 (PT2 order, resolved), C-06 (marker-gating, open), C-07 (§3.3 resolutions, open), C-08 (jazz ride band, open).
@@ -52,7 +55,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 2 | Parameter & mood model | done | 02 | All 8 DoD items proven; 245 tests green. Caveat C-01 (PARAM_MALFORMED) |
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
-| 5 | Rhythm-section part generators | in progress | 06 | 4 chunks: loaders/foundations [06 DONE, DoD 1+2 proven, 735 tests] → arrangement+selection [next] → generators/walker/voicing → orchestrator+Serializer+milestone |
+| 5 | Rhythm-section part generators | in progress | 06, 07 | 4 chunks: loaders/foundations [06 DONE, DoD 1+2] → arrangement+selection [07 DONE, DoD 3+4, 816 tests] → generators/walker/voicing [next] → orchestrator+Serializer+milestone |
 | 6 | Transitions, variation & humanization | not started | — | |
 | 7 | Sound design | not started | — | |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
@@ -65,6 +68,7 @@ One row per implementation session, appended at close-out. Session plan files li
 | --- | --- | --- | --- | --- |
 | 01 | 2026-07-14 | Phase 1 (all) | All 6 tasks built, reviewed, gates green (125 tests). DoD §9.1–§9.5 + §9.7 proven; §9.6 manual audition pending user. No CAVEATS (all §5.6 goldens reproduced exactly; no doc amendments). | e0643ee seeds · 5d32e8c schema · 41e3af8 packs · 7fc3a5f validator+export · 6fbaa7c fixture · cf2b490 playground · e27f704 review-fixes |
 | 02 | 2026-07-15 | Phase 2 (all) | 6 tasks built, per-task + 4-lens whole-session review, gates green (245 tests). All §11 DoD 1–8 proven; both §6.5 goldens reproduce field-for-field; orchestrator pre-verified every load-bearing sample. Contract lens COMPLIANT. Review fixes: malformed-type wrapping (C-01), pack-tonic validation, mode-ladder dedupe, 3 test-coverage gaps closed. | 74e57b5 plan-fields · 2ab6997 moods · 8fe953f packs+refs · 2c0c602 params · 26f39a0 interpreter · eb00804 review-fixes |
+| 07 | 2026-07-16 | Phase 5 chunk 2 (arrangement + selection) | 3 opus tasks (T1 arrange ‖ T2 selection, then T3 goldens) + 1 review fix. Per-task reviews all APPROVE / APPROVE-WITH-NITS. Whole-chunk 2-lens review (correctness/contract + test-quality/DoD): both APPROVE-WITH-NITS, **DoD 3+4 PROVEN**, no blockers, no frozen contract touched. Orchestrator verified four gates green (816 tests) + independently reproduced the §4.5 anchors (densities/rungs/registers) and §9.1 counts (pop 1 / jazz 3). One test gap closed (production `rng_factory=None` select path golden-locked to §9.1 winner ids — no divergence). Two correctness nits proven non-reachable in v1 (adjacent-intro count read; extreme-bias lane span) → handoff notes, no caveats. | d52a00e arrange+lanes · 71ac7a7 selection · cbfaa19 §9.1 goldens · eecb17b golden-lock fix |
 | 06 | 2026-07-16 | Phase 5 chunk 1 (loaders + foundations) | 4 tasks + T1b (all opus): T1 schema/loader/PT1-11, T1b bank-retarget default, T3 foundations, T2 reference banks. Per-task + 2-lens whole-chunk review (contract/integration + test-quality/DoD — both APPROVE-WITH-NITS, **DoD 1+2 PROVEN**, no blockers). Two per-task blockers caught+fixed: T1 PT2 non-decreasing rejected the normative voice-grouped §7 banks (C-05); T2 pr_dr_3 rung-3 bar-2 groove dropout. Reviewers re-derived every §3.3 degree/fallback + the §9.4 E2=40 anchor + all §9.1 candidate counts. Orchestrator verified all 11 §12 amendments present (no edits). 4 caveats: C-05 (PT2, resolved), C-06 (marker-gating), C-07 (§3.3 resolutions), C-08 (jazz ride band). Gates green (735 tests). | 60c6289 schema · 4299062 retarget-default · 095d0e1 foundations · 4e131c2 banks · 5edb8d3 polish |
 | 05 | 2026-07-16 | Phase 4 chunk 2 (stage + goldens) | 3 tasks (T1 schema opus, T2 stage opus, T3 goldens opus) + orchestrator §13 check. Per-task + 4-lens whole-phase review (correctness/contract/test-quality/code-quality) across both chunks — all clean/COMPLIANT/GOOD, zero confirmed bugs. **DoD 4/5/6/7/9/10 PROVEN**; full §14 DoD 1–10 complete. Gates green (644 tests). Orchestrator independently reproduced seed anchor + both §10 `pool_selections` + Ex1 sample event + final tags + ASCII symbols + event counts (76/56). T3 surfaced + fixed a real stage tiling bug (own-code, not a caveat); review-fixes brought DoD-7 matrix to the pinned 25 seeds + added DoD-6 budget append-only. §10.2 Ex2 = 56 events (64 bars hold-merged; §10.2 pins no event count). | 09335d9 schema · 35dccba stage · abc447e goldens+fix · 8f15843 review-fixes |
 | 04 | 2026-07-16 | Phase 4 chunk 1 (theory+dressing+loader) | 4 tasks (T1 opus, then T2/T3/T4 parallel opus). Per-task + 2-lens whole-chunk review; both lenses APPROVE-WITH-NITS, DoD 1/2/3/8 PROVEN. Gates green (587 tests). Orchestrator reproduced §5.6 seed vectors + all 10 §10 per-chord facts exactly. Reviews: T1 sus-case fix; C-03 (SubV in P8, user-approved A); C-04 (voicing API); lane-prune non-emptiness fix. Chunk 2 (stage+goldens) remains. | 21ce323 theory-core · 6cc5907 voicing · ee7ddb6 dressing · bb7114e progressions |
@@ -82,6 +86,54 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 - **Chunk 2** — `arrange()` (§4) + pattern-selection machinery (§3.2). DoD 3, 4.
 - **Chunk 3** — drums / pattern-bass / walking-bass engine (§6.3) / comping+pads voicing passes (§6.4/§6.5); resolves C-04. DoD 5, 6, 7.
 - **Chunk 4** — orchestrator (§8.1) + Serializer (§8.3) + stub timbres (§8.4) + drum→track map (§8.2) + both milestone fixtures + whole-document goldens + determinism shims + whole-phase review + full §13 DoD. DoD 8, 9, 10.
+
+#### Phase 5 — Chunk 2 — session 07 (`plans/sessions/SESSION_07.md`)
+
+**COMPLETE** — 3 opus tasks (T1 ‖ T2, then T3) + 1 whole-chunk review fix; per-task + 2-lens
+whole-chunk review; gates green (816 tests). **DoD 3+4 PROVEN.** Task list:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Arrangement planner `arrangement/arrange.py` + `arrangement/lanes.yaml` (§4.1 activation, §4.2 density, §4.3 lanes+bias/≤71, zero-draw) + §4.5 goldens/property (DoD 3) | opus | done | d52a00e |
+| T2 | Selection machinery `parts/selection.py` (§3.2 kind-map/cache-once/eligibility/draw-iff-≥2 on `select` sub-streams, bass-walking exempt, active-only) + mechanism/draw-count units | opus | done | 71ac7a7 |
+| T3 | §9.1 draw-narrative goldens (pop 1 / jazz 3) + completeness property, end-to-end over both reference packs (`tests/test_selection_goldens.py`) (DoD 4) | opus | done | cbfaa19 |
+
+Per-task reviews (opus): T1 APPROVE-WITH-NITS (reviewer hand-recomputed pop chorus-3 0.842 /
+intro-1 count 2 / jazz solo-3 0.591 / all four bias-shifted registers — doc=test=arithmetic; two
+optional non-reachable nits); T2 APPROVE-WITH-NITS (verified draw-iff-≥2 exact, sub-stream
+derivation `Rng(derive(stream_seed(role),"select"))`, walking-bass stream never constructed; two
+cosmetic nits); T3 APPROVE (goldens doc-transcribed, per-role counting shims prove pop 1 / jazz 3,
+bass/pads no-selection positively asserted). Whole-chunk review (2 fresh opus lenses):
+**correctness/contract APPROVE-WITH-NITS** (arrange↔selection compose; rung written by arrange ==
+rung read by selection; ≤71 ceiling on every non-drum entry; zero arrangement draws; no frozen
+contract touched — `git diff 00f0315..HEAD` clean on schema/packs/intensity/seeds; two non-reachable
+nits) and **test-quality/DoD APPROVE-WITH-NITS** (DoD 3+4 PROVEN; one low gap: default select path
+not golden-locked → fixed `eecb17b`, no divergence). Orchestrator independently reproduced all §4.5
+anchors + §9.1 counts; ran four gates. No CAVEATS (both correctness nits are non-reachable latent
+edges changing no pinned value — logged as handoff notes).
+
+DoD (§13) — Chunk 2 targets 3, 4 — **both PROVEN**:
+- [x] §13.3 **Arrangement stage PROVEN** — both §4.5 tables field-for-field (real interpreter→form
+  pipeline @ seed `1ps9wxb`; every `(section, role)` incl. inactive: `intensity`/`density_budget`
+  3dp/`active`/`register`) — `test_arrange.py::test_{pop,jazz}_arrangement_golden_field_for_field`;
+  zero-draw counting shim (`test_arrange_consumes_zero_draws`) + structural (arrange imports no
+  `random`, TID251); property matrix pop_rock+jazz × supported moods × lengths {30..600 step 15} ×
+  25 seeds (`test_property_valid_arrangement`: full section×role coverage, `active` contiguous prefix
+  ≤ `layersMax`, non-drum `high≤71` & `low<high`, intro < resolved-successor count,
+  `intensity==intensity(energy)`, density∈[0,1]@3dp). Mechanism units: baseCount/layersMax cap,
+  breakdown-min-2 / bridge-min-3, intro thinning + `max(1,·)` floor + no-successor edge, bias
+  shift+ceiling-clamp (incl. bias 0.9 forcing the cap) + negative shift + half-even ties, lanes.yaml
+  validation. Commit `d52a00e`. Resolves the arrangement half of **C-06**.
+- [x] §13.4 **Selection PROVEN** — both §9.1 draw narratives with exact draw counts summed from
+  per-role counting shims (**pop 1**, **jazz 3**), winner ids at the right `by_key` keys, walking-bass
+  + dormant-pads **positively** asserted as no-selection, and the production `rng_factory=None` path
+  golden-locked to the same winner ids — `test_selection_goldens.py::test_{pop,jazz}_selection_draw_narrative`;
+  completeness property (every reachable `(section, role)` resolves, no extras) over pop_rock+jazz ×
+  21 moods × 5 tempi × 5 seeds — `test_selection_completeness`; 16 mechanism units
+  (`test_selection.py`: kind map incl. breakdown→main/outro→ending, cache-once `is`-identity +
+  reuse-not-redraw, different-rung redraw, `main` energy-filter, intro/ending energy-ignored, inclusive
+  tempo band, singleton 0-draw, ≥2 draws-once + independent replay, walking-bass exempt, inactive-role
+  nothing). Commits `71ac7a7`, `cbfaa19`, `eecb17b`.
 
 #### Phase 5 — Chunk 1 — session 06 (`plans/sessions/SESSION_06.md`)
 
