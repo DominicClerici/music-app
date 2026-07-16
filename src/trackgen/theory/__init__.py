@@ -22,6 +22,15 @@ from trackgen.theory.chords import (
     resolve_token,
     scale_pcs,
 )
+from trackgen.theory.voicing import (
+    Lane,
+    LaneLike,
+    VoicingClass,
+    VoicingWeights,
+    optimal_voicing_path,
+    vl_distance,
+    voicing_candidates,
+)
 
 __all__ = [
     "EXTENSION_OFFSETS",
@@ -30,8 +39,12 @@ __all__ = [
     "Function",
     "GuideTones",
     "KeyLike",
+    "Lane",
+    "LaneLike",
     "ScaleHint",
     "TokenError",
+    "VoicingClass",
+    "VoicingWeights",
     "chord_function",
     "chord_intervals",
     "chord_scale",
@@ -40,6 +53,9 @@ __all__ = [
     "extensions_legal",
     "guide_tones",
     "legal_extensions",
+    "optimal_voicing_path",
     "resolve_token",
     "scale_pcs",
+    "vl_distance",
+    "voicing_candidates",
 ]
