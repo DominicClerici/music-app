@@ -1,0 +1,84 @@
+pools:
+  intro:
+    - { id: two_five_vamp,       weight: 60, modes: [major, mixolydian],
+        phrases: { a: [[ii7], [V7], [ii7], [V7]] } }
+    - { id: turnaround_in,       weight: 40, modes: [major, mixolydian],
+        phrases: { a: [[Imaj7], [VI7], [ii7], [V7]] } }
+    - { id: minor_two_five_vamp, weight: 60, modes: [minor, dorian],
+        phrases: { a: [[iiø7], [V7], [iiø7], [V7]] } }
+    - { id: minor_vamp,          weight: 40, modes: [minor, dorian],
+        phrases: { a: [[i7], [bVI7], [i7], [V7]] } }
+  aaba_32:
+    - id: rhythm_a
+      weight: 100
+      modes: [major, mixolydian]   # mixolydian coverage required by P6 (user-forced mode)
+      phrases:
+        a: [[Imaj7, vi7], [ii7, V7], [Imaj7, vi7], [ii7, V7],
+            [Imaj7, I7], [IVmaj7, iv7], [Imaj7, V7], [Imaj7]]
+        b: [[III7], [~], [VI7], [~], [II7], [~], [V7], [~]]
+    - id: minor_aaba
+      weight: 100
+      modes: [minor, dorian]
+      phrases:
+        a: [[i7], [iv7], [i7], [~], [iiø7], [V7], [i7], [~]]
+        b: [[iv7], [~], [i7], [~], [iiø7], [V7], [i7], [V7]]
+  blues_12:
+    - id: jazz_blues
+      weight: 60
+      modes: [major, mixolydian]
+      phrases:
+        a: [[I7], [IV7], [I7], [~]]
+        b: [[IV7], ["#iv°7"], [I7], [VI7]]
+        c: [[ii7], [V7], [I7], [~]]
+    - id: basic_blues
+      weight: 40
+      modes: [major, mixolydian]
+      phrases:
+        a: [[I7], [~], [~], [~]]
+        b: [[IV7], [~], [I7], [~]]
+        c: [[V7], [IV7], [I7], [~]]
+    - id: minor_quick
+      weight: 60
+      modes: [minor, dorian]
+      phrases:
+        a: [[i7], [iv7], [i7], [~]]
+        b: [[iv7], [~], [i7], [~]]
+        c: [[bVI7], [V7], [i7], [~]]
+    - id: minor_basic
+      weight: 40
+      modes: [minor, dorian]
+      phrases:
+        a: [[i7], [~], [~], [~]]
+        b: [[iv7], [~], [i7], [~]]
+        c: [[bVI7], [V7], [i7], [~]]
+  outro:
+    - { id: final_two_five, weight: 100, modes: [major, mixolydian],
+        phrases: { a: [[iii7], [VI7], [ii7], [V7]] } }
+    - { id: minor_outro,    weight: 100, modes: [minor, dorian],
+        phrases: { a: [[i7], [iv7], [i7], [~]] } }
+
+turnarounds:
+  - { id: one_six_two_five,     weight: 40, modes: [major, mixolydian],
+      bars: [[Imaj7, VI7], [ii7, V7]] }
+  - { id: three_six_two_five,   weight: 25, modes: [major, mixolydian],
+      bars: [[iii7, VI7], [ii7, V7]] }
+  - { id: quick_two_five,       weight: 20, modes: [major, mixolydian],
+      bars: [[ii7, V7]] }                                    # 1 bar — fits AABA's 1-bar tonic run
+  - { id: tritone_turn,         weight: 15, modes: [major, mixolydian], dissonance: [0.55, 1.0],
+      bars: [[Imaj7, bIII7], [ii7, bII7]] }
+  - { id: minor_turn,           weight: 50, modes: [minor, dorian],
+      bars: [[i7, bVI7], [iiø7, V7]] }
+  - { id: minor_two_five,       weight: 30, modes: [minor, dorian],
+      bars: [[i7], [iiø7, V7]] }
+  - { id: minor_quick_two_five, weight: 20, modes: [minor, dorian],
+      bars: [[iiø7, V7]] }                                   # 1 bar
+
+finals:
+  - { id: two_five_close,     weight: 60, modes: [major, mixolydian],
+      bars: [[ii7, V7], [Imaj7]] }
+  - { id: backdoor_close,     weight: 40, modes: [major, mixolydian],
+      bars: [[iv7, bVII7], [Imaj7]] }
+  - { id: minor_close,        weight: 60, modes: [minor, dorian],
+      bars: [[iiø7, V7], [i7]] }
+  - { id: minor_plagal_close, weight: 40, modes: [minor, dorian],
+      bars: [[iv7], [i7]] }

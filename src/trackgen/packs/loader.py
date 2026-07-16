@@ -6,6 +6,7 @@ validates everything into the frozen models in `trackgen.packs.models`.
 """
 
 import math
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -17,8 +18,11 @@ from trackgen.packs.models import (
     InterpreterConfig,
     Manifest,
     PatternEnvelope,
+    ProgressionsConfig,
     StylePack,
+    _is_degree1_rooted,
 )
+from trackgen.theory import chord_function
 
 PATTERN_ROLES = ("drums", "bass", "comping", "pads")
 
@@ -59,6 +63,125 @@ def _check_f11(forms: FormsConfig, manifest: Manifest) -> None:
             f"at the {_MIN_LENGTH_SEC}s minimum length, below the required "
             f"{_MIN_BAR_BUDGET} (F11)"
         )
+
+
+def _forms_tag_usage(
+    forms: FormsConfig,
+) -> tuple[
+    set[str],
+    dict[str, set[tuple[frozenset[str], int]]],
+    dict[str, set[str]],
+]:
+    """Walk every section type × bar option in `forms.yaml` (resolving
+    `inherit`), returning: the set of harmonyTags used; per tag the set of
+    `(phrase labels, phrase length in bars)` requirements each option imposes
+    (P4); and per tag the set of section TYPES that serve it (P7)."""
+    tags_used: set[str] = set()
+    tag_reqs: dict[str, set[tuple[frozenset[str], int]]] = defaultdict(set)
+    tag_types: dict[str, set[str]] = defaultdict(set)
+
+    for type_name, section_def in forms.sections.items():
+        resolved = (
+            forms.sections[section_def.inherit]
+            if section_def.inherit is not None
+            else section_def
+        )
+        assert resolved.bars is not None
+        assert resolved.phrases is not None
+        assert resolved.harmony_tag is not None
+        for n, _weight in resolved.bars:
+            tag = resolved.harmony_tag[n]
+            labels = resolved.phrases[n]
+            tags_used.add(tag)
+            tag_reqs[tag].add((frozenset(labels), n // len(labels)))
+            tag_types[tag].add(type_name)
+
+    return tags_used, tag_reqs, tag_types
+
+
+def _check_progressions_cross_file(
+    progressions: ProgressionsConfig,
+    forms: FormsConfig | None,
+    interpreter: InterpreterConfig | None,
+) -> None:
+    """PHASE_4 §4.3 cross-file rules — P1/P4/P7 against `forms.yaml`, P6 against
+    `interpreter.yaml`. Like `_check_f11`, these need more than one file, so
+    they live in the loader rather than a single-config model validator."""
+    if forms is not None:
+        tags_used, tag_reqs, tag_types = _forms_tag_usage(forms)
+
+        # P1: every harmonyTag any forms bar option uses has a non-empty pool.
+        for tag in tags_used:
+            if not progressions.pools.get(tag):
+                raise ValueError(
+                    f"harmonyTag {tag!r} used by forms.yaml has no non-empty pool (P1)"
+                )
+
+        # P4: every pool entry provides exactly the labels each option using
+        # its tag needs, each with that option's phrase length in bars.
+        for tag, reqs in tag_reqs.items():
+            entries = progressions.pools.get(tag)
+            if not entries:
+                continue  # P1 already raised
+            for labels, phrase_len in reqs:
+                for entry in entries:
+                    if set(entry.phrases) != set(labels):
+                        raise ValueError(
+                            f"pool {tag!r} entry {entry.id!r}: phrase labels "
+                            f"{sorted(entry.phrases)} != required "
+                            f"{sorted(labels)} for a forms option (P4)"
+                        )
+                    for label in labels:
+                        got = len(entry.phrases[label])
+                        if got != phrase_len:
+                            raise ValueError(
+                                f"pool {tag!r} entry {entry.id!r}: phrase "
+                                f"{label!r} is {got} bars, forms option needs "
+                                f"{phrase_len} (P4)"
+                            )
+
+        # P7: cadence classes by the section TYPES a tag serves.
+        for tag, types in tag_types.items():
+            entries = progressions.pools.get(tag)
+            if not entries:
+                continue
+            need_dominant = bool(types & {"prechorus", "bridge"})
+            need_open = bool(types & {"intro", "verse"})
+            if not (need_dominant or need_open):
+                continue
+            for entry in entries:
+                final = entry.final_chord_token()
+                if need_dominant and chord_function(final) != "D":
+                    raise ValueError(
+                        f"pool {tag!r} entry {entry.id!r}: final chord {final!r} "
+                        f"must be D-function (serves prechorus/bridge) (P7)"
+                    )
+                if need_open and _is_degree1_rooted(final):
+                    raise ValueError(
+                        f"pool {tag!r} entry {entry.id!r}: final chord {final!r} "
+                        f"must be open / not degree-1-rooted (serves intro/verse) "
+                        f"(P7)"
+                    )
+
+    if interpreter is not None:
+        # P6: for every interpreter mode, every pool and finals has >= 1 entry
+        # listing that mode with NO valence/dissonance band (never empty).
+        named_groups: list[tuple[str, tuple[Any, ...]]] = [
+            *progressions.pools.items(),
+            ("finals", progressions.finals),
+        ]
+        for mode in interpreter.modes:
+            for name, entries in named_groups:
+                if not any(
+                    mode in entry.modes
+                    and entry.valence is None
+                    and entry.dissonance is None
+                    for entry in entries
+                ):
+                    raise ValueError(
+                        f"pool {name!r} has no unconditional entry for mode "
+                        f"{mode!r} — selection could come up empty (P6)"
+                    )
 
 
 def load_pack(path: str | Path) -> StylePack:
@@ -122,8 +245,29 @@ def load_pack(path: str | Path) -> StylePack:
         except ValueError as exc:
             raise PackLoadError(f"{forms_path}: {exc}") from exc
 
+    progressions: ProgressionsConfig | None = None
+    progressions_path = pack_dir / "progressions.yaml"
+    if progressions_path.exists():
+        raw_progressions = _read_yaml(progressions_path)
+        if not isinstance(raw_progressions, dict):
+            raise PackLoadError(f"{progressions_path}: progressions must be a mapping")
+        try:
+            progressions = ProgressionsConfig.model_validate(raw_progressions)
+        except ValidationError as exc:
+            raise PackLoadError(
+                f"{progressions_path}: invalid progressions config\n{exc}"
+            ) from exc
+        try:
+            _check_progressions_cross_file(progressions, forms, interpreter)
+        except ValueError as exc:
+            raise PackLoadError(f"{progressions_path}: {exc}") from exc
+
     return StylePack(
-        manifest=manifest, patterns=patterns, interpreter=interpreter, forms=forms
+        manifest=manifest,
+        patterns=patterns,
+        interpreter=interpreter,
+        forms=forms,
+        progressions=progressions,
     )
 
 

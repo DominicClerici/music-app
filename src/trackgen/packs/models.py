@@ -682,6 +682,282 @@ class FormsConfig(PackModel):
                 )
 
 
+# --- PHASE_4 §4 `progressions.yaml` ------------------------------------------
+
+# A bar is a list of 1/2/4 authored chord tokens, or the single-token hold
+# `("~",)`. YAML authors holds as the bare `~`, which `yaml.safe_load` yields
+# as `None`; the entry before-validators normalize `None` back to `"~"` so the
+# rest of the code sees one hold sentinel.
+Bar = tuple[str, ...]
+
+_HOLD = "~"
+
+
+class _NeutralKey:
+    """A fixed, key-independent `KeyLike` used only to validate token GRAMMAR
+    and read a token's degree/function at load time (§3.1/§3.2). Degrees are
+    major-scale-relative and mode-independent, so any major-class mode over
+    `tonic_pc 0` parses every legal token identically; spelling is discarded."""
+
+    tonic_pc: int = 0
+    mode: str = "major"
+
+
+_NEUTRAL_KEY = _NeutralKey()
+
+
+def _normalize_holds(value: Any) -> Any:
+    """Recursively turn YAML `None` (authored `~`) into the `"~"` hold sentinel
+    inside a bar-list / phrases structure, leaving everything else untouched."""
+    if value is None:
+        return _HOLD
+    if isinstance(value, list):
+        return [_normalize_holds(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_holds(item) for key, item in value.items()}
+    return value
+
+
+def _final_sounding_token(bars: tuple[Bar, ...]) -> str:
+    """The last non-hold token across `bars` — the entry's cadential chord.
+    Every legal bar list starts with a real chord (holds are barred from a
+    phrase's first bar and from turnarounds/finals), so this always finds one."""
+    for bar in reversed(bars):
+        for token in reversed(bar):
+            if token != _HOLD:
+                return token
+    raise ValueError("bar list has no sounding chord")
+
+
+def _is_degree1_rooted(token: str) -> bool:
+    """True iff `token`'s root is scale degree 1 with no accidental (§3.2).
+
+    Resolved against the neutral key, degree-1-no-accidental is the unique
+    token whose `root_pc` equals the tonic AND whose function is `T` (the other
+    T-degrees b3/3/6 root elsewhere; an enharmonic `#VII` also lands on the
+    tonic pc but is function `O`, so the conjunction pins degree 1 exactly)."""
+    from trackgen.theory import chord_function, resolve_token
+
+    spec = resolve_token(token, _NEUTRAL_KEY)
+    return spec.root_pc == _NEUTRAL_KEY.tonic_pc and chord_function(token) == "T"
+
+
+def _relaunches_as_dominant(token: str) -> bool:
+    """True iff `token` is a dominant-functioning relaunch chord for P8.
+
+    The §3.2 table's `D` degrees (V, bVII, VII), OR a tritone-substitute
+    dominant (a bII with a dominant-seventh quality — the SubV that resolves to
+    I exactly as V does). See the CAVEAT documented in the loader/report:
+    §9.2's `tritone_turn` ends on `bII7`, which the §3.2 table labels `S`, yet
+    §14 requires the reference pack to load clean, so P8 admits the SubV."""
+    from trackgen.theory import chord_function, resolve_token
+
+    if chord_function(token) == "D":
+        return True
+    spec = resolve_token(token, _NEUTRAL_KEY)
+    return spec.root_pc == 1 and spec.quality in ("dom7", "dom7sus4")
+
+
+class _ProgressionEntry(PackModel):
+    """Shared selection metadata for pool/turnaround/final entries (§4.1)."""
+
+    id: str
+    weight: int = Field(ge=1)  # P2
+    modes: tuple[str, ...] = Field(min_length=1)  # P2 (non-empty)
+    valence: tuple[float, float] | None = None
+    dissonance: tuple[float, float] | None = None
+
+    @model_validator(mode="after")
+    def _check_modes_and_bands(self) -> "_ProgressionEntry":
+        # Lazy import (mirrors InterpreterConfig): `interpreter.moods` imports
+        # PackModel from this module, so a top-level import would be circular.
+        from trackgen.interpreter.moods import MODE_LADDER
+
+        # P2: modes ⊆ the engine mode vocabulary.
+        unknown = set(self.modes) - set(MODE_LADDER)
+        if unknown:
+            raise ValueError(
+                f"entry {self.id!r}: modes contain unknown mode(s) {sorted(unknown)}; "
+                f"must be ⊆ {MODE_LADDER} (P2)"
+            )
+
+        # P3: band ranges + ordering.
+        for name, band, lo_bound, hi_bound in (
+            ("valence", self.valence, -1.0, 1.0),
+            ("dissonance", self.dissonance, 0.0, 1.0),
+        ):
+            if band is None:
+                continue
+            lo, hi = band
+            if not (lo_bound <= lo <= hi_bound and lo_bound <= hi <= hi_bound):
+                raise ValueError(
+                    f"entry {self.id!r}: {name} band {band} must lie within "
+                    f"[{lo_bound}, {hi_bound}] (P3)"
+                )
+            if lo > hi:
+                raise ValueError(
+                    f"entry {self.id!r}: {name} band {band} must satisfy lo <= hi (P3)"
+                )
+        return self
+
+
+class PoolEntry(_ProgressionEntry):
+    """§4.1 a per-`harmonyTag` pool entry: one progression per phrase LABEL."""
+
+    phrases: dict[str, tuple[Bar, ...]] = Field(min_length=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "phrases" in data:
+            data = dict(data)
+            data["phrases"] = _normalize_holds(data["phrases"])
+        return data
+
+    @model_validator(mode="after")
+    def _check_bars(self) -> "PoolEntry":
+        from trackgen.theory import TokenError, resolve_token
+
+        for label, bars in self.phrases.items():
+            if not bars:
+                raise ValueError(
+                    f"entry {self.id!r} phrase {label!r}: must have >= 1 bar (P5)"
+                )
+            for bar_index, bar in enumerate(bars):
+                loc = f"entry {self.id!r} phrase {label!r} bar {bar_index}"
+                if tuple(bar) == (_HOLD,):
+                    # P5: `~` never in a phrase's FIRST bar.
+                    if bar_index == 0:
+                        raise ValueError(
+                            f"{loc}: '~' must not be a phrase's first bar (P5)"
+                        )
+                    continue
+                if _HOLD in bar:
+                    raise ValueError(
+                        f"{loc}: '~' may only appear as the sole token of a bar (P5)"
+                    )
+                if len(bar) not in (1, 2, 4):
+                    raise ValueError(
+                        f"{loc}: a bar must have 1, 2, or 4 tokens, got {len(bar)} (P5)"
+                    )
+                for token in bar:
+                    try:
+                        resolve_token(token, _NEUTRAL_KEY)
+                    except TokenError as exc:
+                        raise ValueError(
+                            f"{loc}: token {token!r} does not parse (P5): {exc}"
+                        ) from exc
+        return self
+
+    @property
+    def density(self) -> float:
+        """§4.2 `density = totalTokens / totalBars` across all phrase labels;
+        holds (`~`) are excluded from the token count."""
+        total_tokens = 0
+        total_bars = 0
+        for bars in self.phrases.values():
+            for bar in bars:
+                total_bars += 1
+                total_tokens += sum(1 for token in bar if token != _HOLD)
+        return total_tokens / total_bars
+
+    def final_chord_token(self) -> str:
+        """The cadential chord token — the last sounding token of the
+        last-declared phrase label (unambiguous for the single-label pools the
+        P7 cadence classes constrain in v1)."""
+        last_label = next(reversed(self.phrases))
+        return _final_sounding_token(self.phrases[last_label])
+
+
+class _BarsEntry(_ProgressionEntry):
+    """Shared shape for turnaround/final entries: a 1–2 bar chord list (§4.1).
+    Holds are never legal here (P5); subclasses add the final-chord check."""
+
+    bars: tuple[Bar, ...] = Field(min_length=1, max_length=2)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "bars" in data:
+            data = dict(data)
+            data["bars"] = _normalize_holds(data["bars"])
+        return data
+
+    @model_validator(mode="after")
+    def _check_bars(self) -> "_BarsEntry":
+        from trackgen.theory import TokenError, resolve_token
+
+        for bar_index, bar in enumerate(self.bars):
+            loc = f"entry {self.id!r} bar {bar_index}"
+            if _HOLD in bar:
+                raise ValueError(
+                    f"{loc}: holds ('~') are not allowed in turnarounds/finals (P5)"
+                )
+            if len(bar) not in (1, 2, 4):
+                raise ValueError(
+                    f"{loc}: a bar must have 1, 2, or 4 tokens, got {len(bar)} (P5)"
+                )
+            for token in bar:
+                try:
+                    resolve_token(token, _NEUTRAL_KEY)
+                except TokenError as exc:
+                    raise ValueError(
+                        f"{loc}: token {token!r} does not parse (P5): {exc}"
+                    ) from exc
+        return self
+
+
+class TurnaroundEntry(_BarsEntry):
+    """§4.1 a loop-back relaunch bar list (1–2 bars); final chord D-function."""
+
+    @model_validator(mode="after")
+    def _check_cadence(self) -> "TurnaroundEntry":
+        final = _final_sounding_token(self.bars)
+        if not _relaunches_as_dominant(final):
+            raise ValueError(
+                f"turnaround {self.id!r}: final chord {final!r} must be "
+                f"dominant-functioning (P8)"
+            )
+        return self
+
+
+class FinalEntry(_BarsEntry):
+    """§4.1 a song-close bar list (1–2 bars); final chord rooted on degree 1."""
+
+    @model_validator(mode="after")
+    def _check_cadence(self) -> "FinalEntry":
+        final = _final_sounding_token(self.bars)
+        if not _is_degree1_rooted(final):
+            raise ValueError(
+                f"final {self.id!r}: final chord {final!r} must be rooted on "
+                f"degree 1 (P9)"
+            )
+        return self
+
+
+class ProgressionsConfig(PackModel):
+    """§4.1 `progressions.yaml` — pools + turnarounds + (required) finals."""
+
+    pools: dict[str, tuple[PoolEntry, ...]]
+    turnarounds: tuple[TurnaroundEntry, ...] = ()
+    finals: tuple[FinalEntry, ...] = Field(min_length=1)  # P9 non-empty
+
+    @model_validator(mode="after")
+    def _check_unique_ids(self) -> "ProgressionsConfig":
+        # P2: ids unique within each pool, within turnarounds, within finals.
+        groups: list[tuple[str, tuple[_ProgressionEntry, ...]]] = [
+            *((f"pool {tag!r}", entries) for tag, entries in self.pools.items()),
+            ("turnarounds", self.turnarounds),
+            ("finals", self.finals),
+        ]
+        for label, entries in groups:
+            ids = [entry.id for entry in entries]
+            if len(set(ids)) != len(ids):
+                dupes = sorted({i for i in ids if ids.count(i) > 1})
+                raise ValueError(f"{label}: duplicate entry id(s) {dupes} (P2)")
+        return self
+
+
 class StylePack(PackModel):
     """A loaded, validated style pack: manifest + per-role pattern banks."""
 
@@ -689,3 +965,4 @@ class StylePack(PackModel):
     patterns: dict[str, list[PatternEnvelope]]
     interpreter: InterpreterConfig | None = None
     forms: FormsConfig | None = None
+    progressions: ProgressionsConfig | None = None

@@ -1,0 +1,77 @@
+pools:
+  intro:
+    - { id: tonic_vamp,       weight: 60, modes: [major],
+        phrases: { a: [[I], [IV], [I], [IV]] } }
+    - { id: axis_intro,       weight: 40, modes: [major],
+        phrases: { a: [[I], [V], [vi], [IV]] } }
+    - { id: minor_vamp,       weight: 60, modes: [minor],
+        phrases: { a: [[i], [bVI], [i], [bVII]] } }
+    - { id: minor_axis_intro, weight: 40, modes: [minor],
+        phrases: { a: [[i], [bVI], [bIII], [bVII]] } }
+  verse:
+    - { id: anchor,           weight: 40, modes: [major],
+        phrases: { a: [[I], [IV], [I], [V]] } }
+    - { id: axis_verse,       weight: 30, modes: [major],
+        phrases: { a: [[I], [V], [vi], [IV]] } }
+    - { id: mixo_rock,        weight: 20, modes: [major], valence: [-1.0, 0.5],
+        phrases: { a: [[I], [bVII], [IV], [IV]] } }
+    - { id: doo_wop,          weight: 10, modes: [major], valence: [0.2, 1.0],
+        phrases: { a: [[I], [vi], [IV], [V]] } }
+    - { id: minor_anchor,     weight: 40, modes: [minor],
+        phrases: { a: [[i], [bVII], [bVI], [bVII]] } }
+    - { id: minor_axis_verse, weight: 30, modes: [minor],
+        phrases: { a: [[i], [bVI], [bIII], [bVII]] } }
+  prechorus:
+    - { id: four_five,     weight: 50, modes: [major],
+        phrases: { a: [[IV], [V], [IV], [V]] } }
+    - { id: lift,          weight: 30, modes: [major],
+        phrases: { a: [[vi], [IV], [V], [V]] } }
+    - { id: two_five_pop,  weight: 20, modes: [major],
+        phrases: { a: [[ii], [IV], [V], [V]] } }
+    - { id: minor_lift,    weight: 50, modes: [minor],
+        phrases: { a: [[iv], [bVI], [V], [V]] } }
+    - { id: minor_shuttle, weight: 50, modes: [minor],
+        phrases: { a: [[iv], [V], [iv], [V]] } }
+  chorus:
+    - { id: axis,          weight: 45, modes: [major],
+        phrases: { a: [[I], [V], [vi], [IV]] } }
+    - { id: axis_rotation, weight: 20, modes: [major],
+        phrases: { a: [[vi], [IV], [I], [V]] } }
+    - { id: four_lift,     weight: 15, modes: [major],
+        phrases: { a: [[I], [IV], [vi], [V]] } }
+    - { id: fifties,       weight: 10, modes: [major], valence: [0.2, 1.0],
+        phrases: { a: [[I], [vi], [IV], [V]] } }
+    - { id: plagal_rock,   weight: 10, modes: [major],
+        phrases: { a: [[I], [bVII], [IV], [I]] } }
+    - { id: minor_axis,    weight: 60, modes: [minor],
+        phrases: { a: [[i], [bVI], [bIII], [bVII]] } }
+    - { id: andalusian,    weight: 20, modes: [minor], valence: [-1.0, 0.0],
+        phrases: { a: [[i], [bVII], [bVI], [V]] } }
+    - { id: minor_climb,   weight: 20, modes: [minor],
+        phrases: { a: [[i], [iv], [bVI], [bVII]] } }
+  bridge:
+    - { id: depart_six,       weight: 40, modes: [major],
+        phrases: { a: [[vi], [IV], [I], [V]] } }
+    - { id: subdominant_turn, weight: 35, modes: [major],
+        phrases: { a: [[IV], [I], [ii], [V]] } }
+    - { id: flat_lift,        weight: 25, modes: [major], valence: [-1.0, 0.5],
+        phrases: { a: [[bVI], [bVII], [I], [V]] } }
+    - { id: minor_depart,     weight: 60, modes: [minor],
+        phrases: { a: [[bVI], [iv], [i], [V]] } }
+    - { id: minor_flat_walk,  weight: 40, modes: [minor],
+        phrases: { a: [[bVI], [bVII], [i], [V]] } }
+  outro:
+    - { id: plagal_tag, weight: 60, modes: [major],
+        phrases: { a: [[I], [IV], [I], [IV]] } }
+    - { id: axis_out,   weight: 40, modes: [major],
+        phrases: { a: [[I], [V], [vi], [IV]] } }
+    - { id: minor_tag,  weight: 100, modes: [minor],
+        phrases: { a: [[i], [bVI], [i], [bVI]] } }
+
+turnarounds: []        # pop loops don't relaunch through turnarounds (v1)
+
+finals:
+  - { id: authentic,       weight: 50, modes: [major], bars: [[V],  [I]] }
+  - { id: plagal,          weight: 50, modes: [major], bars: [[IV], [I]] }
+  - { id: minor_authentic, weight: 60, modes: [minor], bars: [[V],  [i]] }
+  - { id: minor_plagal,    weight: 40, modes: [minor], bars: [[iv], [i]] }
