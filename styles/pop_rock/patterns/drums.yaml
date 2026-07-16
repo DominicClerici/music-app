@@ -1,1 +1,195 @@
-patterns: []
+# pop_rock drum pattern bank (PHASE_5 §7.1). Straight-grid, drum events only
+# (no retarget — drums are lane-exempt, §5.2). Carries the pack-level
+# layeringOrder (§5.1/PT10). Velocities authored pre-§3.4 shift.
+layeringOrder: [drums, bass, comping, pads]
+patterns:
+  # rung 1 — kick 1+3, quarter hats
+  - id: pr_dr_1
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 960, voice: kick, velocity: 0.85 }
+      - { pos: 480, voice: snare, velocity: 0.75 }
+      - { pos: 1440, voice: snare, velocity: 0.72 }
+      - { pos: 0, voice: hat_closed, velocity: 0.55 }
+      - { pos: 480, voice: hat_closed, velocity: 0.45 }
+      - { pos: 960, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.45 }
+
+  # rung 2 — money beat, 8th-note hats with quarters accented (GOLDEN ANCHOR)
+  - id: pr_dr_2a
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 480, voice: snare, velocity: 0.85 }
+      - { pos: 1440, voice: snare, velocity: 0.82 }
+      - { pos: 0, voice: hat_closed, velocity: 0.58 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.48 }
+      - { pos: 720, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.55 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.42 }
+
+  # rung 2 — four-on-the-floor variant
+  - id: pr_dr_2b
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 480, voice: kick, velocity: 0.85 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 1440, voice: kick, velocity: 0.85 }
+      - { pos: 480, voice: snare, velocity: 0.80 }
+      - { pos: 1440, voice: snare, velocity: 0.78 }
+      - { pos: 0, voice: hat_closed, velocity: 0.50 }
+      - { pos: 240, voice: hat_closed, velocity: 0.38 }
+      - { pos: 480, voice: hat_closed, velocity: 0.46 }
+      - { pos: 720, voice: hat_closed, velocity: 0.38 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.46 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.40 }
+
+  # rung 3 (2-bar) — bar 1 = money beat (pr_dr_2a events, pos 0-1680); bar 2 =
+  # money beat (pr_dr_2a shifted +1920) plus a gated ghost, an extra kick, and a
+  # 4& open hat (the shifted 4& hat_closed is dropped — the open hat replaces it)
+  - id: pr_dr_3
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 480, voice: snare, velocity: 0.85 }
+      - { pos: 1440, voice: snare, velocity: 0.82 }
+      - { pos: 0, voice: hat_closed, velocity: 0.58 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.48 }
+      - { pos: 720, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.55 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.42 }
+      - { pos: 1920, voice: kick, velocity: 0.92 }
+      - { pos: 2880, voice: kick, velocity: 0.88 }
+      - { pos: 2400, voice: snare, velocity: 0.85 }
+      - { pos: 3360, voice: snare, velocity: 0.82 }
+      - { pos: 1920, voice: hat_closed, velocity: 0.58 }
+      - { pos: 2160, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2400, voice: hat_closed, velocity: 0.48 }
+      - { pos: 2640, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2880, voice: hat_closed, velocity: 0.55 }
+      - { pos: 3120, voice: hat_closed, velocity: 0.40 }
+      - { pos: 3360, voice: hat_closed, velocity: 0.48 }
+      - { pos: 3000, voice: snare, velocity: 0.25, minDensity: 0.70 }
+      - { pos: 3120, voice: kick, velocity: 0.80, minDensity: 0.65 }
+      - { pos: 3600, voice: hat_open, velocity: 0.60, dur: 360 }
+
+  # rung 4 (2-bar) — ride 8ths both bars (on-beat 0.62 / off-beat 0.50);
+  # kick 1, 2& (gated), 3; snare 2/4; bar-2 ghost + 4& open hat
+  - id: pr_dr_4
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, voice: ride, velocity: 0.62 }
+      - { pos: 240, voice: ride, velocity: 0.50 }
+      - { pos: 480, voice: ride, velocity: 0.62 }
+      - { pos: 720, voice: ride, velocity: 0.50 }
+      - { pos: 960, voice: ride, velocity: 0.62 }
+      - { pos: 1200, voice: ride, velocity: 0.50 }
+      - { pos: 1440, voice: ride, velocity: 0.62 }
+      - { pos: 1680, voice: ride, velocity: 0.50 }
+      - { pos: 1920, voice: ride, velocity: 0.62 }
+      - { pos: 2160, voice: ride, velocity: 0.50 }
+      - { pos: 2400, voice: ride, velocity: 0.62 }
+      - { pos: 2640, voice: ride, velocity: 0.50 }
+      - { pos: 2880, voice: ride, velocity: 0.62 }
+      - { pos: 3120, voice: ride, velocity: 0.50 }
+      - { pos: 3360, voice: ride, velocity: 0.62 }
+      - { pos: 3600, voice: ride, velocity: 0.50 }
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 720, voice: kick, velocity: 0.80, minDensity: 0.60 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 1920, voice: kick, velocity: 0.92 }
+      - { pos: 2640, voice: kick, velocity: 0.80, minDensity: 0.60 }
+      - { pos: 2880, voice: kick, velocity: 0.88 }
+      - { pos: 480, voice: snare, velocity: 0.92 }
+      - { pos: 1440, voice: snare, velocity: 0.90 }
+      - { pos: 2400, voice: snare, velocity: 0.92 }
+      - { pos: 3360, voice: snare, velocity: 0.90 }
+      - { pos: 3000, voice: snare, velocity: 0.28, minDensity: 0.70 }
+      - { pos: 3600, voice: hat_open, velocity: 0.65, dur: 360 }
+
+  # intro (GOLDEN ANCHOR)
+  - id: pr_dr_i
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.85 }
+      - { pos: 0, voice: hat_closed, velocity: 0.50 }
+      - { pos: 480, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.45 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.40 }
+
+  # ending
+  - id: pr_dr_e
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 960, voice: kick, velocity: 0.85 }
+      - { pos: 480, voice: snare, velocity: 0.80 }
+      - { pos: 0, voice: hat_closed, velocity: 0.50 }
+      - { pos: 480, voice: hat_closed, velocity: 0.45 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+
+  # fill rung 2 (Phase 6 selects/places) — exactly 1 bar
+  - id: pr_dr_f1
+    role: drums
+    kind: fill
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 960, voice: snare, velocity: 0.60 }
+      - { pos: 1200, voice: snare, velocity: 0.68 }
+      - { pos: 1440, voice: snare, velocity: 0.76 }
+      - { pos: 1680, voice: snare, velocity: 0.85 }
+
+  # fill rung 4 (tom run, Phase 6) — exactly 1 bar
+  - id: pr_dr_f2
+    role: drums
+    kind: fill
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 960, voice: tom_high, velocity: 0.75 }
+      - { pos: 1200, voice: tom_mid, velocity: 0.78 }
+      - { pos: 1440, voice: tom_low, velocity: 0.82 }
+      - { pos: 1680, voice: snare, velocity: 0.88 }

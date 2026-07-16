@@ -1,1 +1,65 @@
-patterns: []
+# jazz pads pattern bank (PHASE_5 §7.4). Quartal footballs at every rung. Jazz
+# pads are dormant in v1 (layersMax 3 — the trio), but the bank MUST exist for
+# PT5 completeness. Whole-note degree: chord hits; retarget is the bank-level §7
+# default {45, 64, retrigger}; voicing.classes is quartal at every rung (PT7).
+voicing:
+  classes:
+    1: [quartal]
+    2: [quartal]
+    3: [quartal]
+    4: [quartal]
+retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
+patterns:
+  - id: jz_pd_1
+    role: pads
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: jz_pd_2
+    role: pads
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: jz_pd_3
+    role: pads
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.50 }
+
+  - id: jz_pd_4
+    role: pads
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.50 }
+
+  - id: jz_pd_i
+    role: pads
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: jz_pd_e
+    role: pads
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }

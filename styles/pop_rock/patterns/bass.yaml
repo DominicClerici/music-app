@@ -1,1 +1,101 @@
-patterns: []
+# pop_rock bass pattern bank (PHASE_5 §7.2). Pattern mode; pitched events author
+# chord-degrees, never literal pitches (invariant 2). retarget is the bank-level
+# §7 default {28, 45, retrigger}; the loader injects it into every entry.
+mode: patterns
+retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
+patterns:
+  # rung 1 — whole-note root
+  - id: pr_bs_1
+    role: bass
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.70 }
+
+  # rung 2 — quarter roots (GOLDEN ANCHOR)
+  - id: pr_bs_2
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 480, degree: root, octave: 0, velocity: 0.72 }
+      - { pos: 480, dur: 480, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 480, degree: root, octave: 0, velocity: 0.70 }
+      - { pos: 1440, dur: 480, degree: root, octave: 0, velocity: 0.66 }
+
+  # rung 3 (2-bar) — bar 1 straight root 8ths (0.74 on / 0.62 off); bar 2 root
+  # 8ths with a fifth on beat 3& and a pushed root into the next bar
+  - id: pr_bs_3
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 240, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 480, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 720, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 960, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 1200, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 1440, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 1680, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 1920, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 2160, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 2400, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 2640, dur: 240, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 2880, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 3120, dur: 240, degree: fifth, octave: 0, velocity: 0.68 }
+      - { pos: 3360, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 3600, dur: 240, degree: root, octave: 0, velocity: 0.72, push: true }
+
+  # rung 4 (2-bar) — driving 8ths (0.78 on / 0.66 off); bar 2 octave pop, a
+  # gated 16th pickup, and a pushed root
+  - id: pr_bs_4
+    role: bass
+    kind: main
+    energyLevel: 4
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 240, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 480, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 720, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 1200, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 1440, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 1680, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 1920, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 2160, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 2400, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 2640, dur: 240, degree: root, octave: 1, velocity: 0.70 }
+      - { pos: 2880, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 3120, dur: 240, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 3360, dur: 240, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 3480, dur: 120, degree: root, octave: 0, velocity: 0.60, minDensity: 0.75 }
+      - { pos: 3600, dur: 240, degree: root, octave: 0, velocity: 0.75, push: true }
+
+  # intro — whole-note root
+  - id: pr_bs_i
+    role: bass
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.68 }
+
+  # ending — whole-note root
+  - id: pr_bs_e
+    role: bass
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.70 }

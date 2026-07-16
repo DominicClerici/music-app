@@ -1,1 +1,8 @@
-patterns: []
+# jazz bass pattern bank (PHASE_5 §7.4/§5.3). Walking mode — no patterns and no
+# retarget; the walker (§6.3) serves every section and is exempt from the PT5
+# completeness rules. The walking block parameterizes the engine walker.
+mode: walking
+walking:
+  feelByIntensity: { 1: two, 2: two, 3: four, 4: four }
+  approachWeights: { chromatic_below: 2, diatonic: 1, dominant: 1 }
+  beat1RepeatWeights: { fifth: 2, third: 1, root: 1 }

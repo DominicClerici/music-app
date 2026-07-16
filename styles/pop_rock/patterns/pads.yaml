@@ -1,1 +1,66 @@
-patterns: []
+# pop_rock pads pattern bank (PHASE_5 §7.3). Sustained degree: chord hits; pop
+# pads voice the `fifths` class (§6.5). retarget is the bank-level §7 default
+# {45, 64, retrigger}. Pads are articulation-exempt (§3.4).
+voicing:
+  classes:
+    1: [fifths]
+    2: [fifths]
+    3: [fifths]
+    4: [fifths]
+retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
+patterns:
+  # rungs 1-3 whole-note chord; rung 4 half-note pulse
+  - id: pr_pd_1
+    role: pads
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: pr_pd_2
+    role: pads
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: pr_pd_3
+    role: pads
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.50 }
+
+  - id: pr_pd_4
+    role: pads
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.55 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.50 }
+
+  - id: pr_pd_i
+    role: pads
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  - id: pr_pd_e
+    role: pads
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }

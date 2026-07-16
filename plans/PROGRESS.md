@@ -79,8 +79,9 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Pattern-bank schema (`packs/models.py`) + loader (`packs/loader.py`) + PT1–PT11 + one rejection fixture per class (event vocab `sixth`/`chord`/`push`/`minDensity`; bass mode/walking; comping/pads voicing.classes; manifest layeringOrder; §3.2 completeness) | opus | done | 60c6289 |
-| T2 | Reference banks §7.1–§7.4 fully enumerated (8 YAML, complete the abridged entries) + load-clean/anchor test | opus | not started | — |
-| T3 | Foundation transforms §3.1 intensity + §3.3 retargeting + §3.4 velocity/articulation + §3.5 gating + DoD-2 unit tests | opus | not started | — |
+| T1b | Bank-level `retarget` default support (§7 "shown once") — BassBank/VoicedBank + loader injection | opus | done | 4299062 |
+| T2 | Reference banks §7.1–§7.4 fully enumerated (8 YAML, complete the abridged entries) + load-clean/anchor test | opus | done | _pending_ |
+| T3 | Foundation transforms §3.1 intensity + §3.3 retargeting + §3.4 velocity/articulation + §3.5 gating + DoD-2 unit tests | opus | done | 095d0e1 |
 | T4 | §12 amendment-consistency check + whole-chunk review + close-out | orchestrator | not started | — |
 
 DoD (§13) — Chunk 1 targets 1, 2 (11 attested):

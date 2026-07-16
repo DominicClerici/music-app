@@ -1,1 +1,147 @@
-patterns: []
+# jazz drum pattern bank (PHASE_5 §7.4). Straight-grid ride line (Phase 6 swings
+# it to spang-a-lang); drum events only, no retarget. Carries the pack-level
+# layeringOrder (§5.1/PT10). Ride sits above the snare/kick comping hits (§5.2).
+layeringOrder: [drums, bass, comping, pads]
+patterns:
+  # rung 1 — brush sweeps + hats 2/4
+  - id: jz_dr_1
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: snare, velocity: 0.35, dur: 900 }
+      - { pos: 960, voice: snare, velocity: 0.35, dur: 900 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+
+  # rung 2 — ride: 1, 2, 2&, 3, 4, 4& + hats 2/4 (GOLDEN ANCHOR)
+  - id: jz_dr_2
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: ride, velocity: 0.70 }
+      - { pos: 480, voice: ride, velocity: 0.72 }
+      - { pos: 720, voice: ride, velocity: 0.55 }
+      - { pos: 960, voice: ride, velocity: 0.70 }
+      - { pos: 1440, voice: ride, velocity: 0.72 }
+      - { pos: 1680, voice: ride, velocity: 0.55 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+
+  # rung 3 (2-bar) — ride+hats both bars, plus comping hits (all below the ride):
+  # snare 2& bar 1 (gated), kick 4& bar 1, snare bar 2
+  - id: jz_dr_3a
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 3
+    events:
+      - { pos: 0, voice: ride, velocity: 0.70 }
+      - { pos: 480, voice: ride, velocity: 0.72 }
+      - { pos: 720, voice: ride, velocity: 0.55 }
+      - { pos: 960, voice: ride, velocity: 0.70 }
+      - { pos: 1440, voice: ride, velocity: 0.72 }
+      - { pos: 1680, voice: ride, velocity: 0.55 }
+      - { pos: 1920, voice: ride, velocity: 0.70 }
+      - { pos: 2400, voice: ride, velocity: 0.72 }
+      - { pos: 2640, voice: ride, velocity: 0.55 }
+      - { pos: 2880, voice: ride, velocity: 0.70 }
+      - { pos: 3360, voice: ride, velocity: 0.72 }
+      - { pos: 3600, voice: ride, velocity: 0.55 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+      - { pos: 2400, voice: hat_closed, velocity: 0.50 }
+      - { pos: 3360, voice: hat_closed, velocity: 0.50 }
+      - { pos: 720, voice: snare, velocity: 0.40, minDensity: 0.50 }
+      - { pos: 1680, voice: kick, velocity: 0.35, minDensity: 0.55 }
+      - { pos: 3120, voice: snare, velocity: 0.38 }
+
+  # rung 3 (2-bar) — cross-stick variant: rim on 4 bar 1, sparse kick bombs
+  - id: jz_dr_3b
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 2
+    events:
+      - { pos: 0, voice: ride, velocity: 0.70 }
+      - { pos: 480, voice: ride, velocity: 0.72 }
+      - { pos: 720, voice: ride, velocity: 0.55 }
+      - { pos: 960, voice: ride, velocity: 0.70 }
+      - { pos: 1440, voice: ride, velocity: 0.72 }
+      - { pos: 1680, voice: ride, velocity: 0.55 }
+      - { pos: 1920, voice: ride, velocity: 0.70 }
+      - { pos: 2400, voice: ride, velocity: 0.72 }
+      - { pos: 2640, voice: ride, velocity: 0.55 }
+      - { pos: 2880, voice: ride, velocity: 0.70 }
+      - { pos: 3360, voice: ride, velocity: 0.72 }
+      - { pos: 3600, voice: ride, velocity: 0.55 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+      - { pos: 2400, voice: hat_closed, velocity: 0.50 }
+      - { pos: 3360, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: snare, velocity: 0.42 }
+      - { pos: 3360, voice: kick, velocity: 0.36 }
+
+  # rung 4 (1-bar) — dense ride + active comping
+  - id: jz_dr_4
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: ride, velocity: 0.75 }
+      - { pos: 240, voice: ride, velocity: 0.65 }
+      - { pos: 480, voice: ride, velocity: 0.72 }
+      - { pos: 720, voice: ride, velocity: 0.60 }
+      - { pos: 960, voice: ride, velocity: 0.72 }
+      - { pos: 1200, voice: ride, velocity: 0.60 }
+      - { pos: 1440, voice: ride, velocity: 0.72 }
+      - { pos: 1680, voice: ride, velocity: 0.60 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+      - { pos: 720, voice: snare, velocity: 0.42 }
+      - { pos: 960, voice: kick, velocity: 0.40 }
+      - { pos: 1680, voice: snare, velocity: 0.44 }
+
+  # intro — hats 2/4
+  - id: jz_dr_i
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+
+  # ending — ride downbeat + hats 2/4
+  - id: jz_dr_e
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: ride, velocity: 0.70 }
+      - { pos: 480, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.50 }
+
+  # fill rung 3 (Phase 6) — exactly 1 bar
+  - id: jz_dr_f1
+    role: drums
+    kind: fill
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 1200, voice: snare, velocity: 0.55 }
+      - { pos: 1440, voice: snare, velocity: 0.62 }
+      - { pos: 1680, voice: tom_mid, velocity: 0.66 }

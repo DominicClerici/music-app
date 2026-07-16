@@ -22,6 +22,14 @@ Numbered sequentially (`C-01`, `C-02`, …), never renumbered. If a later sessio
 
 ## Log
 
+### C-08: jazz ride "skip" notes are authored below the §5.2 ride velocity band (0.65–0.75)
+- **Date / session:** 2026-07-16, session 06 (Phase 5, chunk 1), T2 reference banks
+- **What deviated:** PHASE_5 §5.2 states the jazz ride band as "0.65–0.75". The §7.4 golden anchor `jz_dr_2` (fully stated, reproduced verbatim) authors the ride line `1, 2, 2&, 3, 4, 4&` as `0.70, 0.72, 0.55, 0.70, 0.72, 0.55` — the two "skip" notes (the `&` of 2 and 4) sit at **0.55**, below the stated band; the completed `jz_dr_4` similarly uses 0.60 for its skip notes. The "above the snare/kick comping hits (0.3–0.5)" relationship §5.2 also states still holds.
+- **Why:** the band imprecision is in the pinned doc itself, not an implementer choice — 0.55 comes straight from the §7.4 golden anchor, which the reference bank reproduces verbatim (per golden-value arbitration, the normative fixture wins over the prose band). The band was written for the accented (downbeat) ride notes; the swung skip note is idiomatically lighter.
+- **Impact:** `styles/jazz/patterns/drums.yaml` (`jz_dr_2` skip notes 0.55, `jz_dr_4` 0.60). A future §5.2 pass should clarify the band applies to accented ride notes and that skip notes go lower, so a validator or reviewer does not false-alarm on the 0.55/0.60 values. No behavior change; the values are the golden.
+- **Doc amendment:** none applied — the §7.4 anchor is the binding data; §5.2's band is descriptive prose. Flagged for a future §5.2 clarification.
+- **Status:** open
+
 ### C-07: §3.3 retargeting — three under-specified points resolved (guide3-over-sus, guide7 fallback scope, <60-tick drop on all retrigger segments)
 - **Date / session:** 2026-07-16, session 06 (Phase 5, chunk 1), T3 foundations
 - **What deviated:** PHASE_5 §3.3's degree table + `onChordChange` prose left three points under-specified; `parts/retarget.py` resolves them as: **(a)** `guide3` over a **suspended** chord (which has no guide third) → the `third` slot (the suspension tone); §3.3's `guide3` fallback cell is "—", implicitly assuming a third always exists. **(b)** `guide7` fallback broadened from the literal "triads → the fifth" to **any seventh-less quality** (including maj6/min6) → the fifth; note the intended asymmetry that `seventh` on maj6/min6 falls back to the 6th while `guide7` on maj6/min6 falls back to the fifth (guide tones are a distinct concept). **(c)** the `retrigger` "remainders < 60 ticks are dropped" rule is applied to **every** split segment, not only the trailing remainder — so a note < 120 ticks straddling a chord boundary can split into two sub-60 pieces and emit **zero** notes (the whole note vanishes).

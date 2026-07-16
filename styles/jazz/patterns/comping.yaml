@@ -1,1 +1,98 @@
-patterns: []
+# jazz comping pattern bank (PHASE_5 §7.4). degree: chord rhythm cells (footballs
+# → Charleston family → anticipated pushes / Red Garland → dotted-quarter cross);
+# voicing pass (§6.4) supplies shell/rootless pitches. retarget is the bank-level
+# §7 default {52, 67, retrigger}; voicing.classes maps each rung (PT7).
+voicing:
+  classes:
+    1: [shell2, shell3]
+    2: [shell2, shell3]
+    3: [rootless_a, rootless_b]
+    4: [rootless_a, rootless_b]
+retarget: { registerLow: 52, registerHigh: 67, onChordChange: retrigger }
+patterns:
+  # rung 1 — football
+  - id: jz_cp_1
+    role: comping
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.50 }
+
+  # rung 2 — Charleston (GOLDEN ANCHOR)
+  - id: jz_cp_2a
+    role: comping
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 700, degree: chord, velocity: 0.62 }
+      - { pos: 720, dur: 400, degree: chord, velocity: 0.55 }
+
+  # rung 2 — reverse Charleston
+  - id: jz_cp_2b
+    role: comping
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 240, dur: 400, degree: chord, velocity: 0.58 }
+      - { pos: 960, dur: 700, degree: chord, velocity: 0.60 }
+
+  # rung 3 — Charleston + anticipated 4& push
+  - id: jz_cp_3a
+    role: comping
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 660, degree: chord, velocity: 0.62 }
+      - { pos: 720, dur: 300, degree: chord, velocity: 0.56 }
+      - { pos: 1680, dur: 260, degree: chord, velocity: 0.60, push: true }
+
+  # rung 3 — Red Garland 2&/4&
+  - id: jz_cp_3b
+    role: comping
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 720, dur: 240, degree: chord, velocity: 0.58 }
+      - { pos: 1680, dur: 240, degree: chord, velocity: 0.58, push: true }
+
+  # rung 4 — dotted-quarter cross-rhythm
+  - id: jz_cp_4
+    role: comping
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 600, degree: chord, velocity: 0.66 }
+      - { pos: 720, dur: 600, degree: chord, velocity: 0.60 }
+      - { pos: 1440, dur: 400, degree: chord, velocity: 0.62 }
+
+  # intro — football
+  - id: jz_cp_i
+    role: comping
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.48 }
+
+  # ending — football
+  - id: jz_cp_e
+    role: comping
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.55 }
