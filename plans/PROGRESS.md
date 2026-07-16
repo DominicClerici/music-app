@@ -6,7 +6,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 5, Chunk 3 — generators / walker / voicing** (`@PROMPT.md - Phase 5`, resume mid-phase). **Chunks 1+2 are COMPLETE** (sessions 06+07; DoD 1/2/3/4 PROVEN; 816 tests, four gates green; both chunks whole-review clean). No approved plan for Chunk 3 yet — the orchestrator writes `plans/sessions/SESSION_08.md` and gets user approval before dispatching. Read `PHASE_5.md` §6 (part generators — §6.1 drums, §6.2 pattern-bass, §6.3 the walker, §6.4 comping, §6.5 pads) + §3.3 (retargeting, built) + §9.2/§9.3 (walker + voicing goldens) in full; resolves **[C-04]** (voicing API). Proves **DoD 5** (walker §9.2), **DoD 6** (voicing §9.3), **DoD 7** (generators end-to-end).
+> **Next:** **Phase 5, Chunk 3 — generators / walker / voicing** (`@PROMPT.md - Phase 5`, resume mid-phase). **Chunks 1+2 are COMPLETE** (sessions 06+07; DoD 1/2/3/4 PROVEN; 816 tests, four gates green; both chunks whole-review clean). **Session-08 plan WRITTEN — `plans/sessions/SESSION_08.md` — AWAITING USER APPROVAL; no implementation agent dispatched.** Plan: T1 voicing pass (`parts/voicing.py`, §6.4/§6.5, resolves C-04) ‖ T2 walker (`parts/walker.py`, §6.3), then T3 generators dispatcher (`parts/generators.py`, §6/§8.2), then T4 normative goldens (§9.2/§9.3/§9.4 + end-to-end, DoD 5/6/7), then T5 whole-chunk review + close-out. Read `PHASE_5.md` §6 + §3.3 + §9.2/§9.3/§9.4 in full; resolves **[C-04]** (voicing API). Proves **DoD 5** (walker §9.2), **DoD 6** (voicing §9.3), **DoD 7** (generators end-to-end). **Golden-value arbitration is the live risk** (§9.2 walker draw/note counts, §9.3 voicing MIDI are the docs' most intricate computed samples — faithful impl, escalate on divergence, never tune).
 >
 > **What Chunk 2 hands Chunk 3 (all committed, tested — commits `d52a00e`/`71ac7a7`/`cbfaa19`/`eecb17b`):**
 >  - **`arrange(plan, form, pack, rng) -> ArrangementPlan`** (`trackgen.arrangement`) — one `ArrangementEntry` per `(section, role)`: `.active`, `.intensity` (the 1–4 rung), `.density_budget`, `.register` (the role's arrangement lane, already registerBias-shifted + ≤71-clamped). Chunk-3 generators consume: `.register` as the retarget/voicing lane (pass to `retarget_event`'s `lane` and as the voicing-candidate prune lane / `optimal_voicing_path` anchor `lane.high−6`), `.density_budget` for §3.5 gating + the walker's embellishment rate (§6.3), `.intensity` for walker feel-by-intensity + the voicing class per rung. `arrange` consumes **zero** draws (the `arrangement` stream stays reserved).
@@ -86,6 +86,23 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 - **Chunk 2** — `arrange()` (§4) + pattern-selection machinery (§3.2). DoD 3, 4.
 - **Chunk 3** — drums / pattern-bass / walking-bass engine (§6.3) / comping+pads voicing passes (§6.4/§6.5); resolves C-04. DoD 5, 6, 7.
 - **Chunk 4** — orchestrator (§8.1) + Serializer (§8.3) + stub timbres (§8.4) + drum→track map (§8.2) + both milestone fixtures + whole-document goldens + determinism shims + whole-phase review + full §13 DoD. DoD 8, 9, 10.
+
+#### Phase 5 — Chunk 3 — session 08 (`plans/sessions/SESSION_08.md`)
+
+**Planning — plan written, AWAITING USER APPROVAL; no task dispatched.** Task list
+(T1 ‖ T2, then T3, then T4, then T5):
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Voicing pass `parts/voicing.py` (§6.4/§6.5 — full-timeline Viterbi per voiced role, classes-per-rung, comping/pads weights, `lane.high−6` anchor, cardinality-pad) + mechanism units. **Resolves C-04.** | opus | not started | — |
+| T2 | Walking-bass engine `parts/walker.py` (§6.3 — two/four-feel, per-bar sub-streams, nearest, final-bar/two-chord rules, beat3-before-beat2, approach types, decay, embellishment, draw-iff-≥2) + mechanism/draw-order units | opus | not started | — |
+| T3 | Generators dispatcher `parts/generators.py` (§6 shared loop + §6.1 drums/§8.2 voice→track map + §6.2 pattern-bass + §6.4/§6.5 comping/pads + bass-mode dispatch) + generator units | opus | not started | — |
+| T4 | Normative goldens: §9.2 walker (DoD 5) + §9.3 voicing (DoD 6) + §9.4 excerpts / end-to-end / determinism (DoD 7), independent transcriber over the real seed-`1ps9wxb` pipeline | opus | not started | — |
+| T5 | Whole-chunk 4-lens review + DoD 5/6/7 checklist + C-04 resolution + close-out | orchestrator | not started | — |
+
+Targets **DoD 5** (§13.5 walker), **DoD 6** (§13.6 voicing), **DoD 7** (§13.7 generators
+end-to-end). Resolves **C-04** (voicing API). Out of scope: orchestrator/Serializer/timbres/
+milestone/whole-document goldens (Chunk 4, DoD 8/9/10).
 
 #### Phase 5 — Chunk 2 — session 07 (`plans/sessions/SESSION_07.md`)
 
