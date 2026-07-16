@@ -328,18 +328,26 @@ class DrumsBank(PackModel):
 
 class BassBank(PackModel):
     """§5.3 `bass.yaml` — top-level `mode` + optional `walking:` block. The
-    `mode`/`walking` cross-check and mode-presence (PT6) are loader-level."""
+    `mode`/`walking` cross-check and mode-presence (PT6) are loader-level.
+
+    `retarget` is the §7 bank-level default the loader injects into every entry
+    that omits its own (entries may override); it is not consumed here."""
 
     mode: Literal["patterns", "walking"] | None = None
     walking: WalkingConfig | None = None
+    retarget: Retarget | None = None
     patterns: list[PatternEnvelope] = Field(default_factory=list)
 
 
 class VoicedBank(PackModel):
     """§5.4 `comping.yaml` / `pads.yaml` — a `voicing:` block plus the envelope
-    list. Voicing presence (PT7) is loader-level (needs the Phase-5 gate)."""
+    list. Voicing presence (PT7) is loader-level (needs the Phase-5 gate).
+
+    `retarget` is the §7 bank-level default the loader injects into every entry
+    that omits its own (entries may override); it is not consumed here."""
 
     voicing: VoicingConfig | None = None
+    retarget: Retarget | None = None
     patterns: list[PatternEnvelope] = Field(default_factory=list)
 
 

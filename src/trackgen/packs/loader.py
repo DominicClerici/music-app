@@ -190,6 +190,27 @@ def _check_progressions_cross_file(
                     )
 
 
+def _apply_bank_retarget_default(raw: dict[str, Any]) -> dict[str, Any]:
+    """PHASE_5 §7 — fill each pattern entry's missing `retarget` from the
+    bank-level `retarget:` default. Runs on raw entry dicts BEFORE
+    `PatternEnvelope.model_validate`, so PT9 sees a present retarget on entries
+    that omit their own; an entry authoring its own `retarget` keeps it
+    (override). Only pitched-role banks (BassBank/VoicedBank) declare a
+    `retarget` field, so drums never reach this — a drums-bank `retarget:` is
+    left in place for `extra="forbid"` to reject."""
+    default = raw.get("retarget")
+    patterns = raw.get("patterns")
+    if default is None or not isinstance(patterns, list):
+        return raw
+    filled = [
+        {**entry, "retarget": default}
+        if isinstance(entry, dict) and entry.get("retarget") is None
+        else entry
+        for entry in patterns
+    ]
+    return {**raw, "patterns": filled}
+
+
 def _load_bank[BankT: BaseModel](bank_path: Path, model: type[BankT]) -> BankT:
     """Read and validate one per-role pattern-bank file into `model`.
 
@@ -204,6 +225,8 @@ def _load_bank[BankT: BaseModel](bank_path: Path, model: type[BankT]) -> BankT:
         raise PackLoadError(f"{bank_path}: pattern bank must be a mapping")
     if "patterns" in raw and raw["patterns"] is None:
         raw = {**raw, "patterns": []}
+    if "retarget" in model.model_fields:
+        raw = _apply_bank_retarget_default(raw)
     try:
         return model.model_validate(raw)
     except ValidationError as exc:

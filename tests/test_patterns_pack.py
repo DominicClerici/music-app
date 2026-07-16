@@ -430,3 +430,66 @@ def test_phase5_pack_loads_clean_with_all_new_fields(tmp_path: Path) -> None:
     assert comp_events[1].degree == "sixth"  # type: ignore[union-attr]
     assert comp_events[1].min_density == 0.6
     assert comp_events[2].push is True  # type: ignore[union-attr]
+
+
+# --- PHASE_5 §7 bank-level `retarget` default --------------------------------
+
+
+def test_bank_level_retarget_default_fills_entries(tmp_path: Path) -> None:
+    # §7 authors one `retarget:` per pitched-role file; entries omit their own.
+    banks = _valid_banks()
+    for role in ("bass", "comping", "pads"):
+        for entry in banks[role]["patterns"]:
+            entry.pop("retarget", None)
+        banks[role]["retarget"] = _RETARGET[role]
+    _write_pack(tmp_path, banks)
+    pack = load_pack(tmp_path)
+
+    for role in ("bass", "comping", "pads"):
+        want = _RETARGET[role]
+        for env in pack.patterns[role]:
+            assert env.retarget is not None
+            assert env.retarget.register_low == want["registerLow"]
+            assert env.retarget.register_high == want["registerHigh"]
+            assert env.retarget.on_chord_change == want["onChordChange"]
+
+
+def test_bank_level_retarget_entry_override_wins(tmp_path: Path) -> None:
+    banks = _valid_banks()
+    for entry in banks["bass"]["patterns"]:
+        entry.pop("retarget", None)
+    banks["bass"]["retarget"] = _RETARGET["bass"]
+    override = {"registerLow": 30, "registerHigh": 50, "onChordChange": "hold"}
+    banks["bass"]["patterns"][0]["retarget"] = override
+    _write_pack(tmp_path, banks)
+    pack = load_pack(tmp_path)
+
+    first = pack.patterns["bass"][0]
+    assert first.retarget is not None
+    assert first.retarget.register_low == 30
+    assert first.retarget.register_high == 50
+    assert first.retarget.on_chord_change == "hold"
+
+    # a sibling entry that omitted its own still inherits the bank default.
+    sibling = pack.patterns["bass"][1]
+    assert sibling.retarget is not None
+    assert sibling.retarget.register_low == 28
+
+
+def test_pitched_entry_without_any_retarget_still_fails_pt9(tmp_path: Path) -> None:
+    # No bank-level default and no per-entry retarget -> PT9 still fires.
+    banks = _valid_banks()
+    banks["bass"]["patterns"][0].pop("retarget", None)
+    _write_pack(tmp_path, banks)
+    with pytest.raises(PackLoadError, match="PT9"):
+        load_pack(tmp_path)
+
+
+def test_drums_bank_rejects_top_level_retarget(tmp_path: Path) -> None:
+    # DrumsBank declares no `retarget` field; a bank-level one is not injected
+    # and `extra="forbid"` rejects it (drums are retarget-exempt, §5.2).
+    banks = _valid_banks()
+    banks["drums"]["retarget"] = _RETARGET["bass"]
+    _write_pack(tmp_path, banks)
+    with pytest.raises(PackLoadError, match="Extra inputs"):
+        load_pack(tmp_path)
