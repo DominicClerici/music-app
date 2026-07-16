@@ -1,0 +1,16 @@
+# PHASE_5 §4.3 register lanes (normative).
+#
+# Engine-owned data (not a style pack): the per-role MIDI register lane each
+# arrangement entry's `register` is drawn from. `drums` spans the full range
+# (0-127) because its trigger pitches are timbre parameters, not harmonic
+# placement (PHASE_1 D14); it is never shifted. `comping`/`pads` are shifted by
+# `registerBias` and capped at the C-06 ceiling (71) in `arrange()`.
+#
+# Each lane is `[low, high]` with 0 <= low < high <= 127 and high - low >= 12
+# (the §3.3/D6 folding invariant: retarget always has >= 12 semitones to fold
+# into). Validated once at import (mirroring `intensity.yaml`).
+lanes:
+  drums: [0, 127]
+  bass: [28, 55]
+  comping: [48, 71]
+  pads: [43, 71]

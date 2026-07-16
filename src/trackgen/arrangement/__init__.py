@@ -1,9 +1,10 @@
 """The Arrangement stage (PHASE_5 §3.1, §4).
 
-Chunk 1 lands only the engine-owned intensity threshold table (§3.1); the
-`arrange()` planner (§4) is Chunk 2.
+`intensity()` is the §3.1 energy->rung ladder (Chunk 1); `arrange()` is the §4
+planner (Chunk 2).
 """
 
+from trackgen.arrangement.arrange import arrange
 from trackgen.arrangement.intensity import intensity
 
-__all__ = ["intensity"]
+__all__ = ["arrange", "intensity"]
