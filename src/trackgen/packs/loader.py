@@ -11,20 +11,26 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from trackgen.packs.models import (
+    BassBank,
+    DrumsBank,
     FormsConfig,
     InterpreterConfig,
     Manifest,
     PatternEnvelope,
     ProgressionsConfig,
     StylePack,
+    VoicedBank,
+    VoicingConfig,
     _is_degree1_rooted,
 )
+from trackgen.schema.document import Role
 from trackgen.theory import chord_function
 
-PATTERN_ROLES = ("drums", "bass", "comping", "pads")
+PATTERN_ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
+_PATTERN_RUNGS = (1, 2, 3, 4)
 
 STYLES_ROOT = Path(__file__).resolve().parents[3] / "styles"
 
@@ -184,6 +190,145 @@ def _check_progressions_cross_file(
                     )
 
 
+def _load_bank[BankT: BaseModel](bank_path: Path, model: type[BankT]) -> BankT:
+    """Read and validate one per-role pattern-bank file into `model`.
+
+    A `None` or absent `patterns:` key normalizes to an empty list, so an
+    unauthored bank stays structurally loadable (Phase 1 behavior). Entry-level
+    PT1/PT2/PT3/PT8/PT9 and the bank-block PT4/PT6/PT7 checks fire as pydantic
+    validators inside `model_validate`."""
+    raw = _read_yaml(bank_path)
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise PackLoadError(f"{bank_path}: pattern bank must be a mapping")
+    if "patterns" in raw and raw["patterns"] is None:
+        raw = {**raw, "patterns": []}
+    try:
+        return model.model_validate(raw)
+    except ValidationError as exc:
+        raise PackLoadError(f"{bank_path}: invalid pattern bank\n{exc}") from exc
+
+
+def _check_completeness(
+    pack_dir: Path, role: str, entries: list[PatternEnvelope]
+) -> None:
+    """PT5 (§3.2) for one role's bank: an ungated `main` at each rung 1–4 plus
+    an ungated `intro` and `ending` — so pattern selection can never come up
+    empty (the F13/P6 pattern applied to rhythm)."""
+    bank_path = pack_dir / "patterns" / f"{role}.yaml"
+    for rung in _PATTERN_RUNGS:
+        if not any(
+            env.kind == "main" and env.energy_level == rung and not env.is_gated
+            for env in entries
+        ):
+            raise PackLoadError(
+                f"{bank_path}: role {role!r} has no ungated 'main' pattern at "
+                f"rung {rung} (PT5)"
+            )
+    for kind in ("intro", "ending"):
+        if not any(env.kind == kind and not env.is_gated for env in entries):
+            raise PackLoadError(
+                f"{bank_path}: role {role!r} has no ungated {kind!r} pattern (PT5)"
+            )
+
+
+def _check_pattern_banks(
+    pack_dir: Path,
+    drums: DrumsBank,
+    bass: BassBank,
+    comping: VoicedBank,
+    pads: VoicedBank,
+) -> None:
+    """Loader-level pattern-bank rules that need the whole pack: PT1 (role
+    matches file + ids unique per pack) always; and — for Phase-5-authored packs
+    (those declaring `layeringOrder`/`mode`/`voicing`) — PT10 (layering order),
+    PT6 (bass mode/walking cross-check), PT7 (voicing presence), and PT5
+    (completeness). Legacy packs carrying only the Phase-1 flat envelope (no
+    Phase-5 markers — `_stub` and the pre-T2 reference banks) skip the Phase-5
+    bank rules, so they keep loading until their banks are authored."""
+    role_patterns: dict[str, list[PatternEnvelope]] = {
+        "drums": drums.patterns,
+        "bass": bass.patterns,
+        "comping": comping.patterns,
+        "pads": pads.patterns,
+    }
+
+    # PT1: `role` matches the file it was authored in.
+    for role, entries in role_patterns.items():
+        for env in entries:
+            if env.role != role:
+                raise PackLoadError(
+                    f"{pack_dir / 'patterns' / f'{role}.yaml'}: pattern "
+                    f"{env.id!r} declares role {env.role!r} but lives in the "
+                    f"{role!r} bank (PT1)"
+                )
+
+    # PT1: pattern ids unique across the whole pack.
+    all_ids = [env.id for entries in role_patterns.values() for env in entries]
+    dupes = sorted({i for i in all_ids if all_ids.count(i) > 1})
+    if dupes:
+        raise PackLoadError(
+            f"{pack_dir / 'patterns'}: duplicate pattern id(s) across the pack: "
+            f"{dupes} (PT1)"
+        )
+
+    phase5 = (
+        drums.layering_order is not None
+        or bass.mode is not None
+        or bass.walking is not None
+        or comping.voicing is not None
+        or pads.voicing is not None
+    )
+    if not phase5:
+        return
+
+    # PT10: layeringOrder present once, a permutation of the four roles.
+    if drums.layering_order is None:
+        raise PackLoadError(
+            f"{pack_dir / 'patterns' / 'drums.yaml'}: layeringOrder is required "
+            f"once per pack (PT10)"
+        )
+    if sorted(drums.layering_order) != sorted(PATTERN_ROLES):
+        raise PackLoadError(
+            f"{pack_dir / 'patterns' / 'drums.yaml'}: layeringOrder "
+            f"{list(drums.layering_order)} must be a permutation of "
+            f"{list(PATTERN_ROLES)} (PT10)"
+        )
+
+    # PT6: bass mode required; walking block present iff mode == walking.
+    if bass.mode is None:
+        raise PackLoadError(
+            f"{pack_dir / 'patterns' / 'bass.yaml'}: mode is required "
+            f"('patterns' | 'walking') (PT6)"
+        )
+    if bass.mode == "walking" and bass.walking is None:
+        raise PackLoadError(
+            f"{pack_dir / 'patterns' / 'bass.yaml'}: mode 'walking' requires a "
+            f"walking block (PT6)"
+        )
+    if bass.mode != "walking" and bass.walking is not None:
+        raise PackLoadError(
+            f"{pack_dir / 'patterns' / 'bass.yaml'}: walking block is only "
+            f"allowed with mode 'walking' (PT6)"
+        )
+
+    # PT7: comping/pads must declare a voicing block.
+    for role, voiced in (("comping", comping), ("pads", pads)):
+        if voiced.voicing is None:
+            raise PackLoadError(
+                f"{pack_dir / 'patterns' / f'{role}.yaml'}: a voicing block is "
+                f"required (PT7)"
+            )
+
+    # PT5: completeness per role with a pattern bank; `mode: walking` bass exempt.
+    completeness_roles = ["drums", "comping", "pads"]
+    if bass.mode == "patterns":
+        completeness_roles.append("bass")
+    for role in completeness_roles:
+        _check_completeness(pack_dir, role, role_patterns[role])
+
+
 def load_pack(path: str | Path) -> StylePack:
     """Load and validate a style pack directory into a `StylePack`."""
     pack_dir = Path(path)
@@ -197,25 +342,24 @@ def load_pack(path: str | Path) -> StylePack:
     except ValidationError as exc:
         raise PackLoadError(f"{manifest_path}: invalid manifest\n{exc}") from exc
 
-    patterns: dict[str, list[PatternEnvelope]] = {}
-    for role in PATTERN_ROLES:
-        bank_path = pack_dir / "patterns" / f"{role}.yaml"
-        raw_bank = _read_yaml(bank_path)
-        if raw_bank is None:
-            raw_bank = {}
-        if not isinstance(raw_bank, dict):
-            raise PackLoadError(f"{bank_path}: pattern bank must be a mapping")
-        raw_entries = raw_bank.get("patterns")
-        if raw_entries is None:
-            raw_entries = []
-        if not isinstance(raw_entries, list):
-            raise PackLoadError(f"{bank_path}: 'patterns' must be a list")
-        try:
-            patterns[role] = [
-                PatternEnvelope.model_validate(entry) for entry in raw_entries
-            ]
-        except ValidationError as exc:
-            raise PackLoadError(f"{bank_path}: invalid pattern bank\n{exc}") from exc
+    patterns_dir = pack_dir / "patterns"
+    drums_bank = _load_bank(patterns_dir / "drums.yaml", DrumsBank)
+    bass_bank = _load_bank(patterns_dir / "bass.yaml", BassBank)
+    comping_bank = _load_bank(patterns_dir / "comping.yaml", VoicedBank)
+    pads_bank = _load_bank(patterns_dir / "pads.yaml", VoicedBank)
+    _check_pattern_banks(pack_dir, drums_bank, bass_bank, comping_bank, pads_bank)
+
+    patterns: dict[str, list[PatternEnvelope]] = {
+        "drums": drums_bank.patterns,
+        "bass": bass_bank.patterns,
+        "comping": comping_bank.patterns,
+        "pads": pads_bank.patterns,
+    }
+    voicing: dict[Role, VoicingConfig] = {}
+    if comping_bank.voicing is not None:
+        voicing["comping"] = comping_bank.voicing
+    if pads_bank.voicing is not None:
+        voicing["pads"] = pads_bank.voicing
 
     interpreter: InterpreterConfig | None = None
     interpreter_path = pack_dir / "interpreter.yaml"
@@ -265,6 +409,10 @@ def load_pack(path: str | Path) -> StylePack:
     return StylePack(
         manifest=manifest,
         patterns=patterns,
+        layering_order=drums_bank.layering_order,
+        bass_mode=bass_bank.mode,
+        walking=bass_bank.walking,
+        voicing=voicing,
         interpreter=interpreter,
         forms=forms,
         progressions=progressions,

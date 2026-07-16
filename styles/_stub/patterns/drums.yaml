@@ -13,7 +13,6 @@ patterns:
       - { pos: 480, voice: hat_closed, velocity: 0.5 }
       - { pos: 960, voice: snare, velocity: 0.8 }
       - { pos: 1440, voice: hat_closed, velocity: 0.5 }
-    retarget: { registerLow: 0, registerHigh: 0, onChordChange: hold }
 
   - id: drums_fill_1
     role: drums
@@ -25,4 +24,3 @@ patterns:
     events:
       - { pos: 1440, voice: tom_high, velocity: 0.7 }
       - { pos: 1680, voice: crash, velocity: 0.9 }
-    retarget: { registerLow: 0, registerHigh: 0, onChordChange: hold }

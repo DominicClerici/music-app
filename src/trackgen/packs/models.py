@@ -1,13 +1,13 @@
-"""Style-pack structure (PHASE_1 §6).
+"""Style-pack structure (PHASE_1 §6, PHASE_5 §5).
 
 Frozen pydantic v2 models for the pack manifest (§6.1), the shared pattern
-envelope (§6.2), and the event primitives (§6.3). Bank-specific fields owned
-by later phases (progressions/forms/timbres/interpreter schemas, and any
-role-specific envelope extensions) are deliberately NOT modeled here.
+envelope (§6.2), the event primitives (§6.3), and the per-role pattern-bank
+shapes PHASE_5 §5 adds (`layeringOrder`, bass `mode`/`walking`, comping/pads
+`voicing.classes`).
 
-`degree` is restricted to the §6.3 v1 core vocabulary only: `root, third,
-fifth, seventh, guide3, guide7, tension, approach`. Phase 5's later
-extensions (`sixth`, `chord`, `push`, `minDensity`) are out of scope.
+`degree` covers the §6.3 v1 core vocabulary plus PHASE_5 §3.3's additive
+extensions `sixth` (blues boogie cell) and `chord` (comping/pads voicing hits).
+Events also gain PHASE_5's `push` (pitched only) and `minDensity` fields.
 """
 
 from typing import Any, Literal
@@ -21,12 +21,33 @@ Degree = Literal[
     "root",
     "third",
     "fifth",
+    "sixth",
     "seventh",
     "guide3",
     "guide7",
     "tension",
     "approach",
+    "chord",
 ]
+
+# PHASE_5 §5.4/§6.5 — the nine committed voicing-class names (PHASE_4 §8.4 ∪
+# {`fifths`}), the exact set `theory.voicing` implements. Single source of
+# truth for PT7's allowed `voicing.classes` names.
+VOICING_CLASSES: tuple[str, ...] = (
+    "shell2",
+    "shell3",
+    "rootless_a",
+    "rootless_b",
+    "drop2",
+    "triad_close",
+    "triad_open",
+    "quartal",
+    "fifths",
+)
+
+# PHASE_1: PPQ 480, 4/4 — one bar is 1920 ticks. v1 packs are 4/4 only, so
+# PT1's "whole number of bars" is a multiple of this constant.
+_TICKS_PER_BAR = 1920
 
 DrumVoice = Literal[
     "kick",
@@ -88,21 +109,34 @@ class Manifest(PackModel):
 
 
 class PitchedEvent(PackModel):
-    """§6.3 pitched-role event: rhythm + chord-degree, never a literal pitch."""
+    """§6.3 pitched-role event: rhythm + chord-degree, never a literal pitch.
+
+    PHASE_5 additions: `push` (anticipation, §3.3), `minDensity` (density gate,
+    §3.5), and `octave` is now optional/defaulted — §7 `degree: chord`
+    comping/pads events author no octave (placement/anchor rules do not apply
+    to voiced hits, §3.3)."""
 
     pos: int = Field(ge=0)
     dur: int = Field(ge=1)
     degree: Degree
-    octave: int
+    octave: int = 0
     velocity: float = Field(gt=0, le=1)
+    push: bool = False
+    min_density: float | None = Field(default=None, ge=0, le=1)  # PT8
 
 
 class DrumEvent(PackModel):
-    """§6.3 drum event: voice + velocity, no harmonic content."""
+    """§6.3 drum event: voice + velocity, no harmonic content.
+
+    PHASE_5 additions: `dur` (optional, defaults per voice at render — §8.2)
+    and `minDensity` (§3.5). Carries no `degree`/`push`/`octave` — PT3's drum/
+    pitched split is enforced structurally by `extra="forbid"`."""
 
     pos: int = Field(ge=0)
     voice: DrumVoice
     velocity: float = Field(gt=0, le=1)
+    dur: int | None = Field(default=None, ge=1)  # PT2 (dur >= 1 where present)
+    min_density: float | None = Field(default=None, ge=0, le=1)  # PT8
 
 
 class Retarget(PackModel):
@@ -118,9 +152,27 @@ class Eligibility(PackModel):
 
     tempo_bpm: tuple[int, int] | None = None
 
+    @model_validator(mode="after")
+    def _check_tempo_band(self) -> "Eligibility":
+        if self.tempo_bpm is not None:
+            lo, hi = self.tempo_bpm
+            if lo <= 0 or lo > hi:
+                raise ValueError(
+                    f"eligibility.tempoBpm must satisfy 0 < min <= max, "
+                    f"got {self.tempo_bpm} (PT4)"
+                )
+        return self
+
 
 class PatternEnvelope(PackModel):
-    """§6.2 shared pattern envelope, carried by every entry in every bank."""
+    """§6.2 shared pattern envelope, carried by every entry in every bank.
+
+    `retarget` is now optional: pitched-role patterns (bass/comping/pads) must
+    carry it (PT9); drum patterns must not (§5.2). The `_check_envelope`
+    validator enforces PT1 (lengthTicks whole bars, `fill` = 1 bar), PT2 (event
+    `pos` in-range; authored order is authoritative, not required to be sorted),
+    PT3 (drum vs pitched event split by role), and PT9 (retarget presence +
+    span)."""
 
     id: str
     role: Role
@@ -130,7 +182,165 @@ class PatternEnvelope(PackModel):
     weight: int = Field(ge=1)
     eligibility: Eligibility = Field(default_factory=Eligibility)
     events: list[PitchedEvent | DrumEvent]
-    retarget: Retarget
+    retarget: Retarget | None = None
+
+    @property
+    def is_gated(self) -> bool:
+        """True iff an `eligibility.tempoBpm` gate is authored (PT5 reads this:
+        completeness requires *ungated* mains/intro/ending)."""
+        return self.eligibility.tempo_bpm is not None
+
+    @model_validator(mode="after")
+    def _check_envelope(self) -> "PatternEnvelope":
+        # PT1: lengthTicks a positive whole number of bars; fill = exactly 1 bar.
+        if self.length_ticks % _TICKS_PER_BAR != 0:
+            raise ValueError(
+                f"pattern {self.id!r}: lengthTicks ({self.length_ticks}) must be "
+                f"a positive whole number of bars (multiple of {_TICKS_PER_BAR}) "
+                f"(PT1)"
+            )
+        if self.kind == "fill" and self.length_ticks != _TICKS_PER_BAR:
+            raise ValueError(
+                f"pattern {self.id!r}: kind 'fill' must be exactly 1 bar "
+                f"({_TICKS_PER_BAR} ticks), got {self.length_ticks} (PT1)"
+            )
+
+        # PT3: role dictates event type — drums carry `voice` events, pitched
+        # roles carry `degree` events. (Field vocabulary itself is structural
+        # via `extra="forbid"`; this pins the drum/pitched split by role.)
+        is_drums = self.role == "drums"
+        for event in self.events:
+            if is_drums and not isinstance(event, DrumEvent):
+                raise ValueError(
+                    f"pattern {self.id!r}: role 'drums' must carry drum (voice) "
+                    f"events, not a pitched degree event (PT3)"
+                )
+            if not is_drums and not isinstance(event, PitchedEvent):
+                raise ValueError(
+                    f"pattern {self.id!r}: pitched role {self.role!r} must carry "
+                    f"degree events, not a drum (voice) event (PT3)"
+                )
+
+        # PT2: pos in [0, lengthTicks). Authored order is authoritative, not
+        # required to be sorted — §7 reference patterns are authored
+        # voice-grouped (pos decreases across voices) and generators sort at
+        # emit time (§6), so authored pos values need not be non-decreasing.
+        for event in self.events:
+            if event.pos >= self.length_ticks:
+                raise ValueError(
+                    f"pattern {self.id!r}: event pos ({event.pos}) must be "
+                    f"< lengthTicks ({self.length_ticks}) (PT2)"
+                )
+
+        # PT9: retarget present with span >= 12 for pitched roles; drums exempt
+        # and must carry no retarget (§5.2).
+        if is_drums:
+            if self.retarget is not None:
+                raise ValueError(
+                    f"pattern {self.id!r}: drum patterns carry no retarget block "
+                    f"(§5.2, PT9)"
+                )
+        else:
+            if self.retarget is None:
+                raise ValueError(
+                    f"pattern {self.id!r}: pitched role {self.role!r} requires a "
+                    f"retarget block (PT9)"
+                )
+            low, high = self.retarget.register_low, self.retarget.register_high
+            if low >= high or high - low < 12:
+                raise ValueError(
+                    f"pattern {self.id!r}: retarget requires registerLow < "
+                    f"registerHigh with span >= 12, got [{low}, {high}] (PT9)"
+                )
+
+        return self
+
+
+class WalkingConfig(PackModel):
+    """§5.3 bass `walking:` block — the walker's per-rung feel + draw weights.
+
+    Present iff `bass.yaml` declares `mode: walking` (the cross-check is
+    loader-level, PT6). PT6 model rules: `feelByIntensity` covers rungs 1–4 with
+    values `two|four`; both weight maps are non-empty with integer weights ≥ 1."""
+
+    feel_by_intensity: dict[int, Literal["two", "four"]]
+    approach_weights: dict[str, int]
+    beat1_repeat_weights: dict[str, int]
+
+    @model_validator(mode="after")
+    def _check(self) -> "WalkingConfig":
+        if set(self.feel_by_intensity) != {1, 2, 3, 4}:
+            raise ValueError(
+                f"walking.feelByIntensity must cover rungs 1-4, got "
+                f"{sorted(self.feel_by_intensity)} (PT6)"
+            )
+        for name, weights in (
+            ("approachWeights", self.approach_weights),
+            ("beat1RepeatWeights", self.beat1_repeat_weights),
+        ):
+            if not weights:
+                raise ValueError(f"walking.{name} must be non-empty (PT6)")
+            for key, weight in weights.items():
+                if weight < 1:
+                    raise ValueError(
+                        f"walking.{name}[{key!r}] weight ({weight}) must be >= 1 (PT6)"
+                    )
+        return self
+
+
+class VoicingConfig(PackModel):
+    """§5.4 comping/pads `voicing:` block — per-rung candidate voicing classes.
+
+    PT7: `classes` covers rungs 1–4, each a non-empty ordered list of class
+    names from `VOICING_CLASSES`."""
+
+    classes: dict[int, tuple[str, ...]]
+
+    @model_validator(mode="after")
+    def _check(self) -> "VoicingConfig":
+        if set(self.classes) != {1, 2, 3, 4}:
+            raise ValueError(
+                f"voicing.classes must cover rungs 1-4, got "
+                f"{sorted(self.classes)} (PT7)"
+            )
+        for rung, names in self.classes.items():
+            if not names:
+                raise ValueError(
+                    f"voicing.classes[{rung}] must be a non-empty list (PT7)"
+                )
+            unknown = [name for name in names if name not in VOICING_CLASSES]
+            if unknown:
+                raise ValueError(
+                    f"voicing.classes[{rung}] has unknown class name(s) "
+                    f"{unknown}; must be in {VOICING_CLASSES} (PT7)"
+                )
+        return self
+
+
+class DrumsBank(PackModel):
+    """§5.2 `drums.yaml` — envelope list carrying the pack-level `layeringOrder`
+    (§5.1). `layeringOrder` is validated (presence + permutation) at loader
+    level (PT10) since it is a pack-wide fact."""
+
+    layering_order: tuple[Role, ...] | None = None
+    patterns: list[PatternEnvelope] = Field(default_factory=list)
+
+
+class BassBank(PackModel):
+    """§5.3 `bass.yaml` — top-level `mode` + optional `walking:` block. The
+    `mode`/`walking` cross-check and mode-presence (PT6) are loader-level."""
+
+    mode: Literal["patterns", "walking"] | None = None
+    walking: WalkingConfig | None = None
+    patterns: list[PatternEnvelope] = Field(default_factory=list)
+
+
+class VoicedBank(PackModel):
+    """§5.4 `comping.yaml` / `pads.yaml` — a `voicing:` block plus the envelope
+    list. Voicing presence (PT7) is loader-level (needs the Phase-5 gate)."""
+
+    voicing: VoicingConfig | None = None
+    patterns: list[PatternEnvelope] = Field(default_factory=list)
 
 
 class ExpressionRanges(PackModel):
@@ -959,10 +1169,23 @@ class ProgressionsConfig(PackModel):
 
 
 class StylePack(PackModel):
-    """A loaded, validated style pack: manifest + per-role pattern banks."""
+    """A loaded, validated style pack: manifest + per-role pattern banks.
+
+    PHASE_5 exposes the per-role bank data later chunks consume:
+
+    - `patterns[role]` — the envelope list per role (unchanged accessor).
+    - `layering_order` — the §5.1 role permutation (`None` for legacy packs
+      without Phase-5 banks).
+    - `bass_mode` / `walking` — §5.3 bass mode + walker parameters.
+    - `voicing[role]` — §5.4 comping/pads `VoicingConfig` (rung → classes);
+      only populated for roles that declare a `voicing:` block."""
 
     manifest: Manifest
     patterns: dict[str, list[PatternEnvelope]]
+    layering_order: tuple[Role, ...] | None = None
+    bass_mode: Literal["patterns", "walking"] | None = None
+    walking: WalkingConfig | None = None
+    voicing: dict[Role, VoicingConfig] = Field(default_factory=dict)
     interpreter: InterpreterConfig | None = None
     forms: FormsConfig | None = None
     progressions: ProgressionsConfig | None = None

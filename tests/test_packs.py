@@ -89,9 +89,9 @@ def test_load_stub_pack() -> None:
                 "degree": "root",
                 "octave": 0,
                 "velocity": 0.8,
-                "push": True,
+                "swing": True,
             },
-        ),  # unknown field on event (later-phase key)
+        ),  # unknown field on event (extra="forbid")
     ],
     ids=[
         "missing-weight",

@@ -6,9 +6,13 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 5 — Rhythm-section part generators** (`@PROMPT.md - Phase 5`). **Phase 4 is COMPLETE** (sessions 04+05; all §14 DoD 1–10 PROVEN; 644 tests, four gates green). The Harmony stage `harmony(plan, form, progressions, rng) -> HarmonicPlan` (`src/trackgen/harmony/stage.py`) is built, whole-phase reviewed (4 lenses: correctness/contract/test-quality/code-quality — all clean/COMPLIANT/GOOD, zero confirmed bugs), and committed. Chunk-2 commits: T1 `09335d9` (schema §7), T2 `35dccba` (stage), T3+fix `abc447e` (goldens + turnaround-truncation fix), review-fixes `8f15843` (25-seed matrix + budget append-only).
+> **Now:** **Phase 5, Chunk 1 (loaders + foundations)** — plan written, **awaiting user approval** (`plans/sessions/SESSION_06.md`). No implementation task dispatched. On approval, dispatch T1 (schema+loader+PT1–11), then T2 ‖ T3 (reference banks ‖ foundations), then T4 (amendment check + whole-chunk review + close-out).
 >
-> **Phase 5 is the largest phase — split it further** (PROMPT §1; ROADMAP §4 seam): ~4 chunks — (1) loaders/foundations, (2) arrangement planner, (3) generators/walking-bass/voicing, (4) orchestrator + **Serializer** + first end-to-end milestone. Read `PHASE_5.md` in full + `PHASE_4.md` §8 (theory library it builds on) + `PHASE_1.md` §4.4/§4.5 (`ArrangementPlan`/`Phrase` cores).
+> **Phase 5 split into 4 chunks** (ROADMAP §4 seam; PHASE_5 §1): **(1) loaders + foundations** [this session] — pattern schemas §5 + loader PT1–11 + reference banks §7 + foundations §3.1/§3.3/§3.4/§3.5; DoD 1,2. **(2) arrangement + selection** — `arrange()` §4 + selection §3.2; DoD 3,4. **(3) generators/walker/voicing** — drums/bass/walker §6.3 + comping/pads voicing §6.4/§6.5 (resolves C-04); DoD 5,6,7. **(4) orchestrator + Serializer + milestone** — §8 wiring + both milestone fixtures + whole-doc goldens + whole-phase review; DoD 8,9,10 + final sign-off.
+>
+> **Chunk-1 task scoping (done, in SESSION_06.md):** existing contracts confirmed present — IR cores `ArrangementPlan`/`ArrangementEntry`/`Phrase`/`PhraseNote` already in `schema/ir.py` (Phase 1), pattern YAMLs are empty stubs (`patterns: []`), `pack.patterns[role]` read only by `test_packs.py`/`_stub` (small blast radius), voicing API + all 9 classes (incl. `fifths`) committed in `theory/voicing.py`, stage rng convention `harmony(plan, form, progressions, rng)` settled. Chunk 1 must extend `packs/models.py` (event vocab `sixth`/`chord`/`push`/`minDensity`, per-role banks: bass mode/walking, comping/pads voicing.classes, manifest layeringOrder) — all explicit since `PackModel` is `extra="forbid"`.
+>
+> **Phase 4 is COMPLETE** (sessions 04+05; all §14 DoD 1–10 PROVEN; 644 tests, four gates green). Harmony stage committed. Chunk-2 commits: T1 `09335d9`, T2 `35dccba`, T3+fix `abc447e`, review-fixes `8f15843`, close-out `8936425`. Read `PHASE_5.md` in full + `PHASE_4.md` §8 (theory it builds on) + `PHASE_1.md` §4.4/§4.5 (`ArrangementPlan`/`Phrase` cores).
 >
 > **What Phase 4 hands Phase 5 (all committed, tested):**
 >  - **`HarmonicPlan`** (`schema/ir.py`): `chords: [ChordEvent{start_tick, duration_ticks, section_id, chord: ChordSpec, scale: EventScale{root_pc,name}, function: "T"|"S"|"D"|"O", tags: [str]}]`, `keys: [KeyRegion{start_tick,tonic_pc,mode}]` (one region, tick 0, v1), `pool_selections: {str:str}`. Events tile `[0, total_bars×1920)` gaplessly; `scale` is the §7.4 hint Phase 5 uses for `tension`/`approach`/walking-bass passing tones; `function` drives comping/bass role logic.
@@ -38,7 +42,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 2 | Parameter & mood model | done | 02 | All 8 DoD items proven; 245 tests green. Caveat C-01 (PARAM_MALFORMED) |
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
-| 5 | Rhythm-section part generators | not started | — | Expect ~4 chunks: loaders/foundations → arrangement → generators/walker/voicing → orchestrator+Serializer+milestone |
+| 5 | Rhythm-section part generators | planning | 06 | Split into 4 chunks: loaders/foundations [06, planning] → arrangement+selection → generators/walker/voicing → orchestrator+Serializer+milestone |
 | 6 | Transitions, variation & humanization | not started | — | |
 | 7 | Sound design | not started | — | |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
@@ -58,6 +62,31 @@ One row per implementation session, appended at close-out. Session plan files li
 ## Phase detail
 
 When a phase enters `planning`, the orchestrator adds a `### Phase N` section here containing: the approved chunk plan (if split), the task checklist with per-task status and commit hashes, DoD checklist with evidence as items are proven, and links to relevant CAVEATS entries. Keep entries terse — evidence pointers, not narrative.
+
+### Phase 5 — Rhythm-section part generators (chunk plan)
+
+**Split into 4 chunks** (phase too large for one session; ROADMAP §4 seam; PHASE_5 §1). Seams:
+
+- **Chunk 1 — SESSION_06** (`plans/sessions/SESSION_06.md`): pattern-bank schemas (§5) + loader PT1–PT11 + reference banks §7 (fully enumerated) + foundation transforms (§3.1 intensity, §3.3 retargeting, §3.4 velocity/articulation, §3.5 gating) + §12 amendment check. **Proves DoD 1, 2** (DoD 11 attested).
+- **Chunk 2** — `arrange()` (§4) + pattern-selection machinery (§3.2). DoD 3, 4.
+- **Chunk 3** — drums / pattern-bass / walking-bass engine (§6.3) / comping+pads voicing passes (§6.4/§6.5); resolves C-04. DoD 5, 6, 7.
+- **Chunk 4** — orchestrator (§8.1) + Serializer (§8.3) + stub timbres (§8.4) + drum→track map (§8.2) + both milestone fixtures + whole-document goldens + determinism shims + whole-phase review + full §13 DoD. DoD 8, 9, 10.
+
+#### Phase 5 — Chunk 1 — session 06 (`plans/sessions/SESSION_06.md`)
+
+**Planning — awaiting approval; no task dispatched.** Task list (T2 ‖ T3 after T1):
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Pattern-bank schema (`packs/models.py`) + loader (`packs/loader.py`) + PT1–PT11 + one rejection fixture per class (event vocab `sixth`/`chord`/`push`/`minDensity`; bass mode/walking; comping/pads voicing.classes; manifest layeringOrder; §3.2 completeness) | opus | done | _pending_ |
+| T2 | Reference banks §7.1–§7.4 fully enumerated (8 YAML, complete the abridged entries) + load-clean/anchor test | opus | not started | — |
+| T3 | Foundation transforms §3.1 intensity + §3.3 retargeting + §3.4 velocity/articulation + §3.5 gating + DoD-2 unit tests | opus | not started | — |
+| T4 | §12 amendment-consistency check + whole-chunk review + close-out | orchestrator | not started | — |
+
+DoD (§13) — Chunk 1 targets 1, 2 (11 attested):
+- [ ] §13.1 loaders: four `patterns/*.yaml` schemas → frozen models; PT1–PT11 + one rejection fixture per class; both reference packs load clean (T1, T2).
+- [ ] §13.2 foundations: §3.1 thresholds, §3.3 degree resolution (every degree × qualities × dressing tiers, fallbacks, `push` boundary/no-boundary/song-end, octave folding at lane edges tie-down), §3.4 formulas (identity/clamp/exempt), §3.5 gating (T3).
+- [ ] §13.11 §12 amendments present + consistent (T4).
 
 ### Phase 4 — Harmony engine (chunk plan)
 
