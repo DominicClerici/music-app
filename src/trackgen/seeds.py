@@ -18,6 +18,7 @@ from collections.abc import Sequence
 
 __all__ = [
     "STREAMS",
+    "Rng",
     "derive",
     "fresh_master",
     "from_base36",
@@ -27,6 +28,11 @@ __all__ = [
     "to_base36",
     "weighted_choice",
 ]
+
+# The pipeline RNG type. `random` is the single entropy boundary and stays
+# confined to this module (invariant 5 / TID251); downstream stages that accept
+# an injected stream annotate it as `Rng` instead of importing `random`.
+Rng = random.Random
 
 _U64_BYTES = 8
 _U64_MAX = (1 << 64) - 1

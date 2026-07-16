@@ -14,6 +14,7 @@ from trackgen.harmony.dressing import (
     load_dressing_table,
     tier,
 )
+from trackgen.harmony.stage import harmony
 
 __all__ = [
     "DressingLoadError",
@@ -21,6 +22,7 @@ __all__ = [
     "DressingTable",
     "dressing_options",
     "effective_tier",
+    "harmony",
     "load_dressing_table",
     "tier",
 ]
