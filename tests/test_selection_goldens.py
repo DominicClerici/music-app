@@ -85,6 +85,24 @@ def _select(
     return result, shims
 
 
+def _select_default(params: dict[str, object]) -> SelectionResult:
+    """Selection over the same harness but on the PRODUCTION default path
+    (`rng_factory=None`), so its `select` sub-stream derivation — not the shim's
+    reconstruction — is what picks the winners. Pins that the module's own
+    `default_factory` still reproduces the §9.1 ids."""
+    plan, sf, pack = _pipeline(params)
+    arrangement = arrange(plan, sf, pack, Rng(0))
+    return select_patterns(
+        plan,
+        sf,
+        arrangement,
+        pack,
+        plan.seed.master,
+        plan.seed.overrides,
+        rng_factory=None,
+    )
+
+
 # =============================================================================
 # §9.1 — pop_rock / happy: 1 selection draw
 # =============================================================================
@@ -128,6 +146,14 @@ def test_pop_selection_draw_narrative() -> None:
     assert shims["bass"].draws == 0
     assert shims["comping"].draws == 0
     assert shims["pads"].draws == 0
+
+    # Production default path (rng_factory=None) picks the same §9.1 winners:
+    # golden-locks the module's own `select` derivation, not just the shim's.
+    default = _select_default({"styleFamily": "pop_rock", "seed": "1ps9wxb"})
+    assert default.by_section[("intro-1", "drums")].id == "pr_dr_i"
+    assert default.by_key[("drums", "main", 2)].id == "pr_dr_2a"
+    assert default.by_key[("drums", "main", 3)].id == "pr_dr_3"
+    assert default.by_key[("drums", "main", 4)].id == "pr_dr_4"
 
 
 # =============================================================================
@@ -184,6 +210,27 @@ def test_jazz_selection_draw_narrative() -> None:
     assert sum(shim.draws for shim in shims.values()) == 3
     assert shims["drums"].draws == 1
     assert shims["comping"].draws == 2
+
+    # Production default path (rng_factory=None) picks the same §9.1 winners, and
+    # walking-mode bass / dormant pads still yield no entries. Golden-locks the
+    # module's own `select` derivation, not just the shim's reconstruction.
+    default = _select_default(
+        {
+            "styleFamily": "jazz",
+            "mood": "melancholic",
+            "maxLengthSec": 240,
+            "seed": "1ps9wxb",
+        }
+    )
+    assert default.by_key[("drums", "main", 3)].id == "jz_dr_3a"
+    assert default.by_key[("comping", "main", 2)].id == "jz_cp_2a"
+    assert default.by_key[("comping", "main", 3)].id == "jz_cp_3a"
+    assert default.by_section[("outro-1", "drums")].id == "jz_dr_e"
+    assert default.by_section[("outro-1", "comping")].id == "jz_cp_e"
+    assert not any(role == "bass" for (_sid, role) in default.by_section)
+    assert not any(role == "bass" for (role, _k, _r) in default.by_key)
+    assert not any(role == "pads" for (_sid, role) in default.by_section)
+    assert not any(role == "pads" for (role, _k, _r) in default.by_key)
 
 
 # =============================================================================
