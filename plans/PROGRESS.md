@@ -94,8 +94,8 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Voicing pass `parts/voicing.py` (§6.4/§6.5 — full-timeline Viterbi per voiced role, classes-per-rung, comping/pads weights, `lane.high−6` anchor, cardinality-pad) + mechanism units. **Resolves C-04.** | opus | not started | — |
-| T2 | Walking-bass engine `parts/walker.py` (§6.3 — two/four-feel, per-bar sub-streams, nearest, final-bar/two-chord rules, beat3-before-beat2, approach types, decay, embellishment, draw-iff-≥2) + mechanism/draw-order units | opus | not started | — |
+| T1 | Voicing pass `parts/voicing.py` (§6.4/§6.5 — full-timeline Viterbi per voiced role, classes-per-rung, comping/pads weights, `lane.high−6` anchor, cardinality-pad) + mechanism units. **Resolves C-04.** | opus | done | b9eb7aa |
+| T2 | Walking-bass engine `parts/walker.py` (§6.3 — two/four-feel, per-bar sub-streams, nearest, final-bar/two-chord rules, beat3-before-beat2, approach types, decay, embellishment, draw-iff-≥2) + mechanism/draw-order units | opus | done | a93c1a6 |
 | T3 | Generators dispatcher `parts/generators.py` (§6 shared loop + §6.1 drums/§8.2 voice→track map + §6.2 pattern-bass + §6.4/§6.5 comping/pads + bass-mode dispatch) + generator units | opus | not started | — |
 | T4 | Normative goldens: §9.2 walker (DoD 5) + §9.3 voicing (DoD 6) + §9.4 excerpts / end-to-end / determinism (DoD 7), independent transcriber over the real seed-`1ps9wxb` pipeline | opus | not started | — |
 | T5 | Whole-chunk 4-lens review + DoD 5/6/7 checklist + C-04 resolution + close-out | orchestrator | not started | — |
@@ -103,6 +103,17 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 Targets **DoD 5** (§13.5 walker), **DoD 6** (§13.6 voicing), **DoD 7** (§13.7 generators
 end-to-end). Resolves **C-04** (voicing API). Out of scope: orchestrator/Serializer/timbres/
 milestone/whole-document goldens (Chunk 4, DoD 8/9/10).
+
+**T1+T2 DONE** — both opus, per-task opus review **APPROVE-WITH-NITS** (no blockers/majors),
+four gates green (866 tests). Orchestrator verified gates independently + read both modules.
+T1 (voicing, `b9eb7aa`): reviewer re-derived Dm9 shell2 = F3+C4 (§9.3), confirmed positional
+stage-iterator safe + `theory/voicing.py` unmodified + C-04's three readings. Nits (optional):
+test-helper `id()`-keying, register-uniformity assert. T2 (walker, `a93c1a6`): reviewer
+reproduced head-1 = **9** draws by hand, confirmed resolutions 3a–3d correct §6.3 readings and
+the **128** total safe. **T4 watch (carried into T4 dispatch):** `_beat3` includes chord
+extensions via `chord_tones` — a defensible §6.3 reading, but the first suspect if a solo draw
+count (38/37/36) diverges; T4 is the golden arbiter and escalates on divergence. Other nits
+cosmetic (final-bar-two-feel-only; sus positional interval). No CAVEATS (C-04 resolves at T5).
 
 #### Phase 5 — Chunk 2 — session 07 (`plans/sessions/SESSION_07.md`)
 
