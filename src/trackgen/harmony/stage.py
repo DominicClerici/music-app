@@ -202,6 +202,23 @@ def _dress_and_emit_bars(
     return events
 
 
+def _truncate_to(events: list[ChordEvent], replace_start: int) -> list[ChordEvent]:
+    """Retain the events preceding a boundary replacement at `replace_start`,
+    truncating a straddling event to end exactly at the boundary. A shorter-than-
+    run turnaround/finals (§5.4/§5.5) can start mid-way through a hold-merged
+    tonic event, so the retained tonic must be clamped or it overlaps the
+    replacement and breaks the §5 tiling contract."""
+    kept: list[ChordEvent] = []
+    for e in events:
+        if e.start_tick + e.duration_ticks <= replace_start:
+            kept.append(e)
+        elif e.start_tick < replace_start:
+            kept.append(
+                e.model_copy(update={"duration_ticks": replace_start - e.start_tick})
+            )
+    return kept
+
+
 def _terminal_tonic_run(
     section_events: list[ChordEvent], start_bar: int, end_bar: int, tonic_pc: int
 ) -> int:
@@ -336,7 +353,7 @@ def harmony(
         if eligible_ta:
             ta_entry = _select(eligible_ta, rng)
             replace_start = (end_bar - len(ta_entry.bars)) * _TICKS_PER_BAR
-            kept = [e for e in events if e.start_tick < replace_start]
+            kept = _truncate_to(events, replace_start)
             section_events[i] = kept + _dress_and_emit_bars(
                 ta_entry.bars,
                 replace_start,
@@ -373,7 +390,7 @@ def harmony(
     end_bar = final_section.start_bar + final_section.length_bars
     replace_start = (end_bar - len(final_entry.bars)) * _TICKS_PER_BAR
     events = section_events[final_index]
-    kept = [e for e in events if e.start_tick < replace_start]
+    kept = _truncate_to(events, replace_start)
     section_events[final_index] = kept + _dress_and_emit_bars(
         final_entry.bars,
         replace_start,
