@@ -1,0 +1,152 @@
+# PHASE_4 §6.3 dressing tables (normative).
+#
+# Engine-owned data (not a style pack): the dissonance-dressing ladder's
+# per-class weighted option lists, transcribed verbatim from PHASE_4 §6.3.
+# Internal and recalibratable without a schema change (§6 preamble).
+#
+# Keyed by dressing CLASS, then by EFFECTIVE tier (0-6, the base tier after the
+# §6.2 function offset + clamp). Each option is a resulting chord `quality`
+# plus an `extensions` list and an integer `weight`; the harmony stage draws
+# over the ordered option list per chord slot (iff >= 2 options). Every option
+# is constructed inside the §6.4 extension-availability limits (re-checked at
+# load and in dressing_options).
+#
+# The six dressable classes (§6.3 + §3.1):
+#   bare_maj_ts  bare major triad, function T / S / O   (non-D default)
+#   bare_maj_d   bare major triad, function D
+#   bare_min     bare minor triad, any function
+#   dom7         pinned dom7  (extensions only; core quality never changes)
+#   maj7         pinned maj7  (extensions only)
+#   min7         pinned min7  (extensions only)
+# All other classes (dim, dim7, aug, sus2, sus4, dom7sus4, maj6, min6,
+# minMaj7, min7b5) are passthrough in v1 — never dressed, handled in code.
+
+classes:
+  # --- Bare major triad, function T/S (§6.3) ---------------------------------
+  bare_maj_ts:
+    0:
+      - { quality: maj, extensions: [], weight: 3 }
+    1:
+      - { quality: maj, extensions: [], weight: 2 }
+      - { quality: maj, extensions: ["9"], weight: 1 }
+      - { quality: maj6, extensions: [], weight: 1 }
+    2:
+      - { quality: maj7, extensions: [], weight: 2 }
+      - { quality: maj, extensions: ["9"], weight: 1 }
+    3:
+      - { quality: maj7, extensions: ["9"], weight: 2 }
+      - { quality: maj7, extensions: [], weight: 1 }
+    4:
+      - { quality: maj7, extensions: ["9"], weight: 2 }
+      - { quality: maj6, extensions: ["9"], weight: 1 }
+    5:
+      - { quality: maj7, extensions: ["9"], weight: 2 }
+      - { quality: maj6, extensions: ["9"], weight: 1 }
+    6:
+      - { quality: maj7, extensions: ["9"], weight: 2 }
+      - { quality: maj6, extensions: ["9"], weight: 1 }
+
+  # --- Bare major triad, function D (§6.3) -----------------------------------
+  bare_maj_d:
+    0:
+      - { quality: maj, extensions: [], weight: 3 }
+    1:
+      - { quality: maj, extensions: [], weight: 2 }
+      - { quality: dom7, extensions: [], weight: 1 }
+    2:
+      - { quality: dom7, extensions: [], weight: 1 }
+    3:
+      - { quality: dom7, extensions: ["9"], weight: 2 }
+      - { quality: dom7, extensions: [], weight: 1 }
+    4:
+      - { quality: dom7, extensions: ["13"], weight: 2 }
+      - { quality: dom7, extensions: ["9"], weight: 1 }
+    5:
+      - { quality: dom7, extensions: ["b9"], weight: 2 }
+      - { quality: dom7, extensions: ["b13"], weight: 1 }
+    6:
+      - { quality: dom7, extensions: ["b9", "b13"], weight: 2 }
+      - { quality: dom7, extensions: ["#9"], weight: 1 }
+
+  # --- Bare minor triad, any function (§6.3) ---------------------------------
+  bare_min:
+    0:
+      - { quality: min, extensions: [], weight: 1 }
+    1:
+      - { quality: min, extensions: [], weight: 2 }
+      - { quality: min, extensions: ["9"], weight: 1 }
+    2:
+      - { quality: min7, extensions: [], weight: 2 }
+      - { quality: min, extensions: [], weight: 1 }
+    3:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: [], weight: 1 }
+    4:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
+    5:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
+    6:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
+
+  # --- Pinned dom7, extensions only (§6.3) -----------------------------------
+  dom7:
+    0:
+      - { quality: dom7, extensions: [], weight: 1 }
+    1:
+      - { quality: dom7, extensions: [], weight: 1 }
+    2:
+      - { quality: dom7, extensions: [], weight: 1 }
+    3:
+      - { quality: dom7, extensions: ["9"], weight: 2 }
+      - { quality: dom7, extensions: [], weight: 1 }
+    4:
+      - { quality: dom7, extensions: ["13"], weight: 2 }
+      - { quality: dom7, extensions: ["9"], weight: 1 }
+    5:
+      - { quality: dom7, extensions: ["b9"], weight: 2 }
+      - { quality: dom7, extensions: ["b13"], weight: 1 }
+    6:
+      - { quality: dom7, extensions: ["b9", "b13"], weight: 2 }
+      - { quality: dom7, extensions: ["#9"], weight: 1 }
+
+  # --- Pinned maj7, extensions only (§6.3) -----------------------------------
+  maj7:
+    0:
+      - { quality: maj7, extensions: [], weight: 1 }
+    1:
+      - { quality: maj7, extensions: [], weight: 1 }
+    2:
+      - { quality: maj7, extensions: [], weight: 1 }
+    3:
+      - { quality: maj7, extensions: ["9"], weight: 2 }
+      - { quality: maj7, extensions: [], weight: 1 }
+    4:
+      - { quality: maj7, extensions: ["9"], weight: 1 }
+    5:
+      - { quality: maj7, extensions: ["9"], weight: 1 }
+    6:
+      - { quality: maj7, extensions: ["9"], weight: 1 }
+
+  # --- Pinned min7, extensions only (§6.3) -----------------------------------
+  min7:
+    0:
+      - { quality: min7, extensions: [], weight: 1 }
+    1:
+      - { quality: min7, extensions: [], weight: 1 }
+    2:
+      - { quality: min7, extensions: [], weight: 1 }
+    3:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: [], weight: 1 }
+    4:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
+    5:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
+    6:
+      - { quality: min7, extensions: ["9"], weight: 2 }
+      - { quality: min7, extensions: ["11"], weight: 1 }
