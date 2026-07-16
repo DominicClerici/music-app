@@ -573,6 +573,30 @@ def test_on_chord_change_retrigger_multi_boundary() -> None:
     assert [(n.ticks, n.midi % 12) for n in notes] == [(0, 0), (480, 7), (960, 9)]
 
 
+def test_approach_degree_placed_below_next_root() -> None:
+    # §3.3 `approach`: chromatic half-step BELOW the next chord's effective root,
+    # in the octave nearest that target's own placement. Governing chord C, next
+    # chord G: the next root G (pc 7) places at MIDI 31 (G1) in the bass lane;
+    # the approach note is a semitone below, MIDI 30 (F#1), and stays in-lane.
+    c = chord_event(0, "maj")
+    g = chord_event(7, "maj", start=1920)
+    notes = retarget_event(
+        degree="approach",
+        octave=0,
+        push=False,
+        ticks=1000,
+        duration_ticks=480,
+        chords=[c, g],
+        role="bass",
+        lane=BASS_LANE,
+        pattern_register=BASS_REG,
+        on_chord_change="retrigger",
+    )
+    assert len(notes) == 1
+    assert notes[0].midi == 30
+    assert BASS_LANE.low_midi <= notes[0].midi <= BASS_LANE.high_midi
+
+
 def test_chord_degree_requires_voicing_hook() -> None:
     with pytest.raises(ValueError, match="voicing_for"):
         retarget_event(

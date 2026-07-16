@@ -27,7 +27,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import NamedTuple
 
-from trackgen.packs.models import Degree
+from trackgen.packs.models import Degree, OnChordChange
 from trackgen.schema.document import Role
 from trackgen.schema.ir import ChordEvent, ChordSpec, Register
 from trackgen.theory import (
@@ -275,7 +275,7 @@ def retarget_event(
     role: Role,
     lane: Register,
     pattern_register: Register,
-    on_chord_change: str,
+    on_chord_change: OnChordChange,
     voicing_for: VoicingFor | None = None,
 ) -> list[RetargetedNote]:
     """Resolve one pitched pattern event to concrete `RetargetedNote`s (§3.3).
