@@ -30,7 +30,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 1 | Foundations & contracts | done¹ | 01 | ¹Code/automated DoD complete; §9.6 manual listening check awaits user audition of the playground |
 | 2 | Parameter & mood model | done | 02 | All 8 DoD items proven; 245 tests green. Caveat C-01 (PARAM_MALFORMED) |
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
-| 4 | Harmony engine | not started | — | Includes shared theory library used by Phase 5 |
+| 4 | Harmony engine | planning | — | Split into 2 chunks (SESSION_04 theory+dressing+loader; SESSION_05 stage+goldens). Includes shared theory library used by Phase 5 |
 | 5 | Rhythm-section part generators | not started | — | Expect ~4 chunks: loaders/foundations → arrangement → generators/walker/voicing → orchestrator+Serializer+milestone |
 | 6 | Transitions, variation & humanization | not started | — | |
 | 7 | Sound design | not started | — | |
@@ -49,6 +49,33 @@ One row per implementation session, appended at close-out. Session plan files li
 ## Phase detail
 
 When a phase enters `planning`, the orchestrator adds a `### Phase N` section here containing: the approved chunk plan (if split), the task checklist with per-task status and commit hashes, DoD checklist with evidence as items are proven, and links to relevant CAVEATS entries. Keep entries terse — evidence pointers, not narrative.
+
+### Phase 4 — Harmony engine (chunk plan)
+
+**Split into 2 chunks** (phase too large for one session; seam = "pieces vs. assembly"):
+
+- **Chunk 1 — SESSION_04** (`plans/sessions/SESSION_04.md`): theory library + dressing ladder + `progressions.yaml` loader/reference packs. **Proves DoD 1, 2, 3, 8.** Tasks (all opus): T1 theory resolution core (`theory/chords.py`) → then parallel T2 voicing/VL (`theory/voicing.py`), T3 dressing ladder (`harmony/dressing.*`), T4 progressions schema+loader+reference packs (`packs/*` + `styles/*`).
+- **Chunk 2 — SESSION_05** (plan TBD): `HarmonicPlan` §7 schema extension (`schema/ir.py`) + harmony stage (`harmony/stage.py`) §5.1 + 3 boundary transforms + §10 golden chains (76+64 events) + §5.6 seed goldens + determinism (8/30 draws) + property matrix + deceptive fixture + §13 amendments. **Proves DoD 4, 5, 6, 7, 9, 10.**
+
+Golden anchor pre-verified: `derive(3735928559,"harmony")==226146634901021418`; §5.6 getrandbits/randrange vectors match exactly.
+
+#### Phase 4 — Chunk 1 — session 04 (`plans/sessions/SESSION_04.md`)
+
+**Awaiting approval — no task dispatched.** Task list:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Theory resolution core (`theory/chords.py`): §8.1/§8.2 tables, `resolve_token` (§3.1/§3.2/§3.3), §7.4 scale-hint, chord/guide tones, §6.4 helper; music21 cross-val | opus | in progress | — |
+| T2 | Voicing & voice-leading (`theory/voicing.py`): §8.4 candidates incl. `fifths`, §8.5 `vl_distance`, §8.6 Viterbi | opus | not started | — |
+| T3 | Dressing ladder (`harmony/dressing.yaml`+`.py`): §6.1 tiers, §6.2 offsets, §6.3 tables, §6.4 filter | opus | not started | — |
+| T4 | `progressions.yaml` schema (`packs/models.py`) + loader P1–P10/density (`packs/loader.py`) + `styles/{pop_rock,jazz}/progressions.yaml` (§9.1/§9.2) | opus | not started | — |
+
+DoD (§14) — Chunk 1 targets 1, 2, 3, 8:
+- [ ] §14.1 progressions loader P1–P10 (P11 → Phase 8) + one rejection fixture per rule class; both reference files load clean; P1/P4 cross-file vs reference `forms.yaml` — T4.
+- [ ] §14.2 theory module: `resolve_token` goldens (suffixes/alterations/case errors/slash), §8.1/§8.2 tables, spelling goldens (12 tonics × 2 classes), chord/guide tones, voicing candidates + lane pruning, `vl_distance`/`optimal_voicing_path` on ii–V–I + register-drift, integer-cost property; `fifths` class ships — T1+T2.
+- [ ] §14.3 `dressing.yaml` matches §6.3; tier-boundary/offset/clamp unit tests; every option §6.4-legal — T3.
+- [ ] §14.8 `chord_tones` vs music21 `harmony.ChordSymbol` cross-validation (documented exclusions; version pinned) — T1.
+- (§14.4/5/6/7/9/10 → Chunk 2.)
 
 ### Phase 3 — session 03 (plan: `plans/sessions/SESSION_03.md`)
 
