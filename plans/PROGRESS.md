@@ -125,6 +125,24 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 **Split into 3 chunks** (phase too large for one session; PHASE_6 D1 stage seam = note-structural vs
 performance-rendering). Seams:
 
+#### Phase 6 — Chunk 3 — session 12 (`plans/sessions/SESSION_12.md`)
+
+**Planning — plan written, AWAITING USER APPROVAL; no task dispatched.** FINAL chunk of Phase 6:
+wiring + milestone + whole-phase. The stage-6 (`transitions/`) and stage-7 (`humanize/`) engines exist
+and are tested but are **not yet wired** into the pipeline. Task list (T1 → then T2 ‖ T3 → T4 → T5):
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Wire real stages into orchestrator (delete `transitions`/`humanize` stubs) + thread `tempoEvents` → serialize (`header.tempos=[base]+events`) + crash `_STUB_MIX`/stub-timbre (midi 84)/guard removal + unit tests; **xfail** the whole-doc goldens for T2 | opus | not started | — |
+| T2 | Re-bless both whole-document goldens (**dedicated commit**) via `_regen_milestone_fixtures.py`; verify V1–V8 + §9.4 anchors + §7.3 facts + jazz **40-entry** tempo map; independent-arbiter posture | opus | not started | — |
+| T3 | Whole-phase property matrix (DoD 9): both packs × supported moods × [None,180,240] × 25 seeds through the wired pipeline → §11.9 checks + confirm P1-latent & C-10 unreachable | opus | not started | — |
+| T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | not started | — |
+| T5 | Whole-PHASE 4-lens review (all 3 chunks) + full §11 DoD 1–11 + DoD 11/§10 amendment audit + close-out (→ Phase 7) | orchestrator | not started | — |
+
+Ordering: **T1 → (T2 ‖ T3) → T4 → T5** (T2 fixtures & T3 new property test are disjoint files, both
+depend only on T1's wiring). **Targets DoD 9, 10, 11** + full §11 1–11 sign-off. Out of scope: any
+stage-6/stage-7 internal change (frozen; C1/C2 goldens must stay green), `sound_design` mix (Phase 7).
+
 - **Chunk 1 — SESSION_10** (`plans/sessions/SESSION_10.md`): **stage 6, the Transition engine.**
   `transitions.yaml` schema/loader (TR1–TR7) + PT12 + reference content + fill windows (§4); the full
   §3 stage — 6a HOLD ending, 6b boundary taxonomy/device-assignment/fill-select-size-render/stop/
