@@ -4,8 +4,8 @@
 returns a serialized `TrackDocument`. It follows the authoritative code chain
 (SESSION_09 "Authoritative wiring facts" — the §8.1 pseudocode is stale): the
 same interpret -> form -> harmony -> arrange -> select_patterns -> generate x4
-loop the test-only `_drive_full` driver uses, plus the Chunk-4 stub tail
-(transitions -> humanize -> sound_design -> serialize).
+loop the test-only `_drive_full` driver uses, then the real stages
+transitions -> humanize (Phase 6) -> sound_design (stub, Phase 7) -> serialize.
 
 The orchestrator itself makes **no** RNG draws: `generate_plan` is the entropy
 boundary (it derives the master seed), and every downstream stage receives its

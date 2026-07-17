@@ -47,10 +47,9 @@ from trackgen.schema.ir import (
     SongForm,
 )
 from trackgen.seeds import Rng, derive, stream_seed, weighted_choice
-from trackgen.transitions._common import BAR, Builder, to_builders, to_phrases
+from trackgen.transitions._common import BAR, BEAT, Builder, to_builders, to_phrases
 from trackgen.transitions.ending import find_t_last
 
-BEAT = 480
 _PICKUP = 240  # the pickup / anticipation displacement (§3.7).
 _EXCLUDED_TAGS = frozenset({"fill", "crash", "hold"})
 _DRUM_UNIT_BARS = 2

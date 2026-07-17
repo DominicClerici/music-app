@@ -17,8 +17,8 @@ deterministic transform is observable through the real production path (a
 zero-jitter strategy yields the §7.2 pre-jitter positions without touching any
 RNG). Production composes the deterministic pass with `_TriangularJitter`.
 
-The second return value is the ritard tempo curve; it is Task T3's and returns
-`[]` here (the `_ritard` seam is left in place).
+The second return value is the ritard tempo curve (§5.7): a `ritard` close emits
+the sampled Friberg-Sundberg tempo events; `cold`/`fade` emit `[]`.
 """
 
 from __future__ import annotations
@@ -144,8 +144,8 @@ def humanize(
 ) -> tuple[list[Phrase], list[Tempo]]:
     """Render performance feel onto `phrases` (§5); note-count-preserving.
 
-    Returns the humanized phrases and the ritard tempo events (empty in T2 —
-    T3 fills the curve).
+    Returns the humanized phrases and the ritard tempo events (§5.7 — empty
+    unless `ending.close == "ritard"`).
     """
     return _run(phrases, form, plan, _PRODUCTION_JITTER)
 
