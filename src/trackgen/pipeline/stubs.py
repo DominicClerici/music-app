@@ -22,10 +22,11 @@ from trackgen.parts.generators import _TRACK_ORDER as _DRUM_TRACK_IDS
 from trackgen.schema.document import EffectPatch, InstrumentPatch, Tempo
 from trackgen.schema.ir import GenerationPlan, Phrase
 
-# The eight drum track ids (single-sourced from `parts.generators._TRACK_ORDER`,
-# as the Serializer also imports it) and the three pitched roles keyed by their
-# own name. `sound_design` returns a `TrackSound` for every one — the Serializer
-# emits only those with >= 1 note.
+# The drum track ids (single-sourced from `parts.generators._TRACK_ORDER`, as the
+# Serializer also imports it — now including the Phase-6 producer-only `crash`
+# track, skipped below until Chunk 3 authors its stub timbre) and the three
+# pitched roles keyed by their own name. `sound_design` returns a `TrackSound` for
+# every one — the Serializer emits only those with >= 1 note.
 _PITCHED_ROLES: tuple[str, ...] = ("bass", "comping", "pads")
 
 
@@ -76,6 +77,13 @@ def sound_design(plan: GenerationPlan, pack: StylePack) -> dict[str, TrackSound]
     for track_id in _DRUM_TRACK_IDS:
         timbre = kit.get(track_id)
         if timbre is None:
+            # `crash` joined `_TRACK_ORDER` as a stage-6 (Phase 6) producer-only
+            # track; its stub timbre + Serializer `_EMIT_ORDER`/`_STUB_MIX` entry
+            # land in Chunk 3 (SESSION_10 §2.4). Until then a stub kit legitimately
+            # omits it and the note-less crash track is never emitted (serialize
+            # skips tracks with no notes); other missing drum tracks still fail.
+            if track_id == "crash":
+                continue
             raise ValueError(
                 f"sound_design: drum kit {drum_flavor!r} is missing track "
                 f"{track_id!r} (needs {list(_DRUM_TRACK_IDS)})"

@@ -57,13 +57,16 @@ from trackgen.schema.ir import (
 _BAR = 1920
 
 # §8.2 drum voice → track map (engine data, pinned). `crash` is Phase-6's — a
-# main never authors it, and a stray one is dropped rather than emitted here.
+# main never authors it (a stray one stays dropped in `_generate_drums`), but
+# stage 6 (transitions) is the first crash *producer*, so the voice→track and
+# track-order entries live here (PHASE_6 §10.7 / SESSION_10 §2.4).
 _VOICE_TRACK: dict[DrumVoice, str] = {
     "kick": "kick",
     "snare": "snare",
     "hat_closed": "hats",
     "hat_open": "hats",
     "ride": "ride",
+    "crash": "crash",
     "tom_low": "tom_low",
     "tom_mid": "tom_mid",
     "tom_high": "tom_high",
@@ -85,12 +88,15 @@ _DEFAULT_DUR: dict[DrumVoice, int] = {
     "perc": 120,
 }
 
-# Deterministic Phrase order for the drum voice-tracks a section emits.
+# Deterministic Phrase order for the drum voice-tracks a section emits. `crash`
+# is only ever produced by stage 6 (entry/HOLD crashes) but is ordered here for
+# a single source of truth (PHASE_6 §10.7).
 _TRACK_ORDER: tuple[str, ...] = (
     "kick",
     "snare",
     "hats",
     "ride",
+    "crash",
     "tom_low",
     "tom_mid",
     "tom_high",
