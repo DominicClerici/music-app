@@ -52,18 +52,6 @@ _EXAMPLES: dict[str, tuple[str, dict[str, object]]] = {
 # snare (NoiseSynth) stays None; the rest carry their trigger pitch.
 _TRIGGER_MIDI = {"kick": 24, "hats": 80, "ride": 82}
 
-# SESSION_12 T1 wires the real stages 6 (transitions) and 7 (humanize), so a fresh
-# `generate_track` now emits fills/crashes, humanized ticks/velocities/durations,
-# and (jazz) a ritard tempo map — diverging from the stale Phase-5 fixtures. Every
-# assertion that compares against `generate_track` output is xfail'd here (strict:
-# it must fail until T2 re-blesses the fixtures, then T2 un-marks these). The
-# fixture-loading checks (validate / meta / invariants) below stay green.
-_REBLESS = pytest.mark.xfail(
-    strict=True,
-    reason="Phase 6 output legitimately changes; re-blessed in SESSION_12 T2 "
-    "(dedicated commit)",
-)
-
 
 def _load_raw(filename: str) -> dict[str, object]:
     with (_FIXTURES / filename).open(encoding="utf-8") as fh:
@@ -75,7 +63,6 @@ def _track(doc: TrackDocument, track_id: str) -> Track:
     return next(t for t in doc.tracks if t.id == track_id)
 
 
-@_REBLESS
 @pytest.mark.parametrize("example", list(_EXAMPLES), ids=list(_EXAMPLES))
 def test_fixture_reserializes_identically(example: str) -> None:
     """DoD 10 — a fresh `generate_track` re-serializes structure-identically
@@ -142,51 +129,66 @@ def test_whole_document_invariants(example: str) -> None:
 # =============================================================================
 
 
-@_REBLESS
 def test_pop_verse1_bar4_comping_anchor() -> None:
     """§9.4 pop verse-1 bar 4 (tick 7680), governing chord E: comping hits
-    G♯3+B3+E4 = midis [56,59,64] at @0, dur 814, velocity 0.68 (C-09-corrected
-    voicing — inherits the §9.3 verse-1 E voicing)."""
+    G♯3+B3+E4 = midis [56,59,64], dur 814 (C-09-corrected voicing — inherits the
+    §9.3 verse-1 E voicing). Post-Phase-6 the humanizer (§7.1: comping +5 offset +
+    per-role jitter) spreads the chord attack to ticks 7684/7686/7687 and gives
+    each voice its own accent-mapped velocity (0.68 base → 0.683/0.739/0.713). The
+    voicing (midi set) and duration are stage-6/7-invariant; ticks/velocities are
+    the committed humanized values."""
     doc = generate_track(_EXAMPLES["pop"][1])
     comping = _track(doc, "comping")
     lo = 4 * _BAR  # 7680 — verse-1's first bar
-    hits = [n for n in comping.notes if n.ticks == lo]
+    hits = [n for n in comping.notes if lo <= n.ticks < lo + 20]
     assert sorted(n.midi for n in hits if n.midi is not None) == [56, 59, 64]
-    assert {(n.duration_ticks, n.velocity) for n in hits} == {(814, 0.68)}
+    assert all(n.duration_ticks == 814 for n in hits)
+    assert {n.midi: n.velocity for n in hits} == {56: 0.683, 59: 0.739, 64: 0.713}
 
 
-@_REBLESS
 def test_jazz_head1_bass_note_count_anchor() -> None:
-    """§9.2/§9.4 jazz Head-In (ticks 0–23040) walker bass note count = 24."""
+    """§9.2/§9.4 jazz Head-In (ticks 0–23040) walker bass note count = 24. The
+    walker lays 24 notes across the head; a 30-tick guard band at the section
+    boundary excludes the solo-1 downbeat (home tick 23040) that the Phase-6
+    humanizer pulls back to 23037 — a sub-16th boundary offset, not a walker
+    note. The genuine last head note sits at 22080, far inside the guard."""
     doc = generate_track(_EXAMPLES["jazz"][1])
     bass = _track(doc, "bass")
     head_in = doc.sections[0]
     assert head_in.type == "head" and head_in.start_tick == 0
+    guard = 30  # < a 16th (120t); excludes a humanizer-pulled next-section downbeat
     head_bass = [
-        n for n in bass.notes if head_in.start_tick <= n.ticks < head_in.end_tick
+        n
+        for n in bass.notes
+        if head_in.start_tick <= n.ticks < head_in.end_tick - guard
     ]
     assert len(head_bass) == 24
 
 
-@_REBLESS
 def test_jazz_head1_bar0_comping_charleston_anchor() -> None:
     """§9.4 jazz head-1 bar 0 (Dm9): Charleston comping voices F3+C4 =
-    midis [53,60] at tick 0."""
+    midis [53,60]. §7.2 humanizer pushes the bar-0 Charleston hit off tick 0 by
+    +10t (down +18 ms), landing at ticks 12/13; the voicing (midi set) is
+    stage-6/7-invariant."""
     doc = generate_track(_EXAMPLES["jazz"][1])
     comping = _track(doc, "comping")
-    hits = sorted(n.midi for n in comping.notes if n.ticks == 0 and n.midi is not None)
+    hits = sorted(
+        n.midi for n in comping.notes if 0 <= n.ticks < 20 and n.midi is not None
+    )
     assert hits == [53, 60]
 
 
-@_REBLESS
 def test_jazz_ending_final_low_d_whole_note_anchor() -> None:
     """§9.2/§9.5 jazz ending — the final bass note is a low D whole note settling
-    under the outro. The last note is D2 (midi 38), a full-bar whole note (1920
-    ticks) landing on the outro's last bar and ending exactly at song end."""
+    under the outro. The last note is D2 (midi 38) landing on the outro's last bar
+    and ending exactly at song end. Post-Phase-6 the humanizer shifts the onset
+    +1t (bar downbeat 120960 → 120961) while the HOLD transform pins the release
+    at song end, so the whole note is now 1919 ticks (was a clean 1920-tick bar);
+    the release-at-song-end invariant is unchanged (V8-safe ring-out)."""
     doc = generate_track(_EXAMPLES["jazz"][1])
     bass = _track(doc, "bass")
     song_end = doc.sections[-1].end_tick
     last = bass.notes[-1]
     assert last.midi == 38  # D2
-    assert last.duration_ticks == _BAR  # whole note (4/4 bar)
+    assert last.duration_ticks == 1919  # ~whole note; +1t humanized onset, HOLD release
     assert last.ticks + last.duration_ticks == song_end
