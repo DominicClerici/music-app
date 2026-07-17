@@ -1,0 +1,8 @@
+# jazz transitions (PHASE_6 §4.3, normative). Sparser/quieter than pop; stop
+# disabled; compressed crash dynamics (combo, not arena). Data (invariant 1).
+phraseFill: { odds: [1, 3] }               # jazz fills sparser, quieter (setup figures)
+stop:       { enabled: false }
+crash:      { velocity: [0.40, 0.70] }     # compressed dynamics — combo, not arena
+mutation:
+  drums:   { none: 6, drop_ornament: 1 }   # no hat_lift (jazz hats sit on 2/4), no kick_pickup
+  comping: { none: 4, anticipate: 1, drop_hit: 1 }

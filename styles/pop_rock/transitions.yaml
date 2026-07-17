@@ -1,0 +1,8 @@
+# pop_rock transitions (PHASE_6 §4.2, normative). Placement odds, stop gating,
+# crash range, and per-role mutation tables — all data (invariant 1).
+phraseFill: { odds: [1, 2] }               # ~1/3 of phrase turns get a small fill
+stop:       { enabled: true, odds: [1, 4] }  # rare spice at rung-4 rising entries
+crash:      { velocity: [0.55, 0.95] }
+mutation:
+  drums:   { none: 10, hat_lift: 2, drop_ornament: 1, kick_pickup: 2 }
+  comping: { none: 3, anticipate: 2, drop_hit: 1 }

@@ -23,9 +23,11 @@ from trackgen.packs.models import (
     ProgressionsConfig,
     StylePack,
     TimbresConfig,
+    TransitionsSpec,
     VoicedBank,
     VoicingConfig,
     _is_degree1_rooted,
+    fill_window,
 )
 from trackgen.schema.document import Role
 from trackgen.theory import chord_function
@@ -353,6 +355,45 @@ def _check_pattern_banks(
         _check_completeness(pack_dir, role, role_patterns[role])
 
 
+_FILL_TAIL_TICKS = 960  # TR7 barline reach = last 2 beats.
+
+
+def _window_and_check_fills(
+    pack_dir: Path, drums: DrumsBank
+) -> dict[str, tuple[int, int]]:
+    """PHASE_6 §3.3 / TR6 / TR7 — compute and cache each drum `kind: fill`
+    pattern's content window, rejecting any fill whose window is empty (TR6) or
+    that has no event in the last 2 beats (TR7). Runs over whatever fills the
+    drum bank declares; PT12 (an ungated fill must *exist*) is a separate,
+    transitions-gated check in `load_pack`."""
+    windows: dict[str, tuple[int, int]] = {}
+    bank_path = pack_dir / "patterns" / "drums.yaml"
+    for env in drums.patterns:
+        if env.kind != "fill":
+            continue
+        if not env.events:
+            raise PackLoadError(
+                f"{bank_path}: fill {env.id!r} has no events; a fill's window is "
+                f"undefined (TR6)"
+            )
+        start, end = fill_window(env)
+        if start >= end:
+            raise PackLoadError(
+                f"{bank_path}: fill {env.id!r} has an empty window "
+                f"[{start}, {end}) (TR6)"
+            )
+        if not any(
+            event.pos >= env.length_ticks - _FILL_TAIL_TICKS for event in env.events
+        ):
+            raise PackLoadError(
+                f"{bank_path}: fill {env.id!r} has no event in its last 2 beats "
+                f"(pos >= {env.length_ticks - _FILL_TAIL_TICKS}); a fill must reach "
+                f"the barline (TR7)"
+            )
+        windows[env.id] = (start, end)
+    return windows
+
+
 def load_pack(path: str | Path) -> StylePack:
     """Load and validate a style pack directory into a `StylePack`."""
     pack_dir = Path(path)
@@ -443,6 +484,31 @@ def load_pack(path: str | Path) -> StylePack:
                 f"{timbres_path}: invalid timbres config\n{exc}"
             ) from exc
 
+    # PHASE_6 §3.3 / TR6 / TR7 — cache fill windows for whatever fills exist.
+    fill_windows = _window_and_check_fills(pack_dir, drums_bank)
+
+    transitions: TransitionsSpec | None = None
+    transitions_path = pack_dir / "transitions.yaml"
+    if transitions_path.exists():
+        raw_transitions = _read_yaml(transitions_path)
+        if not isinstance(raw_transitions, dict):
+            raise PackLoadError(f"{transitions_path}: transitions must be a mapping")
+        try:
+            transitions = TransitionsSpec.model_validate(raw_transitions)
+        except ValidationError as exc:
+            raise PackLoadError(
+                f"{transitions_path}: invalid transitions config\n{exc}"
+            ) from exc
+        # PT12 / TR5 (cross-file) — with a transitions spec present, fill
+        # resolution runs, so the drum bank must carry >= 1 ungated fill.
+        if not any(
+            env.kind == "fill" and not env.is_gated for env in drums_bank.patterns
+        ):
+            raise PackLoadError(
+                f"{transitions_path}: pack has no ungated drum 'fill' pattern, so "
+                f"fill resolution could come up empty (PT12/TR5)"
+            )
+
     return StylePack(
         manifest=manifest,
         patterns=patterns,
@@ -454,6 +520,8 @@ def load_pack(path: str | Path) -> StylePack:
         forms=forms,
         progressions=progressions,
         timbres=timbres,
+        transitions=transitions,
+        fill_windows=fill_windows,
     )
 
 

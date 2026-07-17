@@ -49,6 +49,15 @@ VOICING_CLASSES: tuple[str, ...] = (
 # PT1's "whole number of bars" is a multiple of this constant.
 _TICKS_PER_BAR = 1920
 
+# One quarter-note beat (PHASE_6 §3.3 `beatFloor` granularity).
+_TICKS_PER_BEAT = 480
+
+# PHASE_6 §3.7 — the closed mutation-operator vocabulary, per role. `none`
+# (the heavy no-op bias) is always legal in a table; these are the drawable
+# ops. Single source of truth for TR3's op-name check.
+DRUM_MUTATION_OPS: tuple[str, ...] = ("hat_lift", "drop_ornament", "kick_pickup")
+COMPING_MUTATION_OPS: tuple[str, ...] = ("anticipate", "drop_hit")
+
 DrumVoice = Literal[
     "kick",
     "snare",
@@ -254,6 +263,23 @@ class PatternEnvelope(PackModel):
                 )
 
         return self
+
+
+def fill_window(env: PatternEnvelope) -> tuple[int, int]:
+    """PHASE_6 §3.3 — a `kind: fill` pattern's content window
+    `[beatFloor(first event pos), lengthTicks)`.
+
+    `beatFloor` rounds the earliest authored event position down to its
+    containing beat (480 ticks); `lengthTicks` (a fill is exactly 1 bar by PT1)
+    is the exclusive end. Packs author fill size *as content* — a big fill
+    opens at beat 1 (window = whole bar), a medium fill at beat 3. The loader
+    computes and caches this per fill id (`StylePack.fill_windows`) at load,
+    guarding TR6 (window non-empty) and TR7 (an event reaches the barline);
+    stage 6 (T2) reads the cache. Events are not required to be sorted (PT2),
+    so the earliest event is `min(pos)`, not the first authored entry."""
+    first_pos = min(event.pos for event in env.events)
+    start = (first_pos // _TICKS_PER_BEAT) * _TICKS_PER_BEAT
+    return start, env.length_ticks
 
 
 class WalkingConfig(PackModel):
@@ -1204,6 +1230,118 @@ class TimbresConfig(PackModel):
     pads: dict[str, TrackTimbre]
 
 
+# --- PHASE_6 §4.1 `transitions.yaml` -----------------------------------------
+
+
+class PhraseFill(PackModel):
+    """§4.1 `phraseFill` — interior phrase-boundary include/exclude odds."""
+
+    odds: tuple[int, int]
+
+    @model_validator(mode="after")
+    def _check(self) -> "PhraseFill":
+        # TR1: two ints >= 1 (exactly-two arity enforced by the tuple type).
+        if any(weight < 1 for weight in self.odds):
+            raise ValueError(
+                f"phraseFill.odds must be two ints >= 1, got {list(self.odds)} (TR1)"
+            )
+        return self
+
+
+class Stop(PackModel):
+    """§4.1 `stop` — the shipped stop device's enable flag + draw odds."""
+
+    enabled: bool
+    odds: tuple[int, int] | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> "Stop":
+        # TR2: odds present iff enabled; when present, two ints >= 1.
+        if self.enabled:
+            if self.odds is None:
+                raise ValueError("stop.odds is required when stop.enabled (TR2)")
+            if any(weight < 1 for weight in self.odds):
+                raise ValueError(
+                    f"stop.odds must be two ints >= 1, got {list(self.odds)} (TR2)"
+                )
+        elif self.odds is not None:
+            raise ValueError(
+                "stop.odds must be absent when stop.enabled is false (TR2)"
+            )
+        return self
+
+
+class Crash(PackModel):
+    """§4.1 `crash` — the entry-crash velocity range mapped over section energy."""
+
+    velocity: tuple[float, float]
+
+    @model_validator(mode="after")
+    def _check(self) -> "Crash":
+        # TR1: floats in [0, 1] with lo <= hi.
+        lo, hi = self.velocity
+        if not (0.0 <= lo <= hi <= 1.0):
+            raise ValueError(
+                f"crash.velocity must be floats with 0 <= lo <= hi <= 1, "
+                f"got {list(self.velocity)} (TR1)"
+            )
+        return self
+
+
+class Mutation(PackModel):
+    """§4.1 `mutation` — per-role operator tables (authored order = draw order).
+
+    Only `drums` and `comping` roles carry operators in v1 (§3.7); the closed
+    field set plus `extra="forbid"` enforces TR3's "keys ⊆ {drums, comping}".
+    Each present table must be non-empty, include `none`, weight every op with
+    an int >= 1, and name only ops from that role's §3.7 vocabulary. A table
+    absent means that role never mutates; a single-entry (`none` only) table is
+    legal — the role draws nothing (§3.7)."""
+
+    drums: dict[str, int] | None = None
+    comping: dict[str, int] | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> "Mutation":
+        for role, table, ops in (
+            ("drums", self.drums, DRUM_MUTATION_OPS),
+            ("comping", self.comping, COMPING_MUTATION_OPS),
+        ):
+            if table is None:
+                continue
+            if not table:
+                raise ValueError(f"mutation.{role} table must be non-empty (TR3)")
+            if "none" not in table:
+                raise ValueError(
+                    f"mutation.{role} table must include a 'none' weight (TR3)"
+                )
+            allowed = {"none", *ops}
+            for name, weight in table.items():
+                if name not in allowed:
+                    raise ValueError(
+                        f"mutation.{role} op {name!r} is not in the {role} "
+                        f"vocabulary {sorted(allowed)} (TR3)"
+                    )
+                if weight < 1:
+                    raise ValueError(
+                        f"mutation.{role}[{name!r}] weight ({weight}) must be "
+                        f">= 1 (TR3)"
+                    )
+        return self
+
+
+class TransitionsSpec(PackModel):
+    """§4.1 `transitions.yaml` — placement odds, stop gating, crash range, and
+    per-role mutation tables. Strict (`extra="forbid"`) so TR4 rejects any
+    stray key. Cross-file PT12/TR5 (an ungated drum `fill` exists) and the
+    fill-window checks TR6/TR7 live in the loader, which needs the drum bank."""
+
+    phrase_fill: PhraseFill
+    stop: Stop
+    crash: Crash
+    mutation: Mutation
+
+
 class StylePack(PackModel):
     """A loaded, validated style pack: manifest + per-role pattern banks.
 
@@ -1226,3 +1364,8 @@ class StylePack(PackModel):
     forms: FormsConfig | None = None
     progressions: ProgressionsConfig | None = None
     timbres: TimbresConfig | None = None
+    transitions: TransitionsSpec | None = None
+    # PHASE_6 §3.3 — per-fill-id content windows `(start, end)` in ticks,
+    # computed and cached at load (`None` field entry never appears; empty when
+    # the drum bank has no fills). Stage 6 (T2) reads this by pattern id.
+    fill_windows: dict[str, tuple[int, int]] = Field(default_factory=dict)
