@@ -137,8 +137,8 @@ Task list (T1→T2→T3→T4 serial, then T5); all implementation opus, disjoint
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | 0ad958d |
-| T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | done | (this commit) |
-| T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | not started | — |
+| T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | done | b46a08f |
+| T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | done | (this commit) |
 | T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | not started | — |
 | T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | not started | — |
 
@@ -155,7 +155,13 @@ anchor exact; **fix cycle 1** made bass legato **track-level** (§5.6 "same trac
 — was per-phrase, would drop legato at every interior section boundary; affects C3 jazz re-bless) +
 removed a dead field + test symmetry (+ a track-level boundary test). Four gates green (**2701
 tests**). Next: **T3** (ritard). Handoff note for T4/C3: no §7 golden distinguishes phrase-vs-track
-legato — resolved to track-level on §5.6 prose (not arbitration).
+legato — resolved to track-level on §5.6 prose (not arbitration). **T3 DONE** — ritard renderer
+(`humanize/ritard.py`, wired via the 2-line `_ritard` seam): §5.7 Friberg–Sundberg curve
+`v(x)=(1+(v_end³−1)x)^(1/3)` (v_end 0.65), per-8th→per-16th sampling (release downbeat unsampled),
+`round(bpm,1)`, prevailing-tempo dedupe; `cold`/`fade` → `[]` (D7 alias). Per-task opus review
+**APPROVE** (zero findings) — reviewer independently reproduced all 11 §7.2 table values (68.5…45.5)
++ the 39-event count exactly, de-risking T4. Four gates green (**2715 tests**). Next: **T4** (goldens,
+independent arbiter).
 
 Live-verified this session: §5.8 humanize RNG anchors reproduce exactly (`derive(master,"humanize")`
 = 3899203291477031323; first-five `randrange(100)` = [58,79,50,70,90]; `derive(derive(humanize,

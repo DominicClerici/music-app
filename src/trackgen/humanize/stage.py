@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from trackgen.humanize.feel import FeelData, OffsetProfile, load_feel
+from trackgen.humanize.ritard import ritard_events
 from trackgen.humanize.swing import swing_phrase
 from trackgen.parts.generators import _note_sort_key
 from trackgen.schema.document import Tempo
@@ -280,5 +281,5 @@ def _emit(phrases: list[Phrase], records: list[_Rec], song_end: int) -> list[Phr
 
 
 def _ritard(form: SongForm, plan: GenerationPlan) -> list[Tempo]:
-    """Ritard tempo curve seam (§5.7) — Task T3. No events in T2."""
-    return []
+    """Ritard tempo curve seam (§5.7): delegates to the pure renderer."""
+    return ritard_events(form, plan)
