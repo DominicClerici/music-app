@@ -96,7 +96,7 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 | --- | --- | --- | --- | --- |
 | T1 | Voicing pass `parts/voicing.py` (§6.4/§6.5 — full-timeline Viterbi per voiced role, classes-per-rung, comping/pads weights, `lane.high−6` anchor, cardinality-pad) + mechanism units. **Resolves C-04.** | opus | done | b9eb7aa |
 | T2 | Walking-bass engine `parts/walker.py` (§6.3 — two/four-feel, per-bar sub-streams, nearest, final-bar/two-chord rules, beat3-before-beat2, approach types, decay, embellishment, draw-iff-≥2) + mechanism/draw-order units | opus | done | a93c1a6 |
-| T3 | Generators dispatcher `parts/generators.py` (§6 shared loop + §6.1 drums/§8.2 voice→track map + §6.2 pattern-bass + §6.4/§6.5 comping/pads + bass-mode dispatch) + generator units | opus | not started | — |
+| T3 | Generators dispatcher `parts/generators.py` (§6 shared loop + §6.1 drums/§8.2 voice→track map + §6.2 pattern-bass + §6.4/§6.5 comping/pads + bass-mode dispatch) + generator units | opus | done | fa00f51 |
 | T4 | Normative goldens: §9.2 walker (DoD 5) + §9.3 voicing (DoD 6) + §9.4 excerpts / end-to-end / determinism (DoD 7), independent transcriber over the real seed-`1ps9wxb` pipeline | opus | not started | — |
 | T5 | Whole-chunk 4-lens review + DoD 5/6/7 checklist + C-04 resolution + close-out | orchestrator | not started | — |
 
@@ -114,6 +114,17 @@ the **128** total safe. **T4 watch (carried into T4 dispatch):** `_beat3` includ
 extensions via `chord_tones` — a defensible §6.3 reading, but the first suspect if a solo draw
 count (38/37/36) diverges; T4 is the golden arbiter and escalates on divergence. Other nits
 cosmetic (final-bar-two-feel-only; sus positional interval). No CAVEATS (C-04 resolves at T5).
+
+**T3 DONE** (`fa00f51`) — generators dispatcher, per-task opus review **APPROVE-WITH-NITS** (no
+blockers; reviewer confirmed frozen contracts unmodified via empty `git diff`, re-derived §9.4
+sanity 814/720/443 + velocities, judged the two composition ambiguities unpinned-but-reasonable).
+Orchestrator verified four gates green (892 tests) + independently read the module. Design
+resolutions (documented, unpinned by any §9 golden): **gap-clamp is to the next *surviving*
+(post-gating) same-track event**; **articulation applied to authored dur then passed to retarget,
+so `retrigger` splits the articulated length** (no §9 golden pins a comping/bass hit crossing a
+chord boundary — the excerpts are single-chord bars). **T5-polish candidate (non-reachable nit):**
+two same-tick pitched events → `gap 0` → `duration_ticks 0` (schema `≥1` violation); no reference
+pattern authors this. Next: **T4** (normative goldens §9.2/§9.3/§9.4 + end-to-end, DoD 5/6/7).
 
 #### Phase 5 — Chunk 2 — session 07 (`plans/sessions/SESSION_07.md`)
 
