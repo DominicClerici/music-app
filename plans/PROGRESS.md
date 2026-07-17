@@ -6,7 +6,26 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 6 — Transitions, Variation & Humanization** (`@PROMPT.md - Phase 6`, fresh phase). **Phase 5 is COMPLETE** (sessions 06/07/08/09; full §13 DoD 1–11 PROVEN; 990 tests, four gates green; whole-phase 4-lens review CLEAN/COMPLIANT/PROVEN/GOOD). Read `PHASE_6.md` in full (binding design), then scope/split per PROMPT.md and get user approval before dispatching. Phase 6 is likely a multi-session phase (PHASE_6 splits into note-structure edits vs performance rendering — see D1/D8).
+> **Next:** **Phase 6 — Chunk 1 (Transition engine / stage 6)**, session 10. **Chunk plan
+> written + AWAITING USER APPROVAL; no implementation agent dispatched.** Session plan:
+> `plans/sessions/SESSION_10.md`. On approval, dispatch T1→T2→T3→T4 (serial, all opus) then T5
+> (orchestrator review + close-out). See the **Phase 6 chunk plan** in Phase detail below.
+>
+> Phase 6 is split into **3 chunks** (D1 stage seam): **C1 = stage 6 Transitions** (note-structural:
+> `transitions.yaml` loader, HOLD ending, boundary devices/fills/stop/dropout/crash, mutation ops;
+> DoD 1/3/4/8 + stage-6 slices of 7/9), **C2 = stage 7 Humanizer** (swing/`feel.yaml`/jitter/accent/
+> legato/ritard; DoD 2/5/6 + humanizer 7), **C3 = wiring + milestone + whole-phase** (thread
+> tempoEvents orchestrator→serializer, delete stubs, add `crash` to Serializer emit/mix + stub timbre,
+> re-bless whole-doc goldens, milestone listening, full §11 DoD 1–11; DoD 9/10/11).
+>
+> **Pre-flight done this session:** all PHASE_6 §3.8/§5.8 RNG anchors verified faithful against the
+> live seed system (transitions/humanize stream seeds, devices/mutate/drums sub-streams, humanize
+> getrandbits/randrange vectors — all match). So the §7 draw *counts* (pop 14/38/9, jazz 10/32/11) and
+> the ritard tempo table are the **arbitration-risk** surface (C-09 precedent): the golden-transcriber
+> tasks (C1 T4, C2 T4) are the arbiters — xfail + escalate on divergence, never tune.
+>
+> **Phase 5 is COMPLETE** (sessions 06/07/08/09; full §13 DoD 1–11 PROVEN; 990 tests, four gates green;
+> whole-phase 4-lens review CLEAN/COMPLIANT/PROVEN/GOOD). Read `PHASE_6.md` in full (binding design).
 >
 > **What Phase 5 hands Phase 6 (all committed, tested):**
 >  - **The full pipeline runs end-to-end:** `generate_track(raw_params: dict) -> TrackDocument` in `trackgen.pipeline` (`pipeline/orchestrator.py`) — the proven chain `generate_plan → form → harmony → arrange → select_patterns → generate×[drums,bass,comping,pads] → transitions(stub) → humanize(stub) → sound_design(stub) → serialize`. CLI `trackgen generate`. Both milestone `TrackDocument`s are committed whole-document goldens.
@@ -34,7 +53,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
-| 6 | Transitions, variation & humanization | not started | — | |
+| 6 | Transitions, variation & humanization | planning | 10 | 3-chunk split (D1 seam): C1 stage-6 Transitions (SESSION_10, planning — awaiting approval), C2 stage-7 Humanizer, C3 wiring+milestone+whole-phase |
 | 7 | Sound design | not started | — | |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
 
@@ -57,6 +76,48 @@ One row per implementation session, appended at close-out. Session plan files li
 ## Phase detail
 
 When a phase enters `planning`, the orchestrator adds a `### Phase N` section here containing: the approved chunk plan (if split), the task checklist with per-task status and commit hashes, DoD checklist with evidence as items are proven, and links to relevant CAVEATS entries. Keep entries terse — evidence pointers, not narrative.
+
+### Phase 6 — Transitions, variation & humanization (chunk plan)
+
+**Split into 3 chunks** (phase too large for one session; PHASE_6 D1 stage seam = note-structural vs
+performance-rendering). Seams:
+
+- **Chunk 1 — SESSION_10** (`plans/sessions/SESSION_10.md`): **stage 6, the Transition engine.**
+  `transitions.yaml` schema/loader (TR1–TR7) + PT12 + reference content + fill windows (§4); the full
+  §3 stage — 6a HOLD ending, 6b boundary taxonomy/device-assignment/fill-select-size-render/stop/
+  dropout/crash, 6c mutation (5 operators); device+rendering+mutation goldens (§7.1/§7.2), synthetic
+  fixtures, stage-6 determinism + property subset. Adds tags `fill`/`crash`/`var`/`hold`; adds `crash`
+  to the producer-side voice→track map + drum track order. **Targets DoD 1, 3, 4, 8** + stage-6 slices
+  of 7/9. Out of scope: all of stage 7; pipeline wiring; Serializer crash emit/mix + stub crash timbre;
+  whole-doc re-bless; full property matrix + DoD 1–11 sign-off (C2/C3).
+- **Chunk 2** — stage 7, the Humanizer: `feel.yaml` data+loader+validator (§5.3), the §5 engine (swing
+  §5.2, offset maps §5.3, `tri` timing jitter §5.4, velocity accent+jitter §5.5, bass legato §5.6),
+  ritard tempo curve §5.7 (Friberg–Sundberg, 39-event jazz golden), RNG §5.8; humanizer units + jazz
+  head-1 pre-jitter excerpt golden + note-count-preservation. **DoD 2, 5, 6** + humanizer slice of 7.
+- **Chunk 3** — wiring + milestone + whole-phase: thread `tempoEvents` orchestrator→serializer
+  (`header.tempos = [base] + tempoEvents`), delete the stubs + call the real stages, add `crash` to
+  Serializer `_EMIT_ORDER`/`_STUB_MIX` + a stub-timbres `crash` entry, re-bless both whole-document
+  goldens (fills/crashes/humanization/jazz 40-entry tempo map now change the output), the §11.10
+  milestone listening check, the whole-phase property matrix (DoD 9: V1–V8, crash suppression, C5
+  ceiling under both stages, backbeat protection), whole-PHASE 4-lens review, full §11 DoD 1–11, DoD 11
+  amendment audit (§10). **DoD 9, 10, 11.**
+
+#### Phase 6 — Chunk 1 — session 10 (`plans/sessions/SESSION_10.md`)
+
+**Planning — plan written, AWAITING USER APPROVAL; no task dispatched.** Task list (T1→T2→T3→T4
+serial, then T5):
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | `transitions.yaml` schema (`packs/models.py`) + loader (`packs/loader.py`) + both `styles/*/transitions.yaml` + fill windows + TR1–TR7/PT12 | opus | not started | — |
+| T2 | Stage-6 engine: 6a HOLD (`transitions/ending.py`) + 6b devices (`transitions/devices.py`) + `stage.py` + crash voice→track plumbing (`generators`) | opus | not started | — |
+| T3 | Mutation pass 6c (`transitions/mutation.py`) — five operators + per-unit sub-streams + no-op degradation | opus | not started | — |
+| T4 | Goldens (independent arbiter): §7.1/§7.2 device narratives + rendering + synthetic fixtures + stage-6 determinism/property subset | opus | not started | — |
+| T5 | Whole-chunk 2-lens review + DoD 1/3/4/8 + close-out | orchestrator | not started | — |
+
+Targets **DoD 1** (loader), **3** (device narratives), **4** (rendering goldens), **8** (synthetic
+fixtures), + stage-6 slices of **7** (determinism) and **9** (properties). Pre-flight: all §3.8 RNG
+anchors verified faithful; §7 draw counts (14/38/9, 10/32/11) are the arbitration surface (T4 arbitrates).
 
 ### Phase 5 — Rhythm-section part generators (chunk plan)
 
