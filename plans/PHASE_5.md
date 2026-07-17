@@ -574,7 +574,7 @@ Jazz: drums — rung 2 `jz_dr_2` (single); rung 3 draw {jz_dr_3a w3, jz_dr_3b w2
 
 ### 9.2 Jazz walker (bass stream, per-bar sub-streams)
 
-Draw counts per section (golden): head-1 **9**, solo-1 **38**, solo-2 **37**, solo-3 **36**, head-2 **7**, outro-1 **1** — **128 total**. Note counts: 24 / 50 / 53 / 53 / 24 / 7.
+Draw counts per section (golden): head-1 **9**, solo-1 **38**, solo-2 **37**, solo-3 **36**, head-2 **7**, outro-1 **1** — **128 total**. Note counts: 24 / 51 / 54 / 54 / 24 / 7 — each solo's dead-note ghost count follows from the §6.3 rule-6 embellishment firing on every bar with `barInSection ≡ N−1`, the section's final bar included.
 
 Head-1, bars 0–3 (two-feel; chords Dm9 · Gm9 · Dm9 · Dm9):
 
@@ -592,19 +592,19 @@ Solo-1, bars 12–15 (four-feel over Dm9):
 | Bar | 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
 | 12 | D2 root | E2 (scale) | F2 (chord) | G♭2 chromatic → G2 |
-| 13 | G2 root | A2 | F2 | C2 diatonic → D2 |
+| 13 | G2 root | A2 | F2 | D♭2 chromatic → D2 |
 | 14 | D2 root | B♭1 | C2 | D♭2 chromatic → D2 |
-| 15 | A1 *fifth (decay draw)* | B♭1 | F1 | G♭1 chromatic + dead-note ghost (and-of-4) |
+| 15 | A1 *fifth (decay draw)* | B♭1 | F1 | F1 diatonic + dead-note ghost (and-of-4) |
 
 The bar-15 beat-1 decay draw fires because bars 14–15 share Dm9; the embellishment lands on bar 15 (`barInSection % 4 == 3`, density 0.543 < 0.55 → N = 4). Outro-1 (two-feel, final): D2 · A1 | G1 · D2 | E2 · A2 (2/bar) | **D2 whole note** (final-bar rule, lowest in-lane placement). One draw total.
 
 ### 9.3 Voicing passes (zero draws — integer Viterbi)
 
-Jazz comping (lane 46–69, anchor 63): heads at rung 2 voice shells — Dm9 → **F3+C4** (guide tones), Gm9 → **G3+B♭3+F4** (shell3), B♭13 → **D3+A♭3**, A7♭9 → **D♭3+G3**; solos at rung 3 voice rootless forms — Dm9 → **C3 E3 F3 A3** (Type B: 7-9-3-5), Gm9 → **B♭2 D3 F3 A3** (Type A: 3-5-7-9), B♭13 → **D3 F3 A♭3 G4**, A7♭9 → **D♭3 E3 G3 B♭3**. The A/B alternation around the ii–V (Gm9 Type A → Dm9 Type B, 3 of 4 voices static) **emerges from cost minimization** — nothing rules it in. Pop comping (lane 50–71, anchor 65): verse-1 opens E → E3 G♯3 B3, A → E3 A3 C♯4 (common-tone E3 held; from bar 6 the path re-voices E → E3 B3 G♯4 as it climbs toward the chorus register); chorus E → B3 E4 G♯4, B7 → B3 D♯4 F♯4, C♯m → G♯3 C♯4 E4, A → A3 C♯4 E4; final plagal close A → A3 C♯4 E4, E → B3 E4 G♯4. Pop pads (`fifths`, lane 45–71, stillness weights): chorus E → E3 B3 E4, B7 → B2 F♯3 B3, C♯m → C♯3 G♯3 C♯4, A → A2 E3 A3. All tops ≤ B4 (MIDI 71) — the C5 ceiling holds structurally.
+Jazz comping (lane 46–69, anchor 63): heads at rung 2 voice shells — Dm9 → **F3+C4** (guide tones), Gm9 → **G3+B♭3+F4** (shell3), B♭13 → **D3+A♭3**, A7♭9 → **D♭3+G3**; solos at rung 3 voice rootless forms — Dm9 → **C4 E4 F4 A4** (Type B: 7-9-3-5), Gm9 → **B♭3 D4 F4 A4** (Type A: 3-5-7-9), B♭13 → **D4 F4 A♭4** (no 9th — rootless falls back to 3-5-♭7), A7♭9 → **G3 B♭3 D♭4 E4**. The A/B alternation around the ii–V (Gm9 Type A → Dm9 Type B, 2 of 4 voices static) **emerges from cost minimization** — nothing rules it in. Pop comping (lane 50–71, anchor 65): verse-1 opens E → G♯3 B3 E4, A → A3 C♯4 E4 (common-tone E4 held, and the E voicing stays put across the whole section); chorus E → G♯3 B3 E4, B7 → F♯3 B3 D♯4, C♯m → G♯3 C♯4 E4, A → A3 C♯4 E4; final plagal close A → A3 C♯4 E4, E → G♯3 B3 E4. Pop pads (`fifths`, lane 45–71, stillness weights): chorus E → E3 B3 E4, B7 → B2 F♯3 B3, C♯m → C♯3 G♯3 C♯4, A → A2 E3 A3. All tops ≤ B4 (MIDI 71) — the C5 ceiling holds structurally.
 
 ### 9.4 Instantiation excerpts
 
-Pop verse-1, bar 4 (ticks 7680–9600), governing chord E: kick 0.98 @ 0 / 0.94 @ 960; snare 0.91 @ 480 / 0.88 @ 1440; hats 8ths 0.64/0.46/0.54/0.46/0.61/0.46/0.54/0.48; bass root quarters E2 (40) 0.78/0.72/0.76/0.72 dur 434; comping E3+G♯3+B3 hits @ 0 (dur 814, 0.68) and @ 960 (dur 814, 0.64). Jazz head-1, bar 0 (Dm9): ride 0.675/0.695/0.525/0.675/0.695/0.525 at the straight-grid positions; hats 0.475 @ 480/1440; bass D2 root (0.695) / A2 fifth (0.655) halves; comping Charleston F3+C4 @ 0 (dur 720 — clamped to the 720 gap, 0.595) and @ 720 (dur 443, 0.525). The walker's per-section note counts are golden (§9.2); full-document golden note lists land with the implementation (fixtures, not prose).
+Pop verse-1, bar 4 (ticks 7680–9600), governing chord E: kick 0.98 @ 0 / 0.94 @ 960; snare 0.91 @ 480 / 0.88 @ 1440; hats 8ths 0.64/0.46/0.54/0.46/0.61/0.46/0.54/0.48; bass root quarters E2 (40) 0.78/0.72/0.76/0.72 dur 434; comping G♯3+B3+E4 hits @ 0 (dur 814, 0.68) and @ 960 (dur 814, 0.64). Jazz head-1, bar 0 (Dm9): ride 0.675/0.695/0.525/0.675/0.695/0.525 at the straight-grid positions; hats 0.475 @ 480/1440; bass D2 root (0.695) / A2 fifth (0.655) halves; comping Charleston F3+C4 @ 0 (dur 720 — clamped to the 720 gap, 0.595) and @ 720 (dur 443, 0.525). The walker's per-section note counts are golden (§9.2); full-document golden note lists land with the implementation (fixtures, not prose).
 
 ### 9.5 Milestone
 
@@ -683,7 +683,7 @@ Phase 5 is **built** when an implementation session demonstrates:
 2. **Foundations**: unit tests for §3.1 thresholds (boundary values), §3.3 degree resolution (every degree × representative qualities × dressing tiers, fallbacks, `push` boundary cases incl. no-boundary and song-end, octave folding at lane edges with tie-down), §3.4 velocity/articulation formulas (identity points, clamps, exemptions), §3.5 gating.
 3. **Arrangement stage**: golden tests asserting both §4.5 tables field-for-field; zero-draw assertion (counting-RNG shim on the `arrangement` stream); property tests — every pack × supported mood × lengths × 25 seeds: full section×role coverage, `active` counts ≤ layersMax, lanes within ceilings, intro thinner than successor.
 4. **Selection**: golden tests for both §9.1 draw narratives (selections and exact draw counts: pop 1, jazz 3); completeness property (every reachable (role, kind, rung) resolves for every pack × mood × tempo).
-5. **Walker**: golden tests for §9.2 (all excerpt notes exactly; per-section draw counts 9/38/37/36/7/1; total 128; note counts 24/50/53/53/24/7); per-bar sub-stream independence test (regenerating one bar's RNG reproduces its draws in isolation); property tests — every note in lane, beat-1 rule compliance, approach targets correct, final-bar rule on final sections.
+5. **Walker**: golden tests for §9.2 (all excerpt notes exactly; per-section draw counts 9/38/37/36/7/1; total 128; note counts 24/51/54/54/24/7); per-bar sub-stream independence test (regenerating one bar's RNG reproduces its draws in isolation); property tests — every note in lane, beat-1 rule compliance, approach targets correct, final-bar rule on final sections.
 6. **Voicing passes**: golden tests for §9.3 voicings (jazz shells/rootless, pop triads, pads fifths — exact MIDI); integer-cost property; all tops ≤ 71; cardinality-padding unit test.
 7. **Generators end-to-end**: both worked examples produce Phrases passing: notes sorted, within section spans, velocities in (0,1], non-drum pitches ≤ 71, `push`/`ghost` tags present where §9 says.
 8. **Serializer + milestone**: both examples serialize to `TrackDocument`s passing PHASE_1 §3.8 V1–V8 and the schema; documents committed as fixtures; each plays in the Phase 1 playground through the §9.5 listening checklist. This is the roadmap's first-generated-track milestone.
