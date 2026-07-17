@@ -1,0 +1,93 @@
+# PROVISIONAL stub (PHASE_5 §8.4) — Phase 7 replaces schema + content
+#
+# Instrument recipes are the exact PHASE_1 `fixtures/milestone.trackdoc.json`
+# patches (MembraneSynth kick, NoiseSynth snare, MetalSynth hats, MonoSynth bass,
+# PolySynth/FMSynth comping, PolySynth/AMSynth pads). All flavors of a role reuse
+# one recipe in the stub — flavor differentiation is Phase 7 — but every declared
+# flavor id (interpreter.yaml) is present. Trigger midi: kick 24, hats 80, ride 82,
+# tom_low/mid/high 43/47/50, perc 39; snare (NoiseSynth) carries no midi (V5).
+# Ride/toms/perc reuse the MetalSynth hats recipe (stub simplification).
+
+drums:
+  acoustic_kit: &drum_kit
+    kick:
+      midi: 24
+      instrument:
+        type: MembraneSynth
+        options:
+          pitchDecay: 0.05
+          octaves: 4
+          oscillator: { type: sine }
+          envelope:
+            { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4,
+              attackCurve: exponential }
+    snare:
+      instrument:
+        type: NoiseSynth
+        options:
+          noise: { type: pink, playbackRate: 3 }
+          envelope: { attack: 0.001, decay: 0.13, sustain: 0, release: 0.03 }
+    hats:
+      midi: 80
+      instrument:
+        type: MetalSynth
+        options: &metal_opts
+          frequency: 200
+          envelope: { attack: 0.001, decay: 0.1, release: 0.01 }
+          harmonicity: 5.1
+          modulationIndex: 32
+          resonance: 4000
+          octaves: 1.5
+    ride:
+      midi: 82
+      instrument: { type: MetalSynth, options: *metal_opts }
+    tom_low:
+      midi: 43
+      instrument: { type: MetalSynth, options: *metal_opts }
+    tom_mid:
+      midi: 47
+      instrument: { type: MetalSynth, options: *metal_opts }
+    tom_high:
+      midi: 50
+      instrument: { type: MetalSynth, options: *metal_opts }
+    perc:
+      midi: 39
+      instrument: { type: MetalSynth, options: *metal_opts }
+  tight_kit: *drum_kit
+
+bass:
+  electric_fingered: &bass_patch
+    instrument:
+      type: MonoSynth
+      options:
+        oscillator: { type: sawtooth }
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.4, release: 0.4 }
+        filter: { Q: 2, type: lowpass }
+        filterEnvelope:
+          { attack: 0.02, decay: 0.3, sustain: 0.3, release: 0.5,
+            baseFrequency: 200, octaves: 3 }
+  electric_picked: *bass_patch
+
+comping:
+  clean_electric: &comping_patch
+    instrument:
+      type: PolySynth
+      voice: FMSynth
+      maxPolyphony: 6
+      options:
+        harmonicity: 3
+        modulationIndex: 10
+        envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.5 }
+  crunch_electric: *comping_patch
+  piano: *comping_patch
+
+pads:
+  warm_analog: &pads_patch
+    instrument:
+      type: PolySynth
+      voice: AMSynth
+      maxPolyphony: 6
+      options:
+        harmonicity: 2
+        envelope: { attack: 0.3, decay: 0.4, sustain: 0.6, release: 1.2 }
+  airy_strings: *pads_patch

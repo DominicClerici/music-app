@@ -22,6 +22,7 @@ from trackgen.packs.models import (
     PatternEnvelope,
     ProgressionsConfig,
     StylePack,
+    TimbresConfig,
     VoicedBank,
     VoicingConfig,
     _is_degree1_rooted,
@@ -429,6 +430,19 @@ def load_pack(path: str | Path) -> StylePack:
         except ValueError as exc:
             raise PackLoadError(f"{progressions_path}: {exc}") from exc
 
+    timbres: TimbresConfig | None = None
+    timbres_path = pack_dir / "timbres.yaml"
+    if timbres_path.exists():
+        raw_timbres = _read_yaml(timbres_path)
+        if not isinstance(raw_timbres, dict):
+            raise PackLoadError(f"{timbres_path}: timbres must be a mapping")
+        try:
+            timbres = TimbresConfig.model_validate(raw_timbres)
+        except ValidationError as exc:
+            raise PackLoadError(
+                f"{timbres_path}: invalid timbres config\n{exc}"
+            ) from exc
+
     return StylePack(
         manifest=manifest,
         patterns=patterns,
@@ -439,6 +453,7 @@ def load_pack(path: str | Path) -> StylePack:
         interpreter=interpreter,
         forms=forms,
         progressions=progressions,
+        timbres=timbres,
     )
 
 

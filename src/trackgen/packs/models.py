@@ -15,7 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
-from trackgen.schema.document import Role
+from trackgen.schema.document import InstrumentPatch, Role
 
 Degree = Literal[
     "root",
@@ -1176,6 +1176,34 @@ class ProgressionsConfig(PackModel):
         return self
 
 
+# --- PHASE_5 §8.4 provisional `timbres.yaml` (Phase 7 owns the real schema) ---
+
+
+class TrackTimbre(PackModel):
+    """§8.4 one track's stub timbre: an `InstrumentPatch` plus an optional drum
+    trigger `midi`. Pitched roles and NoiseSynth drums (snare) carry no `midi`
+    (V5: the note supplies its own pitch, or none for NoiseSynth)."""
+
+    midi: int | None = None
+    instrument: InstrumentPatch
+
+
+# A drum kit maps a drum-track id (kick/snare/hats/ride/tom_*/perc) → its timbre.
+DrumKit = dict[str, TrackTimbre]
+
+
+class TimbresConfig(PackModel):
+    """§8.4 `timbres.yaml` — per role, each flavor id → a patch. Drums map a
+    flavor id to a whole kit (per-drum-track timbre); pitched roles map a flavor
+    id to a single timbre. Provisional stub: all flavors of a role reuse the
+    same recipe in v1 (flavor differentiation is Phase 7)."""
+
+    drums: dict[str, DrumKit]
+    bass: dict[str, TrackTimbre]
+    comping: dict[str, TrackTimbre]
+    pads: dict[str, TrackTimbre]
+
+
 class StylePack(PackModel):
     """A loaded, validated style pack: manifest + per-role pattern banks.
 
@@ -1197,3 +1225,4 @@ class StylePack(PackModel):
     interpreter: InterpreterConfig | None = None
     forms: FormsConfig | None = None
     progressions: ProgressionsConfig | None = None
+    timbres: TimbresConfig | None = None
