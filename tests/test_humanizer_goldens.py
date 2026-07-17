@@ -45,6 +45,7 @@ from trackgen.humanize.stage import (
     _ZeroJitter,
     humanize,
 )
+from trackgen.seeds import derive, stream_seed
 
 BAR = 1920
 
@@ -65,7 +66,10 @@ def _jazz_zero_jitter() -> Any:
 
 def test_jazz_head1_bar0_ride() -> None:
     """§7.2: ride bar 0 → 0/480/**827**/960/1440/**1787** — downbeats unmoved, the
-    two offbeats (720, 1680) swung, 0 offset."""
+    two offbeats (720, 1680) swung, 0 offset. The ride is the *sole* carrier of a
+    grid-1680 note in bar 0 (bass is two-feel halves, comping is Charleston
+    0/720), so this list already pins the and-of-4 swing landing (1680→1787); a
+    separate and-of-4 test would only re-assert it."""
     zj = _jazz_zero_jitter()
     ride = track_window(zj, "ride", 0, BAR)
     assert [n.ticks for n in ride] == [0, 480, 827, 960, 1440, 1787]
@@ -99,16 +103,6 @@ def test_jazz_head1_bar0_bass() -> None:
     a2 = [n for n in bass if n.midi == 45]  # A2.
     assert d2 and any(n.ticks == 0 for n in d2), "D2 −1 → clamp 0"
     assert a2 and any(n.ticks == 959 for n in a2), "A2 grid 960 → 959"
-
-
-def test_jazz_head1_bar0_and_of_4_swing() -> None:
-    """§7.2: the and-of-4 (grid 1680) swings to **1787** ("walker ghosts at
-    and-of-4 swing to 1787"). Bar 0 of head-1 is a two-feel bar (bass halves at
-    0/960), so its and-of-4 is carried by the ride; the identical 1680→1787 swing
-    mapping the doc pins is asserted here on the zero-jitter output."""
-    zj = _jazz_zero_jitter()
-    at_1787 = [(p.role, p.track_id) for p in zj for n in p.notes if n.ticks == 1787]
-    assert at_1787, "and-of-4 grid 1680 must land at 1787"
 
 
 def test_jazz_head1_bass_legato_two_feel_halves() -> None:
@@ -232,55 +226,60 @@ def test_humanize_draw_counts(
     assert counted == structural == expected
 
 
+def test_humanize_drums_bar0_seed_anchor() -> None:
+    """§5.8 pinned vector: the drums bar-0 sub-stream is seeded
+    `derive(derive(stream_seed(master, overrides, "humanize"), "drums"),
+    "bar:0") == 6949714659275352449`. This locks the per-`(role, absBar)` seed
+    derivation directly, so a seeding regression can't hide behind the
+    behavioral isolation test below."""
+    plan = drive(JAZZ).plan
+    base = stream_seed(plan.seed.master, plan.seed.overrides, "humanize")
+    assert derive(derive(base, "drums"), "bar:0") == 6949714659275352449
+
+
 def test_per_role_bar_isolation() -> None:
-    """§5.8: a bar's humanized output depends only on its own `(role, absBar)`
-    sub-stream. Perturbing a drum note in a **different** bar changes that bar's
-    output but leaves the target bar (drums bar 5) byte-identical — its RNG is
-    self-seeded `derive(derive(humanize, role), f"bar:{absBar}")`."""
+    """§5.8 / DoD 7: "regenerating one bar reproduces its draws in isolation" —
+    each `(role, absBar)` sub-stream is seeded `derive(derive(humanize, role),
+    f"bar:{absBar}")`, independent of every other bar.
+
+    We humanize the full JAZZ output, then humanize an input containing ONLY the
+    drums notes of bar N (same track_ids / spans / absolute ticks, so absBar is
+    unchanged), and assert bar N's humanized output is byte-identical. Drums have
+    no cross-bar deterministic coupling (bass legato is the only track-global
+    pass), so bar N's positions and its per-bar jitter draws depend solely on
+    `bar:N`; isolating it changes nothing.
+
+    This is the discriminator: under a (buggy) whole-role RNG consumed in bar
+    order, bar N's draws would depend on the earlier bars now absent, so the
+    isolated output would differ. Empirically verified — a per-role scheme fails
+    this equality while the pinned per-`(role, absBar)` scheme passes it; a
+    velocity-only or later-bar perturbation, by contrast, cannot discriminate the
+    two."""
     inp = drive(JAZZ)
     s6 = stage6_final(inp)
+    n_bar = 40  # a mid-song bar with active drums.
+    lo, hi = n_bar * BAR, (n_bar + 1) * BAR
 
     def drum_bar(phrases: Any, bar: int) -> list[tuple[Any, ...]]:
-        lo, hi = bar * BAR, (bar + 1) * BAR
+        blo, bhi = bar * BAR, (bar + 1) * BAR
         return sorted(
             (p.track_id, n.ticks, n.midi, n.duration_ticks, n.velocity, tuple(n.tags))
             for p in phrases
             if p.role == "drums"
             for n in p.notes
-            if lo <= n.ticks < hi
+            if blo <= n.ticks < bhi
         )
 
-    base_out, _ = humanize(s6, inp.sf, inp.plan)
+    full, _ = humanize(s6, inp.sf, inp.plan)
 
-    # Perturb one drum note's velocity in bar 30, keeping the note (and its grid
-    # tick) — so no note is added/removed and only that bar's stream is touched.
-    perturbed: list[Any] = []
-    changed = False
-    for phrase in s6:
-        if phrase.role == "drums" and not changed:
-            new_notes = []
-            for note in phrase.notes:
-                if not changed and 30 * BAR <= note.ticks < 31 * BAR:
-                    new_notes.append(
-                        note.model_copy(
-                            update={
-                                "velocity": round(
-                                    min(1.0, note.velocity * 0.5 + 0.01), 3
-                                )
-                            }
-                        )
-                    )
-                    changed = True
-                else:
-                    new_notes.append(note)
-            perturbed.append(phrase.model_copy(update={"notes": new_notes}))
-        else:
-            perturbed.append(phrase)
-    assert changed, "expected a drum note in bar 30 to perturb"
+    # Isolate bar N's drum notes into their own phrases (identical track_id / role
+    # / span / ticks — so each keeps absBar == N and its per-bar seed).
+    isolated_in = [
+        p.model_copy(update={"notes": [n for n in p.notes if lo <= n.ticks < hi]})
+        for p in s6
+        if p.role == "drums" and any(lo <= n.ticks < hi for n in p.notes)
+    ]
+    iso, _ = humanize(isolated_in, inp.sf, inp.plan)
 
-    pert_out, _ = humanize(perturbed, inp.sf, inp.plan)
-
-    # The perturbation genuinely moved its own bar (non-vacuous) …
-    assert drum_bar(base_out, 30) != drum_bar(pert_out, 30)
-    # … but the target bar 5 is untouched (self-seeded per-bar stream).
-    assert drum_bar(base_out, 5) == drum_bar(pert_out, 5)
+    assert drum_bar(full, n_bar), "bar N must have drum notes (non-vacuous)"
+    assert drum_bar(iso, n_bar) == drum_bar(full, n_bar)
