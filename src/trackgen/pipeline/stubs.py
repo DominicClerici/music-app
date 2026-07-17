@@ -18,22 +18,14 @@ TID251): the reserved `transitions`/`humanize`/`sound` seed streams stay unused.
 from pydantic import BaseModel, ConfigDict
 
 from trackgen.packs.models import StylePack
+from trackgen.parts.generators import _TRACK_ORDER as _DRUM_TRACK_IDS
 from trackgen.schema.document import EffectPatch, InstrumentPatch, Tempo
 from trackgen.schema.ir import GenerationPlan, Phrase
 
-# The eight drum track ids (mirrors `parts.generators._TRACK_ORDER`) and the
-# three pitched roles keyed by their own name. `sound_design` returns a
-# `TrackSound` for every one — the Serializer emits only those with >= 1 note.
-_DRUM_TRACK_IDS: tuple[str, ...] = (
-    "kick",
-    "snare",
-    "hats",
-    "ride",
-    "tom_low",
-    "tom_mid",
-    "tom_high",
-    "perc",
-)
+# The eight drum track ids (single-sourced from `parts.generators._TRACK_ORDER`,
+# as the Serializer also imports it) and the three pitched roles keyed by their
+# own name. `sound_design` returns a `TrackSound` for every one — the Serializer
+# emits only those with >= 1 note.
 _PITCHED_ROLES: tuple[str, ...] = ("bass", "comping", "pads")
 
 
