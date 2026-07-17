@@ -27,12 +27,12 @@ Plus the two escalation-watch confirmations made **explicit and non-vacuous**:
   proof that stage-6's crash+kick double-hit guard keeps C-10 unreachable.
 
 The tag-bearing invariants (1/2/3/6 and P1) are asserted on the stage-6 phrase
-output *before* serialize (the C-11 `fill`/`crash` provenance tags are
-serialize-dropped, and the Humanizer only nudges ticks by <= 25 ms / <= 10 ms —
-it cannot move a fill across a bar). The doc-level invariants (4/5/7) are
-asserted on the real `TrackDocument`. `_wired()` composes exactly what
-`generate_track` does (proven identical in `test_wired_matches_generate_track`)
-while exposing the intermediates the phrase-level checks need.
+output (fill/crash *placement* is inherently a stage-6 property, and the C-11
+`fill`/`crash` provenance tags are serialize-dropped). Invariant 5 is asserted
+on both the stage-6 output and the final doc; the doc-level invariants (4/5/7)
+run on the real `TrackDocument`. `_wired()` composes exactly what `generate_track`
+does (proven identical in `test_wired_matches_generate_track`) while exposing the
+intermediates the phrase-level checks need.
 """
 
 from __future__ import annotations
@@ -74,6 +74,9 @@ from trackgen.transitions.ending import find_t_last
 # here rather than silently diverging (§11.9 pins 25 seeds x 3 lengths).
 assert len(_SEEDS) == 25
 assert _LENGTHS == [None, 180, 240]
+# Both reference packs present with a non-empty mood set — guards against a
+# silent matrix shrink (§11.9 pins "every pack x every supported mood").
+assert {p["styleFamily"] for p in _matrix()} == {"pop_rock", "jazz"}
 
 _PITCHED_ROLES = ("bass", "comping", "pads")
 _C5_CEILING = 71  # PHASE_1 D14 / ROADMAP invariant 4: soloist owns above ~C5.
@@ -231,26 +234,38 @@ def test_phase6_property_matrix(params: dict[str, object]) -> None:
             )
 
     # ---- (5) Non-drum midi untouched by both stages (C5 ceiling). --------------
-    # Doc level: no non-drum note is None or > 71.
-    for track in doc.tracks:
-        if track.role in _PITCHED_ROLES:
-            for ev in track.notes:
-                assert ev.midi is not None and ev.midi <= _C5_CEILING, (
-                    params,
-                    "C5-ceiling",
-                    track.role,
-                    ev.midi,
-                )
-    # Phrase level: the emitted pitched-midi multiset is a sub-multiset of the
-    # pre-stage-6 material (both stages move/delete, never re-pitch or add pitch).
+    # The pitched-midi multiset never re-pitches or gains pitch across EITHER
+    # stage. Assert it against the pre-stage-6 generator output at three points:
+    # the stage-6 output (transitions), and the final `TrackDocument` (transitions
+    # AND humanize AND serialize), each a sub-multiset of the original. The final
+    # doc check closes the "both stages" clause directly rather than leaning on
+    # humanize's separately-proven midi invariance (DoD 7).
     for role in _PITCHED_ROLES:
         initial = Counter(
             n.midi for p in inp.phrases if p.role == role for n in p.notes
         )
-        emitted = Counter(n.midi for p in final if p.role == role for n in p.notes)
-        for midi, count in emitted.items():
-            assert midi is not None and midi <= _C5_CEILING, (params, "C5", role, midi)
-            assert initial[midi] >= count, (params, "not-submultiset", role, midi)
+        stage6_emitted = Counter(
+            n.midi for p in final if p.role == role for n in p.notes
+        )
+        doc_emitted = Counter(
+            ev.midi for t in doc.tracks if t.role == role for ev in t.notes
+        )
+        for label, emitted in (("stage6", stage6_emitted), ("doc", doc_emitted)):
+            for midi, count in emitted.items():
+                assert midi is not None and midi <= _C5_CEILING, (
+                    params,
+                    "C5-ceiling",
+                    label,
+                    role,
+                    midi,
+                )
+                assert initial[midi] >= count, (
+                    params,
+                    "not-submultiset",
+                    label,
+                    role,
+                    midi,
+                )
 
     # ---- (6) Backbeat-class snares never removed or moved by mutation. ---------
     def backbeats(phrases: list[Phrase]) -> set[tuple[int, float]]:
