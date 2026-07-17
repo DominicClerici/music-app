@@ -6,51 +6,67 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 6 — Chunk 2 (Humanizer / stage 7)**, session 11 (`@PROMPT.md - Phase 6`, resume
-> mid-phase — the 3-chunk plan is approved; do NOT re-plan the chunk split, just plan Chunk 2's tasks
-> and get approval before dispatching). **STATUS: the Chunk-2 task plan is written
-> (`plans/sessions/SESSION_11.md`, T1–T5) and AWAITING USER APPROVAL — no task dispatched yet.**
-> **Chunk 1 (stage 6) is COMPLETE** (session 10; DoD 1+3+4+8 +
-> stage-6 slices of 7+9 PROVEN; **2667 tests**, four gates green; T4 reproduced every §7 sample verbatim
-> — zero divergences; whole-chunk 2-lens review APPROVE-WITH-NITS / PROVEN-WITH-GAPS, all fixes applied).
+> **Next:** **Phase 6 — Chunk 3 (wiring + milestone + whole-phase)**, session 12 (`@PROMPT.md - Phase 6`,
+> resume mid-phase — the 3-chunk plan is approved; do NOT re-plan the split, just plan C3's tasks and
+> get approval before dispatching). **This is the FINAL chunk of Phase 6** — run the review across all
+> three chunks together and complete the full §11 DoD 1–11 + §10 amendment audit.
 >
-> **What Chunk 2 builds** (stage 7, PHASE_6 §5 — the note-count-preserving Humanizer):
-> `humanize(phrases, form, plan) → (Phrase[], tempoEvents)`. Per-note op order **swing → offset map →
-> timing jitter → velocity accent → velocity jitter → duration** (§5, D9); `feel.yaml` engine data
-> (§5.3 — validator caps offsets ≤25ms / jitter ≤10ms / |accent| ≤0.05); the `tri` triangular helper on
-> `randrange` (§5.4); `dynamicsRange`-scaled velocity jitter (§5.5); walking-bass legato (§5.6); the
-> Friberg–Sundberg **ritard** as stepped tempo events (§5.7 — the jazz 39-event golden table in §7.2).
-> RNG §5.8: per-(role,bar) sub-streams `derive(derive(humanize, role), f"bar:{absBar}")`. Targets
-> **DoD 2, 5, 6** + the humanizer slice of 7. Suggested tasks: T1 `feel.yaml`+loader+validator, T2
-> humanizer engine (§5.2–§5.6), T3 ritard (§5.7), T4 goldens (jazz head-1 pre-jitter excerpt §7.2 +
-> 39-event ritard table + determinism + note-count preservation), T5 review.
+> **Chunk 1 (stage 6) COMPLETE** (session 10; DoD 1+3+4+8 + stage-6 7/9; T4 zero divergences; C-11).
+> **Chunk 2 (stage 7 Humanizer) COMPLETE** (session 11; DoD 2+5+6 + humanizer-slice-7; **2734 tests**,
+> four gates green; T4 **zero divergences** — every §7.2 value verbatim; no new caveats). Both stages
+> now exist as real, tested functions but are **NOT yet wired** into the pipeline.
 >
-> **Pre-flight (already verified session 10):** the §5.8 humanize RNG anchors match the live seed
-> system — `derive(master,"humanize")` = 3899203291477031323; `random.Random(humanize)` first-five
-> `getrandbits(32)` = [4182865326, 1966627690, 4223947781, 2670867691, 1704714080]; first-five
-> `randrange(100)` = [58, 79, 50, 70, 90]; `derive(derive(humanize,"drums"),"bar:0")` = 6949714659275352449.
-> So the §7.2 ritard tempo table (39 events, endpoints 68.5 … 45.5) is the **arbitration-risk** surface —
-> C2 T4 is the arbiter (xfail + escalate on divergence, never tune; C-09 precedent).
+> **What Chunk 3 builds (DoD 9, 10, 11):**
+>  1. **Wire the real stages** — delete the two stubs in `pipeline/stubs.py` (`transitions`, `humanize`;
+>     keep `sound_design` — Phase 7) and call the real `trackgen.transitions.transitions(phrases, form,
+>     chords, arr, plan, pack)` and `trackgen.humanize.humanize(phrases, form, plan)` from
+>     `pipeline/orchestrator.py`. Mind the signatures: the real `transitions` takes 6 args (the stub took
+>     1); the real `humanize` takes `(phrases, form, plan)` (the stub took 1) and returns
+>     `(Phrase[], list[Tempo])`.
+>  2. **Thread `tempoEvents`** — the orchestrator currently discards `humanize`'s 2nd return; route it to
+>     the Serializer so `header.tempos = [Tempo(ticks=0, bpm=plan.tempo_bpm)] + tempoEvents` (PHASE_6 §6;
+>     V1 requires first at tick 0, sorted — the ritard events are already absolute-tick ascending). This
+>     is `serialize`'s only change (its signature gains a tempo-events input).
+>  3. **Crash Serializer/timbre** — add `crash` to the Serializer `_EMIT_ORDER`/`_STUB_MIX` and a
+>     stub-timbres `crash` entry (crash trigger midi per PHASE_7; the session-10 guard in
+>     `stubs.sound_design` currently skips the note-less `crash` track — C3 removes the need). `crash` is
+>     already in `generators._TRACK_ORDER`/`_VOICE_TRACK` and produced by stage 6.
+>  4. **Re-bless both whole-document goldens** (`fixtures/{pop_rock,jazz}.milestone.trackdoc.json` +
+>     `tests/test_whole_document_goldens.py`) in a dedicated commit — fills/crashes/humanization + the
+>     jazz **40-entry** tempo map (base + 39 ritard) now change the output (ROADMAP §3 rule 3 bless-in-
+>     spirit; re-verify V1–V8 + the §9.4 anchors). This is the first multi-event `header.tempos` in a
+>     generated doc.
+>  5. **Whole-phase property matrix (DoD 9)** — every pack × supported mood × lengths × **25 seeds**
+>     through BOTH stages: §11.9 — fills only in legal bars, no groove event inside a rendered window,
+>     crash suppression (postchorus/breakdown), no note < 0 or past song end, non-drum `midi` untouched
+>     (C5 ceiling under both stages), backbeat-class snare (vel≥0.7 at back2/back4) never removed/moved,
+>     every doc passes V1–V8.
+>  6. **Milestone (DoD 10)** — both examples regenerate through the real stages, serialize, play in the
+>     Phase-1 playground; the §11.10 listening checklist (fills lead every change onto a crash; the jazz
+>     ritard reads as a band slowing; the pop ending rings + releases; no bar loops byte-identically; the
+>     swing survives the ritard). **Needs a user audition** (like PHASE_5 §9.5).
+>  7. **Whole-PHASE 4-lens review** (across all 3 chunks) + **full §11 DoD 1–11** checklist with evidence
+>     + **DoD 11 / §10 amendment audit** (all §10 amendments present + consistent: ROADMAP pipeline
+>     diagram, PHASE_1 §4/§4.5 tag vocab + Q5, PHASE_5 §8.1/§8.3 stub replacement + `tempoEvents`, PHASE_2
+>     §7.2 dynamicsRange). Log CAVEATS for any deviation.
 >
-> **What Chunk 2 does NOT touch (stays Chunk 3):** pipeline wiring — the orchestrator still calls the
-> STUB `transitions`/`humanize` (`pipeline/stubs.py`); C3 deletes the stubs, calls the real stages,
-> threads `humanize`'s 2nd return (`tempoEvents`) into `serialize`'s `header.tempos = [base] +
-> tempoEvents`, adds `crash` to the Serializer `_EMIT_ORDER`/`_STUB_MIX` + a stub-timbres `crash` entry
-> (session 10 left a documented guard in `stubs.sound_design` skipping the note-less crash track until
-> then — see the T2 note), re-blesses both whole-document goldens (fills/crashes/humanization/jazz
-> 40-entry tempo map all change the output — ROADMAP §3 bless-in-spirit), runs the milestone listening
-> check (§11.10), the full §11.9 property matrix + V1–V8, and the whole-PHASE 4-lens review + full DoD 1–11.
+> **C3 escalation watch:** the **P1 latent** (SESSION_10 handoff / Chunk-1 notes) — §3.2 places
+> section-boundary fill/crash **unconditionally by entered type**; if a v1 form ever had `drums` inactive
+> at a device site the fill/crash would inject drum events there. Unreachable in the two reference forms
+> (drums active everywhere; goldens pass) — the DoD-9 property matrix should **confirm** this across all
+> mood/length/seed combos; if a combo trips it, that's a §3.2 amendment (sign-off), not a silent fix.
+> Also confirm **C-10** (thin Serializer no coincident-same-voice-drum de-dup, latent V3) stays
+> unreachable now that stage 6 adds crash+kick at shared ticks (the double-hit guard should prevent it —
+> verify in the V-rule sweep).
 >
-> **Chunk-2 integration facts:** stage 7 gets `phrases` = stage-6 output (already tagged fill/crash/var/
-> hold — the humanizer adds no tags, §3.9). It only adjusts `ticks`/`durationTicks`/`velocity`, re-sorts
-> `(ticks, midi)` per phrase (§5). `feel.yaml` lives at `src/trackgen/humanize/feel.yaml`, loaded like
-> `interpreter/moods.yaml`. Pads are jitter-exempt (accent still applies). Drums key feel by **voice**
-> — and the voice provenance is now available on drum notes as tags (see **C-11**), so the humanizer can
-> read the same voice tags rather than re-deriving. `ticksPerMs = 480 × tempoBpm / 60000`.
+> **Chunk-2 facts now TRUE (for C3):** `humanize` keys drums by **track_id** (`tom_*→toms`), pitched by
+> role — it does NOT use the C-11 voice tags; it adds **no** tags and preserves note count (midi/tags
+> untouched), re-sorting `(ticks, midi)` per phrase. Feel-table selection is swing-derived from
+> `plan.swing` (no pack arg; no v1 `feelTable`). Bass legato is **track-level** (§5.6). `ticksPerMs =
+> 480 × tempoBpm / 60000`. The §5.8 RNG anchors are locked by `test_humanize_drums_bar0_seed_anchor`.
 >
-> **Phase 5 is COMPLETE** (sessions 06–09). Read `PHASE_6.md` §5/§7.2 in full (binding). Determinism
-> enforced by TID251; four-gate suite now ~3m45s (the 25-seed stage-6 property matrix; run pytest with
-> an extended timeout).
+> **Read `PHASE_6.md` §3/§5/§6/§7.3/§8.3/§10/§11 in full (binding).** Determinism enforced by TID251;
+> four-gate suite ~3m50s (2734 tests; run pytest with an extended timeout).
 >
 > **What Phase 5 hands Phase 6 (all committed, tested):**
 >  - **The full pipeline runs end-to-end:** `generate_track(raw_params: dict) -> TrackDocument` in `trackgen.pipeline` (`pipeline/orchestrator.py`) — the proven chain `generate_plan → form → harmony → arrange → select_patterns → generate×[drums,bass,comping,pads] → transitions(stub) → humanize(stub) → sound_design(stub) → serialize`. CLI `trackgen generate`. Both milestone `TrackDocument`s are committed whole-document goldens.
@@ -78,7 +94,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
-| 6 | Transitions, variation & humanization | in progress | 10 | 3-chunk split (D1 seam). **C1 stage-6 Transitions DONE** (session 10: DoD 1+3+4+8 + stage-6 7/9; 2667 tests; T4 zero divergences; C-11 logged). Next: C2 stage-7 Humanizer, then C3 wiring+milestone+whole-phase |
+| 6 | Transitions, variation & humanization | in progress | 10, 11 | 3-chunk split (D1 seam). **C1 stage-6 Transitions DONE** (session 10: DoD 1+3+4+8 + stage-6 7/9; C-11). **C2 stage-7 Humanizer DONE** (session 11: DoD 2+5+6 + humanizer-slice-7; 2734 tests; T4 zero divergences; no new caveats). Next: C3 wiring+milestone+whole-phase (DoD 9/10/11) |
 | 7 | Sound design | not started | — | |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
 
@@ -88,6 +104,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 11 | 2026-07-17 | Phase 6 chunk 2 (stage-7 Humanizer) | 4 opus tasks (T1 feel loader → T2 engine → T3 ritard → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2734 tests**). **DoD 2+5+6 + humanizer slice of 7 PROVEN.** New `src/trackgen/humanize/` implements PHASE_6 §5 exactly (`feel.yaml`+loader/validator §5.3 → engine §5.1–§5.6/§5.8 → ritard §5.7); `humanize(phrases, form, plan) → (Phrase[], tempoEvents)`. **T4 arbiter: ZERO divergences** — every §7.2 value verbatim (head-1 bar-0 pre-jitter via the `_ZeroJitter` seam; full 39-event ritard table incl. all 11 anchors 68.5…45.5 + endpoints; two-feel legato 960→912) → no §7 amendment. Whole-chunk 2-lens review: correctness/contract **APPROVE** (engine matches §5 clause-by-clause; two reviewers independently recomputed RNG anchors + the full ritard curve), test-quality/DoD **APPROVE-WITH-NITS**. Fixes: T2-review made bass legato **track-level** (§5.6); T5 replaced a non-discriminating isolation test with the literal "regenerate-one-bar-in-isolation" test (empirically verified to fail a per-role RNG) + a direct §5.8 seed-anchor test + dropped a redundant golden. **No new caveats.** | 0ad958d feel · b46a08f engine · 8f0193a ritard · ec2cccf goldens · f71dffa review-fixes |
 | 10 | 2026-07-17 | Phase 6 chunk 1 (stage-6 Transition engine) | 4 opus tasks (T1 loader → T2 6a HOLD + 6b devices → T3 6c mutation → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2667 tests**, 25-seed property matrix). **DoD 1+3+4+8 + stage-6 slices of 7+9 PROVEN.** New `src/trackgen/transitions/` package implements PHASE_6 §3/§4 exactly (6a HOLD → 6b fill/stop/dropout/crash → 6c five mutation operators; `transitions.yaml` loader + fill windows). **T4 (independent arbiter): ZERO divergences** — every §7 sample reproduced verbatim (pop 14/38/9 & jazz 10/32/11 draws, fired-op lists incl. 4 no-ops, crash velocities, fill bar 3, HOLD both) → no §7 amendment (unlike C-09). Whole-chunk review: correctness/contract APPROVE-WITH-NITS (10/10 clauses CONFIRM), test-quality/DoD PROVEN-WITH-GAPS. Fixes: N1 crash-default 1440 pinned in `_DEFAULT_DUR` (§10.7); N2 fill drops stray crash voice; N3 `drop_ornament` beat-1 protection structural; property matrix 4→**25 seeds** (§11.9). **C-11 logged** (internal voice/ornament provenance tags, serialize-invisible). | 22bd551 loader · 9218e14 devices+HOLD · 7623216 mutation · 492935f goldens · (close-out this commit) |
 | 01 | 2026-07-14 | Phase 1 (all) | All 6 tasks built, reviewed, gates green (125 tests). DoD §9.1–§9.5 + §9.7 proven; §9.6 manual audition pending user. No CAVEATS (all §5.6 goldens reproduced exactly; no doc amendments). | e0643ee seeds · 5d32e8c schema · 41e3af8 packs · 7fc3a5f validator+export · 6fbaa7c fixture · cf2b490 playground · e27f704 review-fixes |
 | 02 | 2026-07-15 | Phase 2 (all) | 6 tasks built, per-task + 4-lens whole-session review, gates green (245 tests). All §11 DoD 1–8 proven; both §6.5 goldens reproduce field-for-field; orchestrator pre-verified every load-bearing sample. Contract lens COMPLIANT. Review fixes: malformed-type wrapping (C-01), pack-tonic validation, mode-ladder dedupe, 3 test-coverage gaps closed. | 74e57b5 plan-fields · 2ab6997 moods · 8fe953f packs+refs · 2c0c602 params · 26f39a0 interpreter · eb00804 review-fixes |
@@ -139,8 +156,59 @@ Task list (T1→T2→T3→T4 serial, then T5); all implementation opus, disjoint
 | T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | 0ad958d |
 | T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | done | b46a08f |
 | T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | done | 8f0193a |
-| T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | done | (this commit) |
-| T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | not started | — |
+| T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | done | ec2cccf |
+| T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | done | f71dffa |
+
+**Chunk 2 COMPLETE.** 4 opus tasks (T1→T2→T3→T4 serial) + T5 whole-chunk 2-lens review; per-task
++ whole-chunk review; four gates green (**2734 tests**). **DoD 2+5+6 + humanizer slice of 7 PROVEN.**
+New `src/trackgen/humanize/` package implements PHASE_6 §5 exactly: `humanize(phrases, form, plan) →
+(Phrase[], tempoEvents)` (feel loader/validator §5.3 → engine §5.1–§5.6/§5.8 → ritard §5.7). **T4
+(independent arbiter): ZERO divergences** — every §7.2 value reproduced verbatim (head-1 bar-0
+pre-jitter, full 39-event ritard table incl. all 11 anchors 68.5…45.5, endpoints; bass legato
+960→912) → no §7 amendment (like C1's T4; unlike C-09). Whole-chunk 2-lens review: correctness/contract
+**APPROVE** (engine matches §5 clause-by-clause; two reviewers independently recomputed RNG anchors +
+the full ritard curve; invariants 2/4/5 hold), test-quality/DoD **APPROVE-WITH-NITS** (DoD 2/5/6
+PROVEN; DoD-7 slice had a non-discriminating isolation test). Review fixes (f71dffa): the isolation
+test replaced with the literal DoD-7 "regenerate one bar in isolation" test — **empirically verified
+to discriminate** (a per-role RNG fails the bar-N-isolated == bar-N-full equality; the pinned
+per-(role,absBar) seeding passes it); + a direct §5.8 seed-anchor test; + deleted a redundant
+and-of-4 test.
+
+**No new CAVEATS.** Two design points resolved (decisions, not deviations — no §5 value changed):
+(1) **bass legato is track-level** (§5.6 "same track's next attack" + "the final whole note (no
+successor)" — spans all bass phrases; only the globally-final bass note exempt; caught + fixed in T2
+review). (2) **feel-table selection uses the swing-derived default** (`plan.swing` → straight/swung)
+since `humanize(phrases, form, plan)` takes no pack and no v1 pack declares the PHASE_8 `feelTable`;
+a future `feelTable` selector would need a signature change (noted in `humanize/stage.py`).
+
+**DoD (§11) — Chunk 2 targets 2, 5, 6 + humanizer slice of 7 — all PROVEN:**
+- [x] §11.2 **Feel data PROVEN** — `humanize/feel.yaml` matches §5.3 field-for-field; validator caps
+  (offsets ≤25ms / jitter ≤10ms / |accent| ≤0.05) each with a non-vacuous rejection fixture +
+  load-wrapper tests (`tests/test_feel.py`, 13). Commit `0ad958d`.
+- [x] §11.5 **Humanizer PROVEN** — swing (offbeat-only, both subdivisions, gap-preserving stretch both
+  directions, straight no-op), offset (both tables, ms→tick both tempi), `tri` bounds + `w==0`/`W==0`
+  draw-skip (both timing & velocity), accent map, `W` width (57/68), bass legato (both feels +
+  final-note exempt + track-level) (`tests/test_humanizer.py`, 21); jazz head-1 bar-0 **pre-jitter**
+  excerpt via the `_ZeroJitter` seam — ride 0/480/827/960/1440/1787, hats 478/1438, comping 10/828,
+  bass D2→0/A2→959, two-feel legato 960→912 (`tests/test_humanizer_goldens.py`). Commits `b46a08f`,
+  `ec2cccf`, `f71dffa`.
+- [x] §11.6 **Ritard PROVEN** — 39-event jazz table (11 §7.2 anchors + endpoints + full-39 fixture,
+  tag_start 115200 from geometry) (`tests/test_ritard_goldens.py`); monotone/floor/first>tag-start/
+  none-past-release + cold/fade zero + fade==cold alias + tag_bars:0 (`tests/test_ritard.py`, 14).
+  Commits `8f0193a`, `ec2cccf`.
+- [x] §11.7 **Determinism (humanizer slice) PROVEN** — repeated-run bit-identity; note-count
+  preservation (midi/tags multisets) both examples; exact draw counts via counting-RNG shim ==
+  independent structural computation (pop **10198** / jazz **5088**); per-(role,bar) isolation
+  (regenerate-one-bar, empirically discriminating) + direct §5.8 seed anchor
+  (`tests/test_humanizer_goldens.py`). Commit `ec2cccf`, `f71dffa`. (Full DoD-9 V1–V8 + combined-stage
+  matrix is C3.)
+
+**Deferred to Chunk 3 (unchanged):** all pipeline wiring (thread `tempoEvents` orchestrator→serializer
+`header.tempos = [base] + tempoEvents`, delete the stubs, call the real stages, add `crash` to
+Serializer `_EMIT_ORDER`/`_STUB_MIX` + a stub-timbres `crash` entry), whole-document golden re-bless,
+milestone listening (§11.10), whole-phase property matrix (DoD 9: V1–V8, crash suppression, C5 ceiling
+under **both** stages, backbeat protection), whole-PHASE 4-lens review, full DoD 1–11 + §10 amendment
+audit (DoD 9, 10, 11).
 
 **T1 DONE** (0ad958d) — feel data + loader + validator (`src/trackgen/humanize/{feel.py,feel.yaml}`);
 §5.3 values field-for-field, three cap classes each with a non-vacuous rejection fixture; per-task
