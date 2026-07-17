@@ -6,26 +6,49 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 6 — Chunk 1 (Transition engine / stage 6)**, session 10. **Chunk plan
-> written + AWAITING USER APPROVAL; no implementation agent dispatched.** Session plan:
-> `plans/sessions/SESSION_10.md`. On approval, dispatch T1→T2→T3→T4 (serial, all opus) then T5
-> (orchestrator review + close-out). See the **Phase 6 chunk plan** in Phase detail below.
+> **Next:** **Phase 6 — Chunk 2 (Humanizer / stage 7)**, session 11 (`@PROMPT.md - Phase 6`, resume
+> mid-phase — the 3-chunk plan is approved; do NOT re-plan the chunk split, just plan Chunk 2's tasks
+> and get approval before dispatching). **Chunk 1 (stage 6) is COMPLETE** (session 10; DoD 1+3+4+8 +
+> stage-6 slices of 7+9 PROVEN; **2667 tests**, four gates green; T4 reproduced every §7 sample verbatim
+> — zero divergences; whole-chunk 2-lens review APPROVE-WITH-NITS / PROVEN-WITH-GAPS, all fixes applied).
 >
-> Phase 6 is split into **3 chunks** (D1 stage seam): **C1 = stage 6 Transitions** (note-structural:
-> `transitions.yaml` loader, HOLD ending, boundary devices/fills/stop/dropout/crash, mutation ops;
-> DoD 1/3/4/8 + stage-6 slices of 7/9), **C2 = stage 7 Humanizer** (swing/`feel.yaml`/jitter/accent/
-> legato/ritard; DoD 2/5/6 + humanizer 7), **C3 = wiring + milestone + whole-phase** (thread
-> tempoEvents orchestrator→serializer, delete stubs, add `crash` to Serializer emit/mix + stub timbre,
-> re-bless whole-doc goldens, milestone listening, full §11 DoD 1–11; DoD 9/10/11).
+> **What Chunk 2 builds** (stage 7, PHASE_6 §5 — the note-count-preserving Humanizer):
+> `humanize(phrases, form, plan) → (Phrase[], tempoEvents)`. Per-note op order **swing → offset map →
+> timing jitter → velocity accent → velocity jitter → duration** (§5, D9); `feel.yaml` engine data
+> (§5.3 — validator caps offsets ≤25ms / jitter ≤10ms / |accent| ≤0.05); the `tri` triangular helper on
+> `randrange` (§5.4); `dynamicsRange`-scaled velocity jitter (§5.5); walking-bass legato (§5.6); the
+> Friberg–Sundberg **ritard** as stepped tempo events (§5.7 — the jazz 39-event golden table in §7.2).
+> RNG §5.8: per-(role,bar) sub-streams `derive(derive(humanize, role), f"bar:{absBar}")`. Targets
+> **DoD 2, 5, 6** + the humanizer slice of 7. Suggested tasks: T1 `feel.yaml`+loader+validator, T2
+> humanizer engine (§5.2–§5.6), T3 ritard (§5.7), T4 goldens (jazz head-1 pre-jitter excerpt §7.2 +
+> 39-event ritard table + determinism + note-count preservation), T5 review.
 >
-> **Pre-flight done this session:** all PHASE_6 §3.8/§5.8 RNG anchors verified faithful against the
-> live seed system (transitions/humanize stream seeds, devices/mutate/drums sub-streams, humanize
-> getrandbits/randrange vectors — all match). So the §7 draw *counts* (pop 14/38/9, jazz 10/32/11) and
-> the ritard tempo table are the **arbitration-risk** surface (C-09 precedent): the golden-transcriber
-> tasks (C1 T4, C2 T4) are the arbiters — xfail + escalate on divergence, never tune.
+> **Pre-flight (already verified session 10):** the §5.8 humanize RNG anchors match the live seed
+> system — `derive(master,"humanize")` = 3899203291477031323; `random.Random(humanize)` first-five
+> `getrandbits(32)` = [4182865326, 1966627690, 4223947781, 2670867691, 1704714080]; first-five
+> `randrange(100)` = [58, 79, 50, 70, 90]; `derive(derive(humanize,"drums"),"bar:0")` = 6949714659275352449.
+> So the §7.2 ritard tempo table (39 events, endpoints 68.5 … 45.5) is the **arbitration-risk** surface —
+> C2 T4 is the arbiter (xfail + escalate on divergence, never tune; C-09 precedent).
 >
-> **Phase 5 is COMPLETE** (sessions 06/07/08/09; full §13 DoD 1–11 PROVEN; 990 tests, four gates green;
-> whole-phase 4-lens review CLEAN/COMPLIANT/PROVEN/GOOD). Read `PHASE_6.md` in full (binding design).
+> **What Chunk 2 does NOT touch (stays Chunk 3):** pipeline wiring — the orchestrator still calls the
+> STUB `transitions`/`humanize` (`pipeline/stubs.py`); C3 deletes the stubs, calls the real stages,
+> threads `humanize`'s 2nd return (`tempoEvents`) into `serialize`'s `header.tempos = [base] +
+> tempoEvents`, adds `crash` to the Serializer `_EMIT_ORDER`/`_STUB_MIX` + a stub-timbres `crash` entry
+> (session 10 left a documented guard in `stubs.sound_design` skipping the note-less crash track until
+> then — see the T2 note), re-blesses both whole-document goldens (fills/crashes/humanization/jazz
+> 40-entry tempo map all change the output — ROADMAP §3 bless-in-spirit), runs the milestone listening
+> check (§11.10), the full §11.9 property matrix + V1–V8, and the whole-PHASE 4-lens review + full DoD 1–11.
+>
+> **Chunk-2 integration facts:** stage 7 gets `phrases` = stage-6 output (already tagged fill/crash/var/
+> hold — the humanizer adds no tags, §3.9). It only adjusts `ticks`/`durationTicks`/`velocity`, re-sorts
+> `(ticks, midi)` per phrase (§5). `feel.yaml` lives at `src/trackgen/humanize/feel.yaml`, loaded like
+> `interpreter/moods.yaml`. Pads are jitter-exempt (accent still applies). Drums key feel by **voice**
+> — and the voice provenance is now available on drum notes as tags (see **C-11**), so the humanizer can
+> read the same voice tags rather than re-deriving. `ticksPerMs = 480 × tempoBpm / 60000`.
+>
+> **Phase 5 is COMPLETE** (sessions 06–09). Read `PHASE_6.md` §5/§7.2 in full (binding). Determinism
+> enforced by TID251; four-gate suite now ~3m45s (the 25-seed stage-6 property matrix; run pytest with
+> an extended timeout).
 >
 > **What Phase 5 hands Phase 6 (all committed, tested):**
 >  - **The full pipeline runs end-to-end:** `generate_track(raw_params: dict) -> TrackDocument` in `trackgen.pipeline` (`pipeline/orchestrator.py`) — the proven chain `generate_plan → form → harmony → arrange → select_patterns → generate×[drums,bass,comping,pads] → transitions(stub) → humanize(stub) → sound_design(stub) → serialize`. CLI `trackgen generate`. Both milestone `TrackDocument`s are committed whole-document goldens.
@@ -53,7 +76,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
-| 6 | Transitions, variation & humanization | planning | 10 | 3-chunk split (D1 seam): C1 stage-6 Transitions (SESSION_10, planning — awaiting approval), C2 stage-7 Humanizer, C3 wiring+milestone+whole-phase |
+| 6 | Transitions, variation & humanization | in progress | 10 | 3-chunk split (D1 seam). **C1 stage-6 Transitions DONE** (session 10: DoD 1+3+4+8 + stage-6 7/9; 2667 tests; T4 zero divergences; C-11 logged). Next: C2 stage-7 Humanizer, then C3 wiring+milestone+whole-phase |
 | 7 | Sound design | not started | — | |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
 
@@ -63,6 +86,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 10 | 2026-07-17 | Phase 6 chunk 1 (stage-6 Transition engine) | 4 opus tasks (T1 loader → T2 6a HOLD + 6b devices → T3 6c mutation → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2667 tests**, 25-seed property matrix). **DoD 1+3+4+8 + stage-6 slices of 7+9 PROVEN.** New `src/trackgen/transitions/` package implements PHASE_6 §3/§4 exactly (6a HOLD → 6b fill/stop/dropout/crash → 6c five mutation operators; `transitions.yaml` loader + fill windows). **T4 (independent arbiter): ZERO divergences** — every §7 sample reproduced verbatim (pop 14/38/9 & jazz 10/32/11 draws, fired-op lists incl. 4 no-ops, crash velocities, fill bar 3, HOLD both) → no §7 amendment (unlike C-09). Whole-chunk review: correctness/contract APPROVE-WITH-NITS (10/10 clauses CONFIRM), test-quality/DoD PROVEN-WITH-GAPS. Fixes: N1 crash-default 1440 pinned in `_DEFAULT_DUR` (§10.7); N2 fill drops stray crash voice; N3 `drop_ornament` beat-1 protection structural; property matrix 4→**25 seeds** (§11.9). **C-11 logged** (internal voice/ornament provenance tags, serialize-invisible). | 22bd551 loader · 9218e14 devices+HOLD · 7623216 mutation · 492935f goldens · (close-out this commit) |
 | 01 | 2026-07-14 | Phase 1 (all) | All 6 tasks built, reviewed, gates green (125 tests). DoD §9.1–§9.5 + §9.7 proven; §9.6 manual audition pending user. No CAVEATS (all §5.6 goldens reproduced exactly; no doc amendments). | e0643ee seeds · 5d32e8c schema · 41e3af8 packs · 7fc3a5f validator+export · 6fbaa7c fixture · cf2b490 playground · e27f704 review-fixes |
 | 02 | 2026-07-15 | Phase 2 (all) | 6 tasks built, per-task + 4-lens whole-session review, gates green (245 tests). All §11 DoD 1–8 proven; both §6.5 goldens reproduce field-for-field; orchestrator pre-verified every load-bearing sample. Contract lens COMPLIANT. Review fixes: malformed-type wrapping (C-01), pack-tonic validation, mode-ladder dedupe, 3 test-coverage gaps closed. | 74e57b5 plan-fields · 2ab6997 moods · 8fe953f packs+refs · 2c0c602 params · 26f39a0 interpreter · eb00804 review-fixes |
 | 09 | 2026-07-17 | Phase 5 chunk 4 (orchestrator + Serializer + milestone) — **Phase 5 COMPLETE** | 4 opus tasks (T1 timbres+stubs → T2 Serializer → T3 orchestrator+CLI → T4 fixtures+goldens+determinism, serial) + T5 whole-phase review. Per-task opus reviews all APPROVE-WITH-NITS. **DoD 8+9+10 PROVEN; full §13 DoD 1–11 complete.** Real orchestrator = the proven `_drive_full` chain incl. `select_patterns` (§8.1 pseudocode is stale). Both milestone `TrackDocument`s committed as the first whole-document goldens (engine-blessed; `validate_document == []`; re-serialize structure-identically). Determinism: repeated-run identity + total-draw shim (pop 18 / jazz 163) decomposed against every per-stream golden. Whole-phase 4-lens review: **correctness CLEAN** (720-doc fuzz all V1–V8), **contract COMPLIANT** (frozen paths clean; additive timbres), **test-DoD PROVEN** (1–11), **code-quality GOOD-WITH-NITS**. §9.4 anchors match C-09-corrected prose (no divergence). Orchestrator independently verified four gates + reproduced both fixtures. **C-10** logged (latent drum-dedup V3 edge, unreachable in v1). §9.5 listening checklist CLOSED (user-confirmed 2026-07-17, sounded correct). | e477484 timbres+stubs · 1de5e9c serializer · 055ff8b orchestrator+CLI · 6f69717 fixtures+goldens+determinism · 843e16c review-fixes+C-10 |
@@ -112,12 +136,72 @@ serial, then T5):
 | T1 | `transitions.yaml` schema (`packs/models.py`) + loader (`packs/loader.py`) + both `styles/*/transitions.yaml` + fill windows + TR1–TR7/PT12 | opus | done | 22bd551 |
 | T2 | Stage-6 engine: 6a HOLD (`transitions/ending.py`) + 6b devices (`transitions/devices.py`) + `stage.py` + crash voice→track plumbing (`generators`) | opus | done | 9218e14 |
 | T3 | Mutation pass 6c (`transitions/mutation.py`) — five operators + per-unit sub-streams + no-op degradation | opus | done | (this commit) |
-| T4 | Goldens (independent arbiter): §7.1/§7.2 device narratives + rendering + synthetic fixtures + stage-6 determinism/property subset | opus | in progress | — |
-| T5 | Whole-chunk 2-lens review + DoD 1/3/4/8 + close-out | orchestrator | not started | — |
+| T4 | Goldens (independent arbiter): §7.1/§7.2 device narratives + rendering + synthetic fixtures + stage-6 determinism/property subset | opus | done | 492935f |
+| T5 | Whole-chunk 2-lens review + DoD 1/3/4/8 + close-out | orchestrator | done | (this commit) |
 
-Targets **DoD 1** (loader), **3** (device narratives), **4** (rendering goldens), **8** (synthetic
-fixtures), + stage-6 slices of **7** (determinism) and **9** (properties). Pre-flight: all §3.8 RNG
-anchors verified faithful; §7 draw counts (14/38/9, 10/32/11) are the arbitration surface (T4 arbitrates).
+**Chunk 1 COMPLETE.** 4 opus tasks (T1→T2→T3→T4 serial) + T5 whole-chunk review; per-task + 2-lens
+whole-chunk review; four gates green (**2667 tests**, 25-seed property matrix). **DoD 1+3+4+8 PROVEN
++ stage-6 slices of 7+9.** The stage-6 Transition engine (`src/trackgen/transitions/`) implements
+PHASE_6 §3/§4 exactly: 6a HOLD → 6b boundary devices (fill select/size/render, stop, dormant dropout,
+crash+kick) → 6c mutation (five constructive-safe operators), draw-iff-≥2 on the `transitions` stream
+(devices) + per-(role,unit) `mutate` sub-streams.
+
+**T4 arbitration result: ZERO divergences** — the engine reproduced **every** PHASE_6 §7 worked-example
+sample verbatim (pop 14/38/9 & jazz 10/32/11 draw counts, fired-op lists incl. the four documented
+no-ops, crash velocities, pop fill bar 3 note-for-note, HOLD both examples). No doc amendment, no
+C-09-style sample correction needed — the §7 samples are engine-faithful.
+
+Whole-chunk 2-lens review (fresh opus): **correctness/contract APPROVE-WITH-NITS** (all 10 clause-checks
+CONFIRM; no blocker/major; sub-pass ordering, `T_last` guard, RNG streams, provenance tags, crash
+plumbing all sound), **test-quality/DoD PROVEN-WITH-GAPS** (§7 goldens confirmed doc-transcribed not
+snapshotted; one must-fix = property matrix 4→25 seeds). Review fixes (this commit): **N1** crash
+default 1440 pinned in `_DEFAULT_DUR` per §10.7 (was hardcoded) + single-sourced; **N2** fill renderer
+drops a stray `crash` voice (matches `_generate_drums`; +test); **N3** `drop_ornament` beat-1 protection
+made structural (`ticks % BAR != 0`; +2 tests); **25-seed** property matrix (§11.9). **C-11 logged**
+(internal drum voice/`ornament` provenance tags beyond §3.9's four — serialize-invisible; the mutation
+needs provenance the `PhraseNote` IR lacks).
+
+**Non-caveat observations (handoff notes):**
+- **pop `anticipate`@44** is *drawn* (so the count-9 reproduces) but legally renders as a **no-op** — the
+  §3.7 `[new, old)` collision guard fires on the dense chorus-2 comp. Consistent with §7.1 ("3 ops" = 3
+  non-`none` draws; §7.1 shows no @44 rendering sample). Covered by `test_pop_anticipate_at_44_degrades_to_noop`.
+  Not a deviation — engine and doc agree.
+- **P1 (latent):** §3.2 places section-boundary devices (fill/crash) **unconditionally by entered type** —
+  the engine is faithful to the pinned text. If a v1 form ever had `drums` inactive at a device site, the
+  fill/crash would inject drum events there. Unreachable in the two reference forms (drums active at every
+  device site; goldens pass). Flagged for C3's whole-phase property matrix to confirm; if the design wants
+  device placement gated on `drums`-active, that is a §3.2 amendment (sign-off), not an implementation fix.
+
+**DoD (§11) — Chunk 1 targets 1, 3, 4, 8 + stage-6 slices of 7, 9 — all PROVEN:**
+- [x] §11.1 **Loader PROVEN** — `transitions.yaml` → frozen `TransitionsSpec`; **TR1–TR7 each with ≥1
+  non-vacuous rejection fixture** (`tests/test_transitions_pack.py`, 24 tests, rule-code matched); both
+  reference files load clean via `resolve_pack`; fill windows computed+cached `(960,1920)` for all three
+  reference fills; **PT12** (=TR5) enforced on both packs. Commit `22bd551`.
+- [x] §11.3 **Device narratives PROVEN** — exact draw counts pop **14/38/9** & jazz **10/32/11** via
+  per-sub-stream counting shims (devices single-instance; mutate decomposed drums-vs-comping by seed
+  identity); fired-op lists asserted as **full lists incl. the four no-ops** (`tests/test_transitions_goldens.py`,
+  `tests/test_transitions_determinism.py`). Crash velocities exact (pop no-kick / jazz +kick). Commit `492935f`.
+- [x] §11.4 **Rendering goldens PROVEN** — pop fill bar 3 note-for-note (snares 0.66/0.74/0.82/0.91 tag
+  `fill`; hats@960/1440 deleted; kick@0/hats@0/480 survive); crash+kick with (pop bar 12) and without
+  (jazz bar 12, kick added) an existing kick; one mutated unit per operator class incl. pitch-preserved
+  `anticipate` and the ≥2-attack `drop_hit` guard; HOLD both (pop crash 1.000, jazz 0.553). Commit `492935f`.
+- [x] §11.8 **Synthetic fixtures PROVEN** — stop-heavy odds pack (§3.4 all-role deletion+truncation+crash
+  end-to-end), `breakdown` form (§3.5 dropout, no fill/crash), rung-restricted fill banks (§3.3 fallback
+  both directions) (`tests/test_transitions_fixtures.py`). Commit `492935f`.
+- [x] §11.7 **Determinism (stage-6 slice) PROVEN** — repeated-run bit-identity + input-immutability;
+  counting-RNG shims for exact per-stream/sub-stream counts; per-unit + per-boundary sub-stream isolation
+  (dispatch == independent replay); §3.8 golden seed vectors asserted (`derive(transitions,"devices")` =
+  11162692426947704816 etc.). `tests/test_transitions_determinism.py`. Commit `492935f`.
+- [x] §11.9 **Property subset (stage-6 slice) PROVEN** — pop_rock+jazz × supported moods × {default,180,240}
+  × **25 seeds**: fills only in legal fill bars; no drum groove event inside a rendered window; crash
+  suppression for postchorus/breakdown; non-drum `midi` a sub-multiset of pre-stage-6 (no re-pitch, ≤71);
+  backbeat-class snare (vel≥0.7 at back2/back4) never removed/moved by mutation. `test_stage6_property_subset`.
+  Commit `492935f` + 25-seed bump this commit. (Full DoD-9 incl. V1–V8 + no-note-past-end is C3.)
+
+**Deferred to Chunk 2 / Chunk 3 (unchanged from the chunk plan):** all of stage 7 (C2); pipeline wiring
+(thread `tempoEvents` orchestrator→serializer, delete stubs, call real stages), Serializer `_EMIT_ORDER`/
+`_STUB_MIX` crash entry + a stub-timbres `crash` timbre, whole-document golden re-bless, milestone
+listening, full §11.9 matrix + V1–V8, full DoD 1–11 sign-off, §10 amendment audit (C3).
 
 ### Phase 5 — Rhythm-section part generators (chunk plan)
 

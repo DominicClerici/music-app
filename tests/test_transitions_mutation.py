@@ -210,6 +210,31 @@ def test_drop_ornament_no_op_without_ornament() -> None:
     assert len(kick.notes) == 2
 
 
+def test_drop_ornament_never_removes_a_beat_1_ornament() -> None:
+    # §3.7 safety, structural (N3): a bar-start (beat-1) event is never removed,
+    # even a minDensity ornament, and even when it is the LATEST ornament in the
+    # unit. Here the beat-1 ornament at tick 1920 is protected, so the earlier
+    # non-beat-1 ornament at 480 is dropped instead.
+    sec = section("A", 0, 4)
+    snare = drum_builder(
+        "snare",
+        [note(480, 0.4, ["snare", "ornament"]), note(1920, 0.4, ["snare", "ornament"])],
+    )
+    _drop_ornament([snare], sec, 0, 2 * BAR, _HUGE)
+    assert [n.ticks for n in snare.notes] == [1920]
+
+
+def test_drop_ornament_no_op_when_only_beat_1_ornaments() -> None:
+    # Both ornaments sit on bar starts (0 and 1920) → both protected → no-op.
+    sec = section("A", 0, 4)
+    kick = drum_builder(
+        "kick",
+        [note(0, 0.9, ["kick", "ornament"]), note(1920, 0.9, ["kick", "ornament"])],
+    )
+    _drop_ornament([kick], sec, 0, 2 * BAR, _HUGE)
+    assert len(kick.notes) == 2
+
+
 # =============================================================================
 # kick_pickup (drums)
 # =============================================================================

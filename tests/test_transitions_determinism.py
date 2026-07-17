@@ -189,7 +189,7 @@ def test_devices_seed_is_rederivable() -> None:
 # 3 — property subset (DoD 9, stage-6 slice)
 # =============================================================================
 
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(4)]
+_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
 _LENGTHS: list[int | None] = [None, 180, 240]
 
 

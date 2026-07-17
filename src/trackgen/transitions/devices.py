@@ -134,6 +134,10 @@ def _render_fill(
         if not (lo <= event.pos < hi):
             continue
         assert isinstance(event, DrumEvent)  # a fill is a drum pattern (PT3).
+        # Fills never author crash — crash placement is contextual (§3.7, D17);
+        # a stray one is dropped here exactly as `_generate_drums` drops it.
+        if event.voice == "crash":
+            continue
         track_id, note = instantiate_fill_event(event, bar_start, plan)
         get_or_create_drum_builder(builders, span, track_id).notes.append(note)
 

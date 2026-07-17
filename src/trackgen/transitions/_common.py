@@ -144,7 +144,11 @@ def add_crash_and_kick(
     crash_bld = get_or_create_drum_builder(builders, span, "crash")
     crash_bld.notes.append(
         PhraseNote(
-            ticks=tick, duration_ticks=1440, midi=None, velocity=velocity, tags=[tag]
+            ticks=tick,
+            duration_ticks=_DEFAULT_DUR["crash"],
+            midi=None,
+            velocity=velocity,
+            tags=[tag],
         )
     )
     kick_bld = get_or_create_drum_builder(builders, span, "kick")

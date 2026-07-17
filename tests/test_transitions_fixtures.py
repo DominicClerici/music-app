@@ -440,3 +440,62 @@ def test_fill_fallback_up_to_rung_4_only_bank() -> None:
         if "fill" in n.tags and 3 * BAR <= n.ticks < 4 * BAR
     )
     assert fills == [1200]
+
+
+def test_fill_never_instantiates_a_crash_voice() -> None:
+    """§3.7/D17 + N2: a fill authoring a `crash`-voice event never emits a
+    `"fill"`-tagged crash — crash placement is contextual, and the renderer
+    drops it exactly as `_generate_drums` drops a stray groove crash. The snare
+    hit in the same fill still renders; the only crash-track notes are the
+    entry crash (tagged `"crash"`, not `"fill"`)."""
+    form = SongForm(
+        template_id="t",
+        total_bars=8,
+        sections=[
+            _section("A", "verse", 0, 4, 0.3, [4]),
+            _section("B", "chorus", 4, 4, 0.6, [4]),
+        ],
+    )
+    pack = _pack(
+        [
+            _fill(
+                "f",
+                2,
+                [
+                    {"pos": 960, "voice": "crash", "velocity": 0.9},
+                    {"pos": 1200, "voice": "snare", "velocity": 0.6},
+                ],
+            )
+        ],
+        {
+            "phraseFill": {"odds": [1, 2]},
+            "stop": {"enabled": False},
+            "crash": {"velocity": [0.55, 0.95]},
+            "mutation": _NONE_MUTATION,
+        },
+    )
+    arr = ArrangementPlan(entries=[_drum_entry("A", 2), _drum_entry("B", 2)])
+    chords = _final_chord(5, "B")
+    phrases: list[Phrase] = [
+        _drum_phrase(
+            "kick",
+            (sec.start_bar * BAR, (sec.start_bar + sec.length_bars) * BAR),
+            [(sec.start_bar * BAR + b * BAR, 0.9) for b in range(sec.length_bars)],
+        )
+        for sec in form.sections
+    ]
+    out = transitions(phrases, form, chords, arr, _plan(0), pack)
+
+    # The fill's snare rendered into bar 3; the crash voice was dropped.
+    snare_fills = [
+        n.ticks - 3 * BAR
+        for p in out
+        if p.track_id == "snare"
+        for n in p.notes
+        if "fill" in n.tags
+    ]
+    assert snare_fills == [1200]
+    crash_fill_notes = [
+        n for p in out if p.track_id == "crash" for n in p.notes if "fill" in n.tags
+    ]
+    assert crash_fill_notes == []  # no fill-tagged crash ever emitted

@@ -86,6 +86,10 @@ _DEFAULT_DUR: dict[DrumVoice, int] = {
     "tom_mid": 120,
     "tom_high": 120,
     "perc": 120,
+    # crash is emitted only by Phase-6 stage 6 (entry crashes + the HOLD final
+    # hit); a main never authors it. Default dur 1440 per PHASE_6 §10.7 (added to
+    # the §8.2 defaults) — single-sourced here for the transitions crash builder.
+    "crash": 1440,
 }
 
 # Deterministic Phrase order for the drum voice-tracks a section emits. `crash`

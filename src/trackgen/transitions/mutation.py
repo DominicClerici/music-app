@@ -175,6 +175,7 @@ def _drop_ornament(
         for n in b.notes:
             if (
                 u_lo <= n.ticks < u_hi
+                and n.ticks % BAR != 0  # never remove a bar-start (beat-1) event
                 and "ornament" in n.tags
                 and _eligible(n, final_bar_tick)
             ):
