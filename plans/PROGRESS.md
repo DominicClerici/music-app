@@ -8,7 +8,9 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 > **Next:** **Phase 6 — Chunk 2 (Humanizer / stage 7)**, session 11 (`@PROMPT.md - Phase 6`, resume
 > mid-phase — the 3-chunk plan is approved; do NOT re-plan the chunk split, just plan Chunk 2's tasks
-> and get approval before dispatching). **Chunk 1 (stage 6) is COMPLETE** (session 10; DoD 1+3+4+8 +
+> and get approval before dispatching). **STATUS: the Chunk-2 task plan is written
+> (`plans/sessions/SESSION_11.md`, T1–T5) and AWAITING USER APPROVAL — no task dispatched yet.**
+> **Chunk 1 (stage 6) is COMPLETE** (session 10; DoD 1+3+4+8 +
 > stage-6 slices of 7+9 PROVEN; **2667 tests**, four gates green; T4 reproduced every §7 sample verbatim
 > — zero divergences; whole-chunk 2-lens review APPROVE-WITH-NITS / PROVEN-WITH-GAPS, all fixes applied).
 >
@@ -125,6 +127,31 @@ performance-rendering). Seams:
   milestone listening check, the whole-phase property matrix (DoD 9: V1–V8, crash suppression, C5
   ceiling under both stages, backbeat protection), whole-PHASE 4-lens review, full §11 DoD 1–11, DoD 11
   amendment audit (§10). **DoD 9, 10, 11.**
+
+#### Phase 6 — Chunk 2 — session 11 (`plans/sessions/SESSION_11.md`)
+
+**Planning — plan written, AWAITING USER APPROVAL; no task dispatched.** Stage 7, the
+note-count-preserving Humanizer (`humanize(phrases, form, plan) → (Phrase[], tempoEvents)`).
+Task list (T1→T2→T3→T4 serial, then T5); all implementation opus, disjoint from stage 6 / pipeline:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | (this commit) |
+| T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | not started | — |
+| T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | not started | — |
+| T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | not started | — |
+| T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | not started | — |
+
+**T1 DONE** — feel data + loader + validator (`src/trackgen/humanize/{feel.py,feel.yaml}`); §5.3
+values field-for-field, three cap classes each with a non-vacuous rejection fixture; per-task opus
+review APPROVE-WITH-NITS (§5.3 fidelity confirmed number-by-number; one nit — `load_feel()` wrapper
+untested — closed with 2 monkeypatch tests). Four gates green (**2680 tests**). Next: **T2** (engine).
+
+Live-verified this session: §5.8 humanize RNG anchors reproduce exactly (`derive(master,"humanize")`
+= 3899203291477031323; first-five `randrange(100)` = [58,79,50,70,90]; `derive(derive(humanize,
+"drums"),"bar:0")` = 6949714659275352449); no `feelTable` in v1 packs → swing-derived default
+(pop→straight, jazz swing8→swung); ritard curve confirmed (rel 240 → 68.47 → 68.5). **Targets DoD
+2, 5, 6 + humanizer slice of 7.** Out of scope: all wiring, whole-phase matrix, DoD 9/10/11 (Chunk 3).
 
 #### Phase 6 — Chunk 1 — session 10 (`plans/sessions/SESSION_10.md`)
 

@@ -1,0 +1,34 @@
+# PHASE_6 §5.3 — the Humanizer's micro-timing / velocity feel data.
+#
+# Engine-owned data (not a style pack; like interpreter/moods.yaml): named
+# offset profiles, one shared jitter table, the velocity accent map, the
+# velocity-jitter widths, and the bass legato factor. Values are in ms
+# (offsets/jitter) or velocity units (accent/velJitter). Recalibratable;
+# the loader caps |offset| <= 25 ms, jitter <= 10 ms, |accent| <= 0.05.
+offsetsMs:
+  swung:
+    kick: 0
+    snare: 3
+    hats: -3
+    ride: 0
+    toms: 0
+    crash: 0
+    perc: 0
+    bass: -2
+    comping: { down: 18, back2: 6, beat3: 10, back4: 4, "off": 2 }
+    pads: 0
+  straight:
+    kick: 0
+    snare: { down: 4, back2: 8, beat3: 4, back4: 6, "off": 4 }
+    hats: -2
+    ride: 0
+    toms: 0
+    crash: 0
+    perc: 0
+    bass: 2
+    comping: 5
+    pads: 0
+jitterMs: { kick: 4, snare: 5, hats: 5, ride: 4, toms: 5, crash: 0, perc: 5, bass: 6, comping: 8, pads: 0 }
+accent: { down: 0.03, back2: 0.0, beat3: 0.015, back4: 0.0, "off": -0.03 }
+velJitter: { base: 0.04, rangeScale: 0.08 }
+bassLegato: 0.95
