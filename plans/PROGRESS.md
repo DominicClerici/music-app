@@ -136,16 +136,26 @@ Task list (T1→T2→T3→T4 serial, then T5); all implementation opus, disjoint
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | (this commit) |
-| T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | not started | — |
+| T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | 0ad958d |
+| T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | done | (this commit) |
 | T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | not started | — |
 | T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | not started | — |
 | T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | not started | — |
 
-**T1 DONE** — feel data + loader + validator (`src/trackgen/humanize/{feel.py,feel.yaml}`); §5.3
-values field-for-field, three cap classes each with a non-vacuous rejection fixture; per-task opus
-review APPROVE-WITH-NITS (§5.3 fidelity confirmed number-by-number; one nit — `load_feel()` wrapper
-untested — closed with 2 monkeypatch tests). Four gates green (**2680 tests**). Next: **T2** (engine).
+**T1 DONE** (0ad958d) — feel data + loader + validator (`src/trackgen/humanize/{feel.py,feel.yaml}`);
+§5.3 values field-for-field, three cap classes each with a non-vacuous rejection fixture; per-task
+opus review APPROVE-WITH-NITS (§5.3 fidelity confirmed number-by-number; nit closed with 2 wrapper
+tests). **T2 DONE** — humanizer engine (`humanize/{stage.py,swing.py}`): `humanize(phrases, form,
+plan) → (Phrase[], [])` (ritard is T3). Op order swing→offset→timing jitter→accent→vel jitter→
+duration; float math + single terminal half-even round; per-(role,absBar) RNG (drums cover all
+voice-tracks, within-bar (grid,track,midi|-1) order); **injectable-jitter seam** exposes the
+deterministic pre-jitter transform through the one production path (T4 asserts §7.2 pre-jitter).
+Per-task opus review APPROVE-WITH-NITS: all §7.2 spot-checks reproduced through production, seed
+anchor exact; **fix cycle 1** made bass legato **track-level** (§5.6 "same track"/"final whole note"
+— was per-phrase, would drop legato at every interior section boundary; affects C3 jazz re-bless) +
+removed a dead field + test symmetry (+ a track-level boundary test). Four gates green (**2701
+tests**). Next: **T3** (ritard). Handoff note for T4/C3: no §7 golden distinguishes phrase-vs-track
+legato — resolved to track-level on §5.6 prose (not arbitration).
 
 Live-verified this session: §5.8 humanize RNG anchors reproduce exactly (`derive(master,"humanize")`
 = 3899203291477031323; first-five `randrange(100)` = [58,79,50,70,90]; `derive(derive(humanize,
