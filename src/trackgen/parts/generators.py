@@ -226,13 +226,23 @@ def _generate_drums(
                 continue
             track = _VOICE_TRACK[event.voice]
             dur = event.dur if event.dur is not None else _DEFAULT_DUR[event.voice]
+            # Internal engine-provenance tags (PHASE_6 §3.7 resolution): the
+            # source `voice` (both hat voices collapse to the `hats` track, so
+            # `hat_closed`/`hat_open` are otherwise indistinguishable) and an
+            # `ornament` marker for `minDensity`-gated events (consumed at
+            # instantiation, otherwise lost). Stage-6 mutation reads these;
+            # serialize (`_to_event`) drops all tags, so they never reach the
+            # `TrackDocument` contract (they are NOT §3.9 contributed tags).
+            tags: list[str] = [event.voice]
+            if event.min_density is not None:
+                tags.append("ornament")
             by_track[track].append(
                 PhraseNote(
                     ticks=abs_tick,
                     duration_ticks=dur,
                     midi=None,
                     velocity=apply_velocity(event.velocity, dynamics_base),
-                    tags=[],
+                    tags=tags,
                 )
             )
 

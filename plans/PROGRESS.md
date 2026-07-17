@@ -109,10 +109,10 @@ serial, then T5):
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | `transitions.yaml` schema (`packs/models.py`) + loader (`packs/loader.py`) + both `styles/*/transitions.yaml` + fill windows + TR1–TR7/PT12 | opus | not started | — |
-| T2 | Stage-6 engine: 6a HOLD (`transitions/ending.py`) + 6b devices (`transitions/devices.py`) + `stage.py` + crash voice→track plumbing (`generators`) | opus | not started | — |
-| T3 | Mutation pass 6c (`transitions/mutation.py`) — five operators + per-unit sub-streams + no-op degradation | opus | not started | — |
-| T4 | Goldens (independent arbiter): §7.1/§7.2 device narratives + rendering + synthetic fixtures + stage-6 determinism/property subset | opus | not started | — |
+| T1 | `transitions.yaml` schema (`packs/models.py`) + loader (`packs/loader.py`) + both `styles/*/transitions.yaml` + fill windows + TR1–TR7/PT12 | opus | done | 22bd551 |
+| T2 | Stage-6 engine: 6a HOLD (`transitions/ending.py`) + 6b devices (`transitions/devices.py`) + `stage.py` + crash voice→track plumbing (`generators`) | opus | done | 9218e14 |
+| T3 | Mutation pass 6c (`transitions/mutation.py`) — five operators + per-unit sub-streams + no-op degradation | opus | done | (this commit) |
+| T4 | Goldens (independent arbiter): §7.1/§7.2 device narratives + rendering + synthetic fixtures + stage-6 determinism/property subset | opus | in progress | — |
 | T5 | Whole-chunk 2-lens review + DoD 1/3/4/8 + close-out | orchestrator | not started | — |
 
 Targets **DoD 1** (loader), **3** (device narratives), **4** (rendering goldens), **8** (synthetic
