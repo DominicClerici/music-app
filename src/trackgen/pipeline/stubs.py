@@ -1,32 +1,29 @@
-"""Provisional pipeline stubs (PHASE_5 §8, D22) — Phases 6/7 replace them.
+"""Provisional pipeline stub (PHASE_5 §8, D22) — Phase 7 replaces it.
 
-The milestone (Chunk 4) wires the full pipeline end to end but de-risks
-generation, not sound design or expression. Three stages are therefore stubs:
+Stages 6 (transitions) and 7 (humanize) are now the real, wired engines; only
+sound design remains a stub:
 
-- `transitions` — identity; real fills/entry-crashes are Phase 6.
-- `humanize` — returns the phrases unchanged plus an empty tempo-event list;
-  swing, jitter, and ritard tempo events are Phase 6.
 - `sound_design` — reads the pack's provisional `timbres.yaml`, selects each
   role's active flavor from `plan.role_flavors`, and returns one `TrackSound`
-  per track id (the eight drum tracks plus bass/comping/pads); the real
+  per track id (the nine drum tracks plus bass/comping/pads); the real
   sound-design stage (mix, sends, reverb bus) is Phase 7.
 
-All three make **zero** RNG draws and import no `random`/wall-clock (invariant 5,
-TID251): the reserved `transitions`/`humanize`/`sound` seed streams stay unused.
+It makes **zero** RNG draws and imports no `random`/wall-clock (invariant 5,
+TID251): the reserved `sound` seed stream stays unused.
 """
 
 from pydantic import BaseModel, ConfigDict
 
 from trackgen.packs.models import StylePack
 from trackgen.parts.generators import _TRACK_ORDER as _DRUM_TRACK_IDS
-from trackgen.schema.document import EffectPatch, InstrumentPatch, Tempo
-from trackgen.schema.ir import GenerationPlan, Phrase
+from trackgen.schema.document import EffectPatch, InstrumentPatch
+from trackgen.schema.ir import GenerationPlan
 
 # The drum track ids (single-sourced from `parts.generators._TRACK_ORDER`, as the
-# Serializer also imports it — now including the Phase-6 producer-only `crash`
-# track, skipped below until Chunk 3 authors its stub timbre) and the three
-# pitched roles keyed by their own name. `sound_design` returns a `TrackSound` for
-# every one — the Serializer emits only those with >= 1 note.
+# Serializer also imports it — including the Phase-6 `crash` track, whose stub
+# timbre the packs now carry) and the three pitched roles keyed by their own name.
+# `sound_design` returns a `TrackSound` for every one — the Serializer emits only
+# those with >= 1 note.
 _PITCHED_ROLES: tuple[str, ...] = ("bass", "comping", "pads")
 
 
@@ -40,17 +37,6 @@ class TrackSound(BaseModel):
     instrument: InstrumentPatch
     effects: list[EffectPatch] = []
     midi: int | None = None
-
-
-def transitions(phrases: list[Phrase]) -> list[Phrase]:
-    """STUB (Phase 6): identity. Real transitions add fills / entry crashes."""
-    return phrases
-
-
-def humanize(phrases: list[Phrase]) -> tuple[list[Phrase], list[Tempo]]:
-    """STUB (Phase 6): pass the phrases through unchanged with no tempo events.
-    Swing, timing jitter, and ritard tempo events are the real Humanizer's."""
-    return phrases, []
 
 
 def sound_design(plan: GenerationPlan, pack: StylePack) -> dict[str, TrackSound]:
@@ -77,13 +63,6 @@ def sound_design(plan: GenerationPlan, pack: StylePack) -> dict[str, TrackSound]
     for track_id in _DRUM_TRACK_IDS:
         timbre = kit.get(track_id)
         if timbre is None:
-            # `crash` joined `_TRACK_ORDER` as a stage-6 (Phase 6) producer-only
-            # track; its stub timbre + Serializer `_EMIT_ORDER`/`_STUB_MIX` entry
-            # land in Chunk 3 (SESSION_10 §2.4). Until then a stub kit legitimately
-            # omits it and the note-less crash track is never emitted (serialize
-            # skips tracks with no notes); other missing drum tracks still fail.
-            if track_id == "crash":
-                continue
             raise ValueError(
                 f"sound_design: drum kit {drum_flavor!r} is missing track "
                 f"{track_id!r} (needs {list(_DRUM_TRACK_IDS)})"

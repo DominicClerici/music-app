@@ -1,10 +1,11 @@
-"""Timbres substrate + stub-stage tests (PHASE_5 §8.4 / D-A / D-B, SESSION_09 T1).
+"""Timbres substrate + sound-design stub tests (PHASE_5 §8.4 / D-A / D-B, SESSION_09
+T1; crash timbre wired SESSION_12 T1).
 
 Covers: both reference packs load with a non-None `.timbres`; every declared
 flavor id (interpreter.yaml) is present in the loaded `TimbresConfig`;
 `sound_design` returns the D-B track-id → `TrackSound` map with correct drum
-trigger midis; the `transitions`/`humanize` stubs are identity; and
-`sound_design` performs zero RNG draws (immune to global `random` state).
+trigger midis; and `sound_design` performs zero RNG draws (immune to global
+`random` state).
 """
 
 from __future__ import annotations
@@ -15,8 +16,8 @@ from pathlib import Path
 from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.packs.models import StylePack, TimbresConfig
-from trackgen.pipeline.stubs import TrackSound, humanize, sound_design, transitions
-from trackgen.schema.ir import GenerationPlan, Phrase, PhraseNote
+from trackgen.pipeline.stubs import TrackSound, sound_design
+from trackgen.schema.ir import GenerationPlan
 
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
 _JAZZ: dict[str, object] = {
@@ -49,8 +50,10 @@ _DRUM_TRACK_IDS = (
     "tom_mid",
     "tom_high",
     "perc",
+    "crash",
 )
-# Expected drum trigger midis (D-A); snare (NoiseSynth) carries no midi (V5).
+# Expected drum trigger midis (D-A + SESSION_12 crash); snare (NoiseSynth) carries
+# no midi (V5).
 _EXPECTED_DRUM_MIDI: dict[str, int | None] = {
     "kick": 24,
     "snare": None,
@@ -60,6 +63,7 @@ _EXPECTED_DRUM_MIDI: dict[str, int | None] = {
     "tom_mid": 47,
     "tom_high": 50,
     "perc": 39,
+    "crash": 84,
 }
 
 
@@ -90,14 +94,14 @@ def test_every_flavor_id_present() -> None:
         assert set(timbres.bass) == expected["bass"]
         assert set(timbres.comping) == expected["comping"]
         assert set(timbres.pads) == expected["pads"]
-        # Each drum kit is complete (all eight tracks present).
+        # Each drum kit is complete (all nine tracks present, incl. crash).
         for kit in timbres.drums.values():
             assert set(kit) == set(_DRUM_TRACK_IDS)
 
 
 def test_sound_design_returns_all_tracks() -> None:
-    """`sound_design` returns a `TrackSound` for the eight drum track ids plus
-    bass/comping/pads, for both worked examples (D-B)."""
+    """`sound_design` returns a `TrackSound` for the nine drum track ids (incl.
+    crash) plus bass/comping/pads, for both worked examples (D-B)."""
     for params in (_POP, _JAZZ):
         sounds = sound_design(_plan(params), _pack(str(params["styleFamily"])))
         assert set(sounds) == set(_DRUM_TRACK_IDS) | {"bass", "comping", "pads"}
@@ -138,33 +142,3 @@ def test_stubs_import_no_entropy_sources() -> None:
     text = (src / "stubs.py").read_text(encoding="utf-8")
     for banned in ("import random", "import time", "import datetime", "from datetime"):
         assert banned not in text, banned
-
-
-def test_transitions_is_identity() -> None:
-    """`transitions` returns its input phrases unchanged."""
-    phrases = [
-        Phrase(
-            track_id="kick",
-            role="drums",
-            start_tick=0,
-            end_tick=1920,
-            notes=[PhraseNote(ticks=0, duration_ticks=120, velocity=0.9)],
-        )
-    ]
-    assert transitions(phrases) is phrases
-
-
-def test_humanize_returns_phrases_and_empty_tempo() -> None:
-    """`humanize` returns the phrases unchanged and an empty tempo-event list."""
-    phrases = [
-        Phrase(
-            track_id="bass",
-            role="bass",
-            start_tick=0,
-            end_tick=1920,
-            notes=[PhraseNote(ticks=0, duration_ticks=480, midi=40, velocity=0.8)],
-        )
-    ]
-    out_phrases, tempo_events = humanize(phrases)
-    assert out_phrases is phrases
-    assert tempo_events == []

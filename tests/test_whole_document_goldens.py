@@ -52,6 +52,18 @@ _EXAMPLES: dict[str, tuple[str, dict[str, object]]] = {
 # snare (NoiseSynth) stays None; the rest carry their trigger pitch.
 _TRIGGER_MIDI = {"kick": 24, "hats": 80, "ride": 82}
 
+# SESSION_12 T1 wires the real stages 6 (transitions) and 7 (humanize), so a fresh
+# `generate_track` now emits fills/crashes, humanized ticks/velocities/durations,
+# and (jazz) a ritard tempo map — diverging from the stale Phase-5 fixtures. Every
+# assertion that compares against `generate_track` output is xfail'd here (strict:
+# it must fail until T2 re-blesses the fixtures, then T2 un-marks these). The
+# fixture-loading checks (validate / meta / invariants) below stay green.
+_REBLESS = pytest.mark.xfail(
+    strict=True,
+    reason="Phase 6 output legitimately changes; re-blessed in SESSION_12 T2 "
+    "(dedicated commit)",
+)
+
 
 def _load_raw(filename: str) -> dict[str, object]:
     with (_FIXTURES / filename).open(encoding="utf-8") as fh:
@@ -63,6 +75,7 @@ def _track(doc: TrackDocument, track_id: str) -> Track:
     return next(t for t in doc.tracks if t.id == track_id)
 
 
+@_REBLESS
 @pytest.mark.parametrize("example", list(_EXAMPLES), ids=list(_EXAMPLES))
 def test_fixture_reserializes_identically(example: str) -> None:
     """DoD 10 — a fresh `generate_track` re-serializes structure-identically
@@ -129,6 +142,7 @@ def test_whole_document_invariants(example: str) -> None:
 # =============================================================================
 
 
+@_REBLESS
 def test_pop_verse1_bar4_comping_anchor() -> None:
     """§9.4 pop verse-1 bar 4 (tick 7680), governing chord E: comping hits
     G♯3+B3+E4 = midis [56,59,64] at @0, dur 814, velocity 0.68 (C-09-corrected
@@ -141,6 +155,7 @@ def test_pop_verse1_bar4_comping_anchor() -> None:
     assert {(n.duration_ticks, n.velocity) for n in hits} == {(814, 0.68)}
 
 
+@_REBLESS
 def test_jazz_head1_bass_note_count_anchor() -> None:
     """§9.2/§9.4 jazz Head-In (ticks 0–23040) walker bass note count = 24."""
     doc = generate_track(_EXAMPLES["jazz"][1])
@@ -153,6 +168,7 @@ def test_jazz_head1_bass_note_count_anchor() -> None:
     assert len(head_bass) == 24
 
 
+@_REBLESS
 def test_jazz_head1_bar0_comping_charleston_anchor() -> None:
     """§9.4 jazz head-1 bar 0 (Dm9): Charleston comping voices F3+C4 =
     midis [53,60] at tick 0."""
@@ -162,6 +178,7 @@ def test_jazz_head1_bar0_comping_charleston_anchor() -> None:
     assert hits == [53, 60]
 
 
+@_REBLESS
 def test_jazz_ending_final_low_d_whole_note_anchor() -> None:
     """§9.2/§9.5 jazz ending — the final bass note is a low D whole note settling
     under the outro. The last note is D2 (midi 38), a full-bar whole note (1920

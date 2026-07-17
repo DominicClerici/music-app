@@ -5,8 +5,8 @@
 # PolySynth/FMSynth comping, PolySynth/AMSynth pads). All flavors of a role reuse
 # one recipe in the stub — flavor differentiation is Phase 7 — but every declared
 # flavor id (interpreter.yaml) is present. Trigger midi: kick 24, hats 80, ride 82,
-# tom_low/mid/high 43/47/50, perc 39; snare (NoiseSynth) carries no midi (V5).
-# Ride/toms/perc reuse the MetalSynth hats recipe (stub simplification).
+# tom_low/mid/high 43/47/50, perc 39, crash 84; snare (NoiseSynth) carries no midi
+# (V5). Ride/toms/perc/crash reuse the MetalSynth hats recipe (stub simplification).
 
 drums:
   acoustic_kit: &drum_kit
@@ -52,6 +52,9 @@ drums:
       instrument: { type: MetalSynth, options: *metal_opts }
     perc:
       midi: 39
+      instrument: { type: MetalSynth, options: *metal_opts }
+    crash:
+      midi: 84
       instrument: { type: MetalSynth, options: *metal_opts }
   tight_kit: *drum_kit
 

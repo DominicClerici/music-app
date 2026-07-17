@@ -13,12 +13,14 @@ Three proofs over the real orchestrator `generate_track`:
    weighted_choice` binding.
 
    Pinned totals (measured) and their decomposition against the independently
-   pinned per-stream counts:
+   pinned per-stream counts. SESSION_12 T1 wired the real stages 6 (transitions)
+   and 7 (humanize), which draw from their own seed streams — the stale `stubs 0`
+   summand is replaced by the two live `transitions` / `humanize` summands:
 
-     pop  = 18 = form 8 + harmony 8 + selection 1 + walker 0 + arrange 0
-                 + stubs 0 + interpreter (auto-tempo) 1
-     jazz = 163 = form 1 + harmony 30 + selection 3 + walker 128 + arrange 0
-                 + stubs 0 + interpreter (auto-tempo) 1
+     pop  = 10277 = form 8 + harmony 8 + selection 1 + walker 0 + arrange 0
+                 + interpreter (auto-tempo) 1 + transitions 61 + humanize 10198
+     jazz =  5304 = form 1 + harmony 30 + selection 3 + walker 128 + arrange 0
+                 + interpreter (auto-tempo) 1 + transitions 53 + humanize 5088
 
    Each summand is independently pinned by an existing chunk-1/2/3 golden, which
    this composed total cross-checks (non-vacuous):
@@ -27,12 +29,17 @@ Three proofs over the real orchestrator `generate_track`:
      - selection 1 / 3: tests/test_selection_goldens.py (§9.1)
      - walker 0 / 128 : tests/test_generator_goldens.py + test_walker_goldens.py (§9.2)
      - arrange 0      : tests/test_arrange.py (zero-draw assertion)
-     - stubs 0        : tests/test_timbres.py (`sound_design` zero-draw shim)
+     - transitions 61 / 53 : tests/test_transitions_goldens.py +
+                             test_transitions_determinism.py (§3.8 device 14/10 +
+                             drums-mutation 38/32 + comping-mutation 9/11)
+     - humanize 10198 / 5088 : tests/test_humanizer_goldens.py (§5 counting-RNG shim)
    The interpreter auto-tempo draw is 1 for both examples (neither params dict
    pins a tempo, so `interpret` draws one tempo from the mood band).
 3. Random-free pipeline modules — `pipeline/{orchestrator,serialize,stubs}.py`
    import no `random`/`time`/`datetime`/`secrets`/`uuid` (TID251 bans these at the
-   import layer; the shim in (2) proves the stub tail + serialize make zero draws).
+   import layer). The orchestrator itself makes no draws (it only wires stages);
+   the draws counted in (2) all originate in the stages it calls — including the
+   real transitions/humanize, whose own goldens pin their sub-totals.
 """
 
 from __future__ import annotations
@@ -55,8 +62,8 @@ _JAZZ: dict[str, object] = {
 
 # Whole-pipeline total draw counts (measured; see module docstring decomposition).
 _TOTAL_DRAWS: dict[str, tuple[dict[str, object], int]] = {
-    "pop": (_POP, 18),
-    "jazz": (_JAZZ, 163),
+    "pop": (_POP, 10277),
+    "jazz": (_JAZZ, 5304),
 }
 
 _SRC = Path(__file__).resolve().parents[1] / "src" / "trackgen" / "pipeline"
@@ -114,8 +121,8 @@ def test_pipeline_modules_are_random_free(module: str) -> None:
     """DoD 9 — the new `pipeline/` modules import no `random`/wall-clock/entropy
     source (TID251 enforces this at the import layer; this asserts it directly so
     a regression is caught even if the lint config drifts). Combined with the
-    zero-draw total shim, this proves the stub tail (transitions/humanize/
-    sound_design) and the Serializer make no draws."""
+    total-draw shim, this confirms the orchestrator/serialize/`sound_design` tail
+    makes no draws of its own — every counted draw comes from a stage it calls."""
     tree = ast.parse((_SRC / module).read_text(encoding="utf-8"))
     imported_roots: set[str] = set()
     for node in ast.walk(tree):

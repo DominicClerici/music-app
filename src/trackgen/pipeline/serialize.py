@@ -44,6 +44,7 @@ _STUB_MIX: dict[str, tuple[float, float]] = {
     "tom_mid": (-4, 0),
     "tom_high": (-4, 0),
     "perc": (-4, 0),
+    "crash": (-4, 0.1),
     "bass": (-3, 0),
     "comping": (-6, 0.1),
     "pads": (-10, -0.1),
@@ -67,9 +68,13 @@ def serialize(
     phrases: list[Phrase],
     patches: dict[str, TrackSound],
     *,
+    tempo_events: list[Tempo] | None = None,
     params: dict[str, object] | None = None,
 ) -> TrackDocument:
-    """Assemble a `TrackDocument` from generated phrases (PHASE_5 §8.3, D-C)."""
+    """Assemble a `TrackDocument` from generated phrases (PHASE_5 §8.3, D-C).
+
+    `tempo_events` are the stage-7 ritard tempo events (empty for a cold close).
+    """
     sections = _build_sections(form)
     song_end = sections[-1].end_tick
 
@@ -91,7 +96,10 @@ def serialize(
     )
     header = Header(
         ppq=480,
-        tempos=[Tempo(ticks=0, bpm=plan.tempo_bpm)],
+        # V1-safe: the ritard events are absolute-tick ascending and the base sits
+        # at tick 0, so appending after it keeps the list sorted with the first
+        # tempo at tick 0.
+        tempos=[Tempo(ticks=0, bpm=plan.tempo_bpm), *(tempo_events or [])],
         time_signatures=[
             TimeSignature(
                 ticks=0,

@@ -23,6 +23,7 @@ from trackgen.arrangement import arrange
 from trackgen.cli import app
 from trackgen.form.stage import form as build_form
 from trackgen.harmony.stage import harmony
+from trackgen.humanize.stage import humanize
 from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.packs.models import StylePack
@@ -31,7 +32,7 @@ from trackgen.parts.selection import select_patterns
 from trackgen.pipeline import generate_track
 from trackgen.pipeline.serialize import serialize
 from trackgen.pipeline.stubs import sound_design
-from trackgen.schema.document import Role, TrackDocument
+from trackgen.schema.document import Role, Tempo, TrackDocument
 from trackgen.schema.ir import (
     GenerationPlan,
     Phrase,
@@ -39,6 +40,7 @@ from trackgen.schema.ir import (
 )
 from trackgen.schema.validate import validate_document
 from trackgen.seeds import Rng, stream_rng
+from trackgen.transitions import transitions
 
 _ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
@@ -52,9 +54,11 @@ _JAZZ: dict[str, object] = {
 
 def _drive_full(
     params: dict[str, object],
-) -> tuple[GenerationPlan, StylePack, SongForm, list[Phrase]]:
+) -> tuple[GenerationPlan, StylePack, SongForm, list[Phrase], list[Tempo]]:
     """Test-only orchestrator loop (§8.1) — the reference `generate_track`
-    subsumes. Mirrors test_generator_goldens.py:62-93."""
+    subsumes. Mirrors test_generator_goldens.py:62-93, then applies the real
+    stage 6 (transitions) and stage 7 (humanize) the orchestrator wires,
+    returning the ritard tempo events alongside the humanized phrases."""
     plan = generate_plan(params)
     pack = resolve_pack(params["styleFamily"])  # type: ignore[arg-type]
     assert pack is not None and pack.forms is not None and pack.progressions is not None
@@ -80,26 +84,47 @@ def _drive_full(
             master=plan.seed.master,
             overrides=plan.seed.overrides,
         )
-    return plan, pack, sf, phrases
+    phrases = transitions(phrases, sf, hp, ap, plan, pack)
+    phrases, tempo_events = humanize(phrases, sf, plan)
+    return plan, pack, sf, phrases, tempo_events
 
 
 @pytest.mark.parametrize("params", [_POP, _JAZZ], ids=["pop", "jazz"])
 def test_generate_track_validates(params: dict[str, object]) -> None:
-    """Both worked examples run end to end to a schema/V-rule-valid document."""
+    """Both worked examples run end to end to a schema/V-rule-valid document
+    THROUGH THE REAL STAGES 6 (transitions) and 7 (humanize)."""
     doc = generate_track(params)
     assert validate_document(doc) == []
 
 
+def test_tempo_map_through_real_stages() -> None:
+    """The wired stage-7 ritard threads into `header.tempos`: jazz (melancholic,
+    240s) closes with a ritard — 40 entries (base + 39 events); pop closes cold —
+    a single base tempo."""
+    jazz_doc = generate_track(_JAZZ)
+    assert len(jazz_doc.header.tempos) == 40
+    assert jazz_doc.header.tempos[0].ticks == 0
+
+    pop_doc = generate_track(_POP)
+    assert len(pop_doc.header.tempos) == 1
+
+
 @pytest.mark.parametrize("params", [_POP, _JAZZ], ids=["pop", "jazz"])
 def test_orchestrator_matches_drive_full(params: dict[str, object]) -> None:
-    """The orchestrator's phrase set (post identity transitions/humanize) equals
-    the reference `_drive_full` loop's. Guards against drift from the pinned
-    chain — chiefly that `select_patterns` is included and the phrase content
-    matches. (Role order is not observable here: generation is order-independent
-    in v1 and serialize groups/sorts by track_id.) Serialize is deterministic, so
-    an equal reference document proves the phrase lists feeding it are equal."""
-    plan, pack, sf, phrases = _drive_full(params)
-    reference = serialize(plan, sf, phrases, sound_design(plan, pack), params=params)
+    """The orchestrator's output (post the real stages 6/7) equals the reference
+    `_drive_full` loop's. Guards against drift from the pinned chain — chiefly
+    that `select_patterns`, `transitions`, and `humanize` are included and that
+    the tempo events thread through. Serialize is deterministic, so an equal
+    reference document proves the inputs feeding it are equal."""
+    plan, pack, sf, phrases, tempo_events = _drive_full(params)
+    reference = serialize(
+        plan,
+        sf,
+        phrases,
+        sound_design(plan, pack),
+        tempo_events=tempo_events,
+        params=params,
+    )
     produced = generate_track(params)
     assert produced.model_dump() == reference.model_dump()
 

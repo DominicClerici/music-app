@@ -15,15 +15,17 @@ seed material explicitly. No `random`/wall-clock import here (invariant 5).
 from trackgen.arrangement import arrange
 from trackgen.form.stage import form
 from trackgen.harmony.stage import harmony
+from trackgen.humanize.stage import humanize
 from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.parts.generators import generate
 from trackgen.parts.selection import select_patterns
 from trackgen.pipeline.serialize import serialize
-from trackgen.pipeline.stubs import humanize, sound_design, transitions
+from trackgen.pipeline.stubs import sound_design
 from trackgen.schema.document import Role, TrackDocument
 from trackgen.schema.ir import Phrase
 from trackgen.seeds import Rng, stream_rng
+from trackgen.transitions import transitions
 
 _ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
 
@@ -72,8 +74,10 @@ def generate_track(raw_params: dict[str, object]) -> TrackDocument:
             prior_phrases=phrases,
         )
 
-    phrases = transitions(phrases)
-    phrases, _tempo_events = humanize(phrases)
+    phrases = transitions(phrases, sf, hp, ap, plan, pack)
+    phrases, tempo_events = humanize(phrases, sf, plan)
     patches = sound_design(plan, pack)
 
-    return serialize(plan, sf, phrases, patches, params=raw_params)
+    return serialize(
+        plan, sf, phrases, patches, tempo_events=tempo_events, params=raw_params
+    )

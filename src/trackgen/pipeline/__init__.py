@@ -2,14 +2,12 @@
 
 from trackgen.pipeline.orchestrator import generate_track
 from trackgen.pipeline.serialize import serialize, to_json
-from trackgen.pipeline.stubs import TrackSound, humanize, sound_design, transitions
+from trackgen.pipeline.stubs import TrackSound, sound_design
 
 __all__ = [
     "TrackSound",
     "generate_track",
-    "humanize",
     "serialize",
     "sound_design",
     "to_json",
-    "transitions",
 ]

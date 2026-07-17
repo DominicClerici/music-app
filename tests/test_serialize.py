@@ -21,7 +21,7 @@ from trackgen.parts.generators import generate
 from trackgen.parts.selection import select_patterns
 from trackgen.pipeline.serialize import _EMIT_ORDER, _STUB_MIX, serialize
 from trackgen.pipeline.stubs import sound_design
-from trackgen.schema.document import Role, TrackDocument
+from trackgen.schema.document import Role, Tempo, TrackDocument
 from trackgen.schema.ir import (
     GenerationPlan,
     Phrase,
@@ -226,6 +226,64 @@ def test_header_single_tempo_and_time_signature(
     assert doc.header.time_signatures[0].ticks == 0
     assert doc.header.time_signatures[0].numerator == plan.time_signature.numerator
     assert doc.header.time_signatures[0].denominator == plan.time_signature.denominator
+
+
+# --- V1: ritard tempo events thread after the tick-0 base -------------------
+
+
+def test_tempo_events_thread_after_base_and_stay_valid() -> None:
+    """A non-empty `tempo_events` list appends after the tick-0 base in order,
+    and the document still passes V1 (first tempo at tick 0, ascending ticks)."""
+    plan, pack, sf, phrases = _drive(_POP)
+    patches = sound_design(plan, pack)
+    events = [
+        Tempo(ticks=1000, bpm=118.0),
+        Tempo(ticks=2000, bpm=110.0),
+        Tempo(ticks=3000, bpm=100.0),
+    ]
+    doc = serialize(plan, sf, phrases, patches, tempo_events=events, params=_POP)
+    assert validate_document(doc) == []
+    assert doc.header.tempos[0] == Tempo(ticks=0, bpm=plan.tempo_bpm)
+    assert doc.header.tempos[1:] == events
+
+
+@pytest.mark.parametrize("events", [None, []], ids=["none", "empty"])
+def test_no_tempo_events_yields_single_base(events: list[Tempo] | None) -> None:
+    """`tempo_events=None`/`[]` (a cold close) yields exactly the base tempo."""
+    plan, pack, sf, phrases = _drive(_POP)
+    patches = sound_design(plan, pack)
+    doc = serialize(plan, sf, phrases, patches, tempo_events=events, params=_POP)
+    assert doc.header.tempos == [Tempo(ticks=0, bpm=plan.tempo_bpm)]
+
+
+# --- Crash: stage-6 crash track serializes with trigger midi 84 -------------
+
+
+def test_crash_track_serializes_with_trigger_midi() -> None:
+    """A phrase set containing a `crash` drum track serializes a crash `Track`
+    carrying trigger midi 84 (the stub timbre) and its `_STUB_MIX` mix."""
+    plan, pack, sf, _ = _drive(_POP)
+    patches = sound_design(plan, pack)
+    song_end = (sf.sections[-1].start_bar + sf.sections[-1].length_bars) * 1920
+    phrases = [
+        Phrase(
+            track_id="crash",
+            role="drums",
+            start_tick=0,
+            end_tick=song_end,
+            notes=[
+                PhraseNote(ticks=0, duration_ticks=1440, midi=None, velocity=0.95),
+            ],
+        )
+    ]
+    doc = serialize(plan, sf, phrases, patches, params=_POP)
+    assert validate_document(doc) == []
+    crash = next(t for t in doc.tracks if t.id == "crash")
+    assert crash.role == "drums"
+    assert [n.midi for n in crash.notes] == [84]
+    volume_db, pan = _STUB_MIX["crash"]
+    assert crash.channel.volume_db == volume_db
+    assert crash.channel.pan == pan
 
 
 # --- Meta: seed / overrides / params echo -----------------------------------
