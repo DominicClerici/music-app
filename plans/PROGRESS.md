@@ -97,7 +97,7 @@ When a phase enters `planning`, the orchestrator adds a `### Phase N` section he
 | T1 | Voicing pass `parts/voicing.py` (§6.4/§6.5 — full-timeline Viterbi per voiced role, classes-per-rung, comping/pads weights, `lane.high−6` anchor, cardinality-pad) + mechanism units. **Resolves C-04.** | opus | done | b9eb7aa |
 | T2 | Walking-bass engine `parts/walker.py` (§6.3 — two/four-feel, per-bar sub-streams, nearest, final-bar/two-chord rules, beat3-before-beat2, approach types, decay, embellishment, draw-iff-≥2) + mechanism/draw-order units | opus | done | a93c1a6 |
 | T3 | Generators dispatcher `parts/generators.py` (§6 shared loop + §6.1 drums/§8.2 voice→track map + §6.2 pattern-bass + §6.4/§6.5 comping/pads + bass-mode dispatch) + generator units | opus | done | fa00f51 |
-| T4 | Normative goldens: §9.2 walker (DoD 5) + §9.3 voicing (DoD 6) + §9.4 excerpts / end-to-end / determinism (DoD 7), independent transcriber over the real seed-`1ps9wxb` pipeline | opus | not started | — |
+| T4 | Normative goldens: §9.2 walker (DoD 5) + §9.3 voicing (DoD 6) + §9.4 excerpts / end-to-end / determinism (DoD 7), independent transcriber over the real seed-`1ps9wxb` pipeline | opus | done | 13c6c02 |
 | T5 | Whole-chunk 4-lens review + DoD 5/6/7 checklist + C-04 resolution + close-out | orchestrator | not started | — |
 
 Targets **DoD 5** (§13.5 walker), **DoD 6** (§13.6 voicing), **DoD 7** (§13.7 generators
@@ -125,6 +125,21 @@ so `retrigger` splits the articulated length** (no §9 golden pins a comping/bas
 chord boundary — the excerpts are single-chord bars). **T5-polish candidate (non-reachable nit):**
 two same-tick pitched events → `gap 0` → `duration_ticks 0` (schema `≥1` violation); no reference
 pattern authors this. Next: **T4** (normative goldens §9.2/§9.3/§9.4 + end-to-end, DoD 5/6/7).
+
+**T4 DONE** (`13c6c02`) — DoD 5/6/7 goldens over the real seed-`1ps9wxb` pipeline. **Golden-value
+arbitration triggered + resolved (user signed off).** T4 (independent transcriber) drove the real
+pipeline and found **7 printed §9.2/§9.3/§9.4/§13.5 samples diverged**; it did NOT tune — marked
+them `strict xfail` and escalated. A deep investigation (trace scripts + DP-cost enumeration)
+confirmed **all 7 are wrong DERIVED doc samples, NO engine bug** — the frozen walker/voicing/
+generators are faithful to §6.3/§6.4/§6.5/§3.6/§8.6. The engine's hardest goldens reproduced
+unchanged: **128 walker draws** (9/38/37/36/7/1), all invariants, determinism, jazz head shells,
+pop pads. Amendments (PHASE_5 + recomputed fixtures in one commit, arbitration rule 2; **CAVEATS
+C-09**): RC1 solo note counts 50/53/53→**51/54/54** (rule-6 ghost fires on the section's final bar;
+draw-free); RC2 §9.2 approach C2/G♭1→**D♭2/F1** (ascending-pitch candidate order §3.6 — **user ruled**
+engine authoritative); RC3 jazz solo rootless + pop comping an octave up (frozen Viterbi global min,
+low octaves cost +371/+1526 more), B♭13→**3-voice D4 F4 A♭4**, §9.4 pop bar-4→**G♯3+B3+E4** cascade.
+Four gates green (940 tests, zero xfail). **DoD 5+6+7 PROVEN** against the corrected goldens. Next:
+**T5** (whole-chunk 4-lens review over the corrected goldens + DoD checklist + C-04 resolution + close-out).
 
 #### Phase 5 — Chunk 2 — session 07 (`plans/sessions/SESSION_07.md`)
 
