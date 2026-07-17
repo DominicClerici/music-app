@@ -133,7 +133,7 @@ and are tested but are **not yet wired** into the pipeline. Task list (T1 → th
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Wire real stages into orchestrator (delete `transitions`/`humanize` stubs) + thread `tempoEvents` → serialize (`header.tempos=[base]+events`) + crash `_STUB_MIX`/stub-timbre (midi 84)/guard removal + unit tests; **xfail** the whole-doc goldens for T2 | opus | not started | — |
+| T1 | Wire real stages into orchestrator (delete `transitions`/`humanize` stubs) + thread `tempoEvents` → serialize (`header.tempos=[base]+events`) + crash `_STUB_MIX`/stub-timbre (midi 84)/guard removal + unit tests; **xfail** the whole-doc goldens for T2 | opus | done | 6c05caf |
 | T2 | Re-bless both whole-document goldens (**dedicated commit**) via `_regen_milestone_fixtures.py`; verify V1–V8 + §9.4 anchors + §7.3 facts + jazz **40-entry** tempo map; independent-arbiter posture | opus | not started | — |
 | T3 | Whole-phase property matrix (DoD 9): both packs × supported moods × [None,180,240] × 25 seeds through the wired pipeline → §11.9 checks + confirm P1-latent & C-10 unreachable | opus | not started | — |
 | T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | not started | — |
