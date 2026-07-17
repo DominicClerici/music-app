@@ -134,10 +134,29 @@ and are tested but are **not yet wired** into the pipeline. Task list (T1 → th
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Wire real stages into orchestrator (delete `transitions`/`humanize` stubs) + thread `tempoEvents` → serialize (`header.tempos=[base]+events`) + crash `_STUB_MIX`/stub-timbre (midi 84)/guard removal + unit tests; **xfail** the whole-doc goldens for T2 | opus | done | 6c05caf |
-| T2 | Re-bless both whole-document goldens (**dedicated commit**) via `_regen_milestone_fixtures.py`; verify V1–V8 + §9.4 anchors + §7.3 facts + jazz **40-entry** tempo map; independent-arbiter posture | opus | not started | — |
-| T3 | Whole-phase property matrix (DoD 9): both packs × supported moods × [None,180,240] × 25 seeds through the wired pipeline → §11.9 checks + confirm P1-latent & C-10 unreachable | opus | not started | — |
-| T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | not started | — |
+| T2 | Re-bless both whole-document goldens (**dedicated commit**) via `_regen_milestone_fixtures.py`; verify V1–V8 + §9.4 anchors + §7.3 facts + jazz **40-entry** tempo map; independent-arbiter posture | opus | done | c6e81fc |
+| T3 | Whole-phase property matrix (DoD 9): both packs × supported moods × [None,180,240] × 25 seeds through the wired pipeline → §11.9 checks + confirm P1-latent & C-10 unreachable | opus | done | 373cfdc, 8fa46ac |
+| T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | in progress | — |
 | T5 | Whole-PHASE 4-lens review (all 3 chunks) + full §11 DoD 1–11 + DoD 11/§10 amendment audit + close-out (→ Phase 7) | orchestrator | not started | — |
+
+**T1 done** (`6c05caf`): real stages 6/7 wired into `orchestrator.py`; `tempoEvents` threaded
+`humanize → serialize` (`header.tempos=[base]+events`); crash serializes (`_STUB_MIX["crash"]`, crash
+timbre midi 84 in both packs, `sound_design` guard removed); `test_total_draw_count` re-pinned
+pop 18→**10277** (18 base + 61 stage-6 + 10198 stage-7) / jazz 163→**5304** (163 + 53 + 5088), each
+summand cross-checked against a committed per-stage golden. Per-task opus review clean (no blockers).
+**T2 done** (`c6e81fc`, dedicated re-bless): both `fixtures/*.milestone.trackdoc.json` regenerated
+through the wired stages; T1 xfails removed; four §9.4/§9.5 anchors updated to the humanized values
+(each documents why). Independent-arbiter verified: 29/29 checks — V1–V8 clean both docs; pop 1-entry
+tempo map (cold); jazz **40-entry** map (base 69 + 39 ritard, first (115440,68.5), last (122760,45.5),
+monotone non-increasing, no anchor divergence from §7.2); C5 ceiling intact; HOLD endings present;
+no byte-identical repeated section. Fixture deltas: tracks pop 7→11 / jazz 6→8 (fills add tom/crash
+voices), notes pop 2856→2790 / jazz 1288→1275 (mutation + fill windows + HOLD). **T3 done**
+(`373cfdc` + nit-fix `8fa46ac`): `tests/test_phase6_property.py` drives the fully-wired `generate_track`
+across **1575 documents** (2 packs × 21 pack-moods × 3 lengths × 25 seeds) + 3 sanity/reachability
+tests; all §11.9 invariants hold. **P1 latent: 0 trips** (drums active at every device site);
+**C-10: 1575 docs, 0 V3 violations**. Crash suppression N/A (postchorus/breakdown never entered) —
+asserted explicitly and non-vacuously. Per-task opus review: no blockers, non-vacuousness
+empirically re-probed across all 1575 docs; nit-fix closes the DoD-9 both-stages midi check directly.
 
 Ordering: **T1 → (T2 ‖ T3) → T4 → T5** (T2 fixtures & T3 new property test are disjoint files, both
 depend only on T1's wiring). **Targets DoD 9, 10, 11** + full §11 1–11 sign-off. Out of scope: any
