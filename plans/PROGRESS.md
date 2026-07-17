@@ -138,8 +138,8 @@ Task list (T1→T2→T3→T4 serial, then T5); all implementation opus, disjoint
 | --- | --- | --- | --- | --- |
 | T1 | `humanize/feel.yaml` (§5.3 exact) + loader + validator (caps offsets ≤25ms / jitter ≤10ms / \|accent\| ≤0.05, rejection fixture per class) | opus | done | 0ad958d |
 | T2 | Humanizer engine (§5.1–§5.6, §5.8): beat classes, swing, offset maps, `tri` timing jitter, velocity accent+jitter, bass legato, op order + terminal rounding + clamps + re-sort, per-(role,bar) RNG | opus | done | b46a08f |
-| T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | done | (this commit) |
-| T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | not started | — |
+| T3 | Ritard renderer (§5.7): Friberg–Sundberg curve → sampled/dedup'd `Tempo[]` (humanize 2nd return); cold/fade → []; fade aliases cold | opus | done | 8f0193a |
+| T4 | Goldens (independent arbiter): jazz head-1 bar-0 pre-jitter excerpt §7.2 + 39-event ritard table §7.2 + stage-7 determinism/draw-counts + note-count preservation. **Ritard table = arbitration-risk surface (xfail+escalate, C-09 precedent).** | opus | done | (this commit) |
 | T5 | Whole-chunk 2-lens review + DoD 2/5/6 + humanizer slice of 7 + close-out | orchestrator | not started | — |
 
 **T1 DONE** (0ad958d) — feel data + loader + validator (`src/trackgen/humanize/{feel.py,feel.yaml}`);
@@ -160,8 +160,15 @@ legato — resolved to track-level on §5.6 prose (not arbitration). **T3 DONE**
 `v(x)=(1+(v_end³−1)x)^(1/3)` (v_end 0.65), per-8th→per-16th sampling (release downbeat unsampled),
 `round(bpm,1)`, prevailing-tempo dedupe; `cold`/`fade` → `[]` (D7 alias). Per-task opus review
 **APPROVE** (zero findings) — reviewer independently reproduced all 11 §7.2 table values (68.5…45.5)
-+ the 39-event count exactly, de-risking T4. Four gates green (**2715 tests**). Next: **T4** (goldens,
-independent arbiter).
++ the 39-event count exactly, de-risking T4. Four gates green (**2715 tests**). **T4 DONE** — goldens
+(independent arbiter) over the real seed-`1ps9wxb` chained pipeline via `_stage6_driver` +
+`humanize`: **ZERO divergences** — every §7.2 value reproduced verbatim (head-1 bar-0 pre-jitter
+ride/hats/comping/bass/and-of-4 via the `_ZeroJitter` seam; the full **39-event** ritard table incl.
+all 11 printed anchors 68.5…45.5, endpoints, tag_start 115200; bass legato two-feel 960→912).
+Determinism: repeated-run identity, note-count preservation (midi/tags multisets), exact draw counts
+(counting shim == structural: **pop 10198 / jazz 5088**), per-(role,bar) isolation. No doc amendment,
+no arbitration escalation (like C1's T4). Four gates green (**2734 tests**). Next: **T5** (whole-chunk
+2-lens review + DoD 2/5/6 + close-out).
 
 Live-verified this session: §5.8 humanize RNG anchors reproduce exactly (`derive(master,"humanize")`
 = 3899203291477031323; first-five `randrange(100)` = [58,79,50,70,90]; `derive(derive(humanize,
