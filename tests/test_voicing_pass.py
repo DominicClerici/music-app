@@ -25,6 +25,7 @@ from trackgen.schema.ir import (
 from trackgen.theory.voicing import (
     Lane,
     VoicingWeights,
+    _pad_to_equal,
     optimal_voicing_path,
     voicing_candidates,
 )
@@ -282,6 +283,19 @@ def test_cardinality_padding_boundary() -> None:
     # rung 2 shell (2 voices) meets rung 3 rootless (4 voices) at the boundary.
     assert len(vmap[a[0].start_tick]) == 2
     assert len(vmap[b[0].start_tick]) == 4
+
+
+def test_pad_to_equal_pads_with_own_top_pitch() -> None:
+    """§6.4 caller policy (PHASE_5 amendment 10): the DP pads the shorter voicing
+    with its own **top** pitch (not its bottom) so `vl_distance` sees equal
+    cardinality. Pins the value directly — the §9.3 boundary goldens only
+    constrain it indirectly. Flipping the pad to `a[0]` would fail this."""
+    short, long = [60, 64], [58, 62, 65, 69]
+    assert _pad_to_equal(short, long) == ([60, 64, 64, 64], [58, 62, 65, 69])
+    # Symmetric: whichever side is shorter is padded with its own top.
+    assert _pad_to_equal(long, short) == ([58, 62, 65, 69], [60, 64, 64, 64])
+    # Equal cardinality is unchanged.
+    assert _pad_to_equal([48, 55], [50, 57]) == ([48, 55], [50, 57])
 
 
 # --- C-04 confirmations -------------------------------------------------------

@@ -345,7 +345,16 @@ def _generate_instantiated(
         notes: list[PhraseNote] = []
         for i, (abs_tick, event) in enumerate(active):
             assert isinstance(event, PitchedEvent)
-            gap = active[i + 1][0] - abs_tick if scale and i + 1 < len(active) else None
+            # Gap to the next surviving same-track event (None past the last, so it
+            # rings out). `max(1, …)` guards the degenerate coincident-onset case
+            # (two pitched hits at one pos): a 0 gap would clamp the duration to 0
+            # and violate PhraseNote's `>= 1`. No reference pattern authors this;
+            # purely defensive against synthetic/future banks.
+            gap = (
+                max(1, active[i + 1][0] - abs_tick)
+                if scale and i + 1 < len(active)
+                else None
+            )
             dur = apply_articulation(event.dur, legato, scale=scale, gap_ticks=gap)
             velocity = apply_velocity(event.velocity, dynamics_base)
             for note in retarget_event(
