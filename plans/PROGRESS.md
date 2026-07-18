@@ -124,7 +124,7 @@ four gates green throughout). Task list (T1 → T2 → T3 serial [T1/T2 share `s
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Engine data: `sound/allowlist.yaml` (fully expanded, D12) + `sound/mod_defaults.yaml` (§5.1 verbatim) + loaders + shared `MappingEntry` (curve enum, `exp⇒min,max>0`; inverted ranges legal) + tests | opus | done | b86be4e |
-| T2 | Patch-evaluation model `sound/evaluate.py` (§3): linear/exp + `round3` half-even + inverted; `merge_mod` per-directive-key replacement (drums per-(directive,voice), empty-list disable); base-XOR-mod check; fixed brightness→attackHardness→space order + tests | opus | not started | — |
+| T2 | Patch-evaluation model `sound/evaluate.py` (§3): linear/exp + `round3` half-even + inverted; `merge_mod` per-directive-key replacement (drums per-(directive,voice), empty-list disable); base-XOR-mod check; fixed brightness→attackHardness→space order + tests | opus | done | aeaf047 |
 | T3 | Real `timbres.yaml` schema `sound/timbres.py` (`PitchedFlavor`/`KitFlavor`/`MixBlock`/`ReverbBus`/`MasterChain`) + TB1(standalone fn)–TB9 validators + one rejection fixture per rule class; **unwired** (stub `TimbresConfig`/`resolve_pack` untouched) | opus | not started | — |
 | T4 | Whole-chunk 2-lens review (correctness/contract + test-quality/DoD) + DoD 2/3 + DoD 1 (C1 slice) + close-out (→ C2) | orchestrator | not started | — |
 
@@ -137,6 +137,20 @@ field-for-field (zero arbitration flags); allowlist coverage **programmatically 
 (handoff, confirmed intended per §5.2/D12): `envelope.*`→attack/decay/sustain/release/attackCurve,
 `modulationEnvelope.*`→attack/decay/sustain/release; classes seeded = the 18 §5.2 names only
 (DuoSynth/PluckSynth/unused effects enter by amendment when first used).
+
+**T2 done** (`aeaf047`): `sound/evaluate.py` — `round3`/`evaluate_mapping`/`merge_mod`/
+`assert_base_xor_mod`/`apply_directives` + `get_by_path`/`set_by_path`; 16 tests. Reproduces the
+§9.1 anchors (snare `noise.playbackRate` **3.67**; bass `filterEnvelope.baseFrequency` **1514.763**,
+matching §9.1's 1-decimal 1514.8). Per-task opus review clean; added an autovivify test (omitted
+`sends` → `set_by_path` creates it). Four gates green at commit (fast gates + T2 file; full suite
+agent-verified **4344**, re-confirmed at T3). **C2 handoff notes:** (a) the stage converts the
+T1 `ModDefaults`/flavor `mod` pydantic models to the dict shapes `merge_mod` expects — rename
+`PitchedModDefaults.attack_hardness`→`"attackHardness"`, flatten drums to `(directive,voice)` keys,
+then per drum voice slice `{d: merged[(d,voice)]}` before `apply_directives` (which is `str`-directive
+keyed); (b) `apply_directives` uses a single working dict `{**options, "mix": mix_block}` — split back
+via `result.pop("mix")`; the top-level `"mix"` key is reserved (no whitelisted class emits an option
+named `mix` — safe, noted); (c) pop bass `envelope.attack` golden is `round3=0.005` (§9.1's "0.0051"
+is a >3-decimal readability display, not a divergence — the §9 fixtures assert full round3).
 
 **Targets DoD 2, 3** (full) + **DoD 1** (partial: validators + TB1 function + one rejection fixture
 per rule class; "both reference files load clean" is the wired check → C2). **Out of scope:** any
