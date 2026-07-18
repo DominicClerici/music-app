@@ -35,11 +35,12 @@ Three proofs over the real orchestrator `generate_track`:
      - humanize 10198 / 5088 : tests/test_humanizer_goldens.py (§5 counting-RNG shim)
    The interpreter auto-tempo draw is 1 for both examples (neither params dict
    pins a tempo, so `interpret` draws one tempo from the mood band).
-3. Random-free pipeline modules — `pipeline/{orchestrator,serialize,stubs}.py`
-   import no `random`/`time`/`datetime`/`secrets`/`uuid` (TID251 bans these at the
-   import layer). The orchestrator itself makes no draws (it only wires stages);
-   the draws counted in (2) all originate in the stages it calls — including the
-   real transitions/humanize, whose own goldens pin their sub-totals.
+3. Random-free pipeline modules — `pipeline/{orchestrator,serialize}.py` import no
+   `random`/`time`/`datetime`/`secrets`/`uuid` (TID251 bans these at the import
+   layer). The orchestrator itself makes no draws (it only wires stages); the
+   draws counted in (2) all originate in the stages it calls — including the real
+   transitions/humanize (whose own goldens pin their sub-totals) and the Phase-7
+   sound-design stage, which draws zero (its own determinism test proves it).
 """
 
 from __future__ import annotations
@@ -67,7 +68,7 @@ _TOTAL_DRAWS: dict[str, tuple[dict[str, object], int]] = {
 }
 
 _SRC = Path(__file__).resolve().parents[1] / "src" / "trackgen" / "pipeline"
-_PIPELINE_MODULES = ("orchestrator.py", "serialize.py", "stubs.py")
+_PIPELINE_MODULES = ("orchestrator.py", "serialize.py")
 _BANNED_IMPORTS = {"random", "time", "datetime", "secrets", "uuid"}
 
 
@@ -121,8 +122,8 @@ def test_pipeline_modules_are_random_free(module: str) -> None:
     """DoD 9 — the new `pipeline/` modules import no `random`/wall-clock/entropy
     source (TID251 enforces this at the import layer; this asserts it directly so
     a regression is caught even if the lint config drifts). Combined with the
-    total-draw shim, this confirms the orchestrator/serialize/`sound_design` tail
-    makes no draws of its own — every counted draw comes from a stage it calls."""
+    total-draw shim, this confirms the orchestrator/serialize tail makes no draws
+    of its own — every counted draw comes from a stage it calls."""
     tree = ast.parse((_SRC / module).read_text(encoding="utf-8"))
     imported_roots: set[str] = set()
     for node in ast.walk(tree):

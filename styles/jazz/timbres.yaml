@@ -1,94 +1,277 @@
-# PROVISIONAL stub (PHASE_5 §8.4) — Phase 7 replaces schema + content
-#
-# Instrument recipes are the exact PHASE_1 `fixtures/milestone.trackdoc.json`
-# patches (MembraneSynth kick, NoiseSynth snare, MetalSynth hats, MonoSynth bass,
-# PolySynth/FMSynth comping, PolySynth/AMSynth pads). All flavors of a role reuse
-# one recipe in the stub — flavor differentiation is Phase 7 — but every declared
-# flavor id (interpreter.yaml) is present. Trigger midi: kick 24, hats 80, ride 82,
-# tom_low/mid/high 43/47/50, perc 39, crash 84; snare (NoiseSynth) carries no midi
-# (V5). Ride/toms/perc/crash reuse the MetalSynth hats recipe (stub simplification).
+# jazz reference timbres (PHASE_7 §8.2) — complete real content under the
+# sound.timbres.TimbresConfig schema. Every interpreter.yaml-declared flavor id
+# carries a full recipe (TB1 unconditional). Mapped params are omitted from
+# `base`/`mix` — the merged mod tables are their sole authority (§3.3).
 
-drums:
-  brush_kit: &drum_kit
-    kick:
-      midi: 24
-      instrument:
-        type: MembraneSynth
-        options:
-          pitchDecay: 0.05
-          octaves: 4
-          oscillator: { type: sine }
-          envelope:
-            { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4,
-              attackCurve: exponential }
-    snare:
-      instrument:
-        type: NoiseSynth
-        options:
-          noise: { type: pink, playbackRate: 3 }
-          envelope: { attack: 0.001, decay: 0.13, sustain: 0, release: 0.03 }
-    hats:
-      midi: 80
-      instrument:
-        type: MetalSynth
-        options: &metal_opts
-          frequency: 200
-          envelope: { attack: 0.001, decay: 0.1, release: 0.01 }
-          harmonicity: 5.1
-          modulationIndex: 32
-          resonance: 4000
-          octaves: 1.5
-    ride:
-      midi: 82
-      instrument: { type: MetalSynth, options: *metal_opts }
-    tom_low:
-      midi: 43
-      instrument: { type: MetalSynth, options: *metal_opts }
-    tom_mid:
-      midi: 47
-      instrument: { type: MetalSynth, options: *metal_opts }
-    tom_high:
-      midi: 50
-      instrument: { type: MetalSynth, options: *metal_opts }
-    perc:
-      midi: 39
-      instrument: { type: MetalSynth, options: *metal_opts }
-    crash:
-      midi: 84
-      instrument: { type: MetalSynth, options: *metal_opts }
-  ride_kit: *drum_kit
+flavors:
+  drums:
+    brush_kit:
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.08
+              octaves: 3
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.35, sustain: 0, release: 0.4 }
+          mix: { volumeDb: -12, pan: 0, sends: { reverb: -18 } } # touch of room (fixed)
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: pink } # playbackRate mapped (brush override ↓)
+              envelope: { attack: 0.02, decay: 0.25, sustain: 0.05, release: 0.3 }
+          mix: { volumeDb: -12, pan: 0 } # brush swish; send mapped
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 220
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.06, release: 0.02 }
+          mix: { volumeDb: -16, pan: 0.25, sends: { reverb: -15 } }
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 420
+              harmonicity: 12
+              modulationIndex: 14
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.5, release: 0.8 }
+          mix: { volumeDb: -13, pan: -0.2, sends: { reverb: -12 } } # the jazz anchor: prominent
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.8, release: 1.5 }
+          mix: { volumeDb: -15, pan: -0.3 } # send mapped
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.25 }
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.05 }
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: 0.15 }
+        perc: # shaker-ish
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 }
+          mix: { volumeDb: -18, pan: 0.2 }
+      mod:
+        brightness:
+          snare: # brush, not crack
+            - { param: noise.playbackRate, min: 0.4, max: 0.9, curve: linear }
+    ride_kit:
+      # sticks: snare cracks (decay 0.13, attack 0.001, default playbackRate — no
+      # brush override), ride modulationIndex 16, brighter hats; same midi/mix shape.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.08
+              octaves: 3
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.35, sustain: 0, release: 0.4 }
+          mix: { volumeDb: -12, pan: 0, sends: { reverb: -18 } }
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: pink }
+              envelope: { attack: 0.001, decay: 0.13, sustain: 0, release: 0.1 }
+          mix: { volumeDb: -12, pan: 0 }
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.06, release: 0.02 }
+          mix: { volumeDb: -16, pan: 0.25, sends: { reverb: -15 } }
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 420
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.5, release: 0.8 }
+          mix: { volumeDb: -13, pan: -0.2, sends: { reverb: -12 } }
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.8, release: 1.5 }
+          mix: { volumeDb: -15, pan: -0.3 }
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.25 }
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.05 }
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: 0.15 }
+        perc:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 }
+          mix: { volumeDb: -18, pan: 0.2 }
 
-bass:
-  upright:
-    instrument:
-      type: MonoSynth
-      options:
-        oscillator: { type: sawtooth }
-        envelope: { attack: 0.01, decay: 0.2, sustain: 0.4, release: 0.4 }
-        filter: { Q: 2, type: lowpass }
-        filterEnvelope:
-          { attack: 0.02, decay: 0.3, sustain: 0.3, release: 0.5,
-            baseFrequency: 200, octaves: 3 }
+  bass:
+    upright: # FM pizzicato (research recipe)
+      engine: { type: FMSynth }
+      base:
+        harmonicity: 1
+        oscillator: { type: sine }
+        envelope: { decay: 0.6, sustain: 0, release: 0.4 } # attack mapped (override)
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.005, decay: 0.15, sustain: 0, release: 0.1 }
+      effects:
+        - { type: Filter, options: { type: lowpass, frequency: 900, Q: 0.5 } } # woody cap
+      mix: { volumeDb: -10, pan: 0 } # jazz: bass upfront; dry
+      mod: # FM engine ⇒ full override (TB7 forces this)
+        brightness:
+          - { param: modulationIndex, min: 1.5, max: 6, curve: exp }
+        attackHardness:
+          - { param: envelope.attack, min: 0.05, max: 0.002, curve: exp }
 
-comping:
-  piano: &comping_patch
-    instrument:
-      type: PolySynth
-      voice: FMSynth
-      maxPolyphony: 6
-      options:
+  comping:
+    piano: # warm FM keys, jazz-voiced
+      engine: { type: PolySynth, voice: FMSynth, maxPolyphony: 12 }
+      base:
         harmonicity: 3
-        modulationIndex: 10
-        envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.5 }
-  guitar_hollow: *comping_patch
+        oscillator: { type: sine }
+        envelope: { decay: 1.4, sustain: 0.08, release: 1.4 } # attack mapped
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.002, decay: 0.25, sustain: 0, release: 0.2 }
+      effects: []
+      mix: { volumeDb: -12, pan: -0.25 } # reverb send mapped (space)
+      mod:
+        brightness:
+          - { param: modulationIndex, min: 4, max: 14, curve: exp }
+    guitar_hollow: # triangle osc, mellow filter
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 12 }
+      base:
+        oscillator: { type: triangle }
+        envelope: { decay: 0.7, sustain: 0.25, release: 0.8 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.002, decay: 0.5, sustain: 0.3, release: 0.6, octaves: 2.0 }
+          # baseFrequency mapped
+      effects: []
+      mix: { volumeDb: -12, pan: -0.25 }
 
-pads:
-  airy_strings: &pads_patch
-    instrument:
-      type: PolySynth
-      voice: AMSynth
-      maxPolyphony: 6
-      options:
-        harmonicity: 2
-        envelope: { attack: 0.3, decay: 0.4, sustain: 0.6, release: 1.2 }
-  organ_soft: *pads_patch
+  pads:
+    airy_strings: # as pop airy_strings, spread 15
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: fatsawtooth, count: 4, spread: 15 }
+        envelope: { decay: 0.3, sustain: 0.8, release: 2.4 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.6, release: 1.6, octaves: 2 }
+      effects:
+        - { type: Chorus, options: { frequency: 0.6, delayTime: 5, depth: 0.6, wet: 0.35 } }
+        - { type: StereoWidener, options: { width: 0.6 } }
+      mix: { volumeDb: -20, pan: 0 }
+    organ_soft:
+      engine: { type: PolySynth, voice: AMSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: sine }
+        envelope: { decay: 0.1, sustain: 1.0, release: 0.3 } # attack mapped; organ = flat sustain
+        modulation: { type: square }
+        modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
+      effects:
+        - { type: Tremolo, options: { frequency: 4.5, depth: 0.35, spread: 90, wet: 0.5 } }
+      mix: { volumeDb: -20, pan: 0 }
+      mod:
+        brightness: # drawbar-mix analog
+          - { param: harmonicity, min: 1.0, max: 2.0, curve: linear }
+
+bus:
+  reverb: { decay: [0.7, 2.2], preDelay: [0.01, 0.03], returnFilterHz: 400 }
+
+master:
+  - { type: Compressor, options: { threshold: -18, ratio: 1.5, attack: 0.03, release: 0.4 } }
+  - { type: Limiter, options: { threshold: -1 } }

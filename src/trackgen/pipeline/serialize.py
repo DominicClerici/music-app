@@ -1,25 +1,22 @@
-"""The thin Serializer (PHASE_5 §8.3, D-C).
+"""The thin Serializer (PHASE_5 §8.3, D-C; PHASE_7 §7).
 
-`serialize(plan, form, phrases, patches)` assembles the `TrackDocument` from the
-generated `Phrase`s, the `SongForm`, and the sound-design patch map. It is a pure
-function: no I/O, no draws, no wall-clock. The output passes every PHASE_1 §3.8
-validator rule (V1-V8).
+`serialize(plan, form, phrases, design)` assembles the `TrackDocument` from the
+generated `Phrase`s, the `SongForm`, and the sound-design stage's `SoundDesign`.
+It is a pure function: no I/O, no draws, no wall-clock. The output passes every
+PHASE_1 §3.8 validator rule (V1-V8).
 
-The channel/mix table below is the §8.3 **stub** engine table — authoritative for
-the milestone and intentionally distinct from the PHASE_1 fixture's hand-authored
-mix (PHASE_7 §7 replaces it with the sound-design stage's per-track mix).
+Each emitted track takes its instrument/effects/channel/sends verbatim from the
+stage's per-track `TrackSound`; the document `buses`/`master` come from the same
+`SoundDesign`. The reverb bus is included only when >= 1 emitted track sends to
+it (§7 omission rule).
 """
 
 import json
 
 from trackgen.form.stage import section_label
 from trackgen.parts.generators import _TRACK_ORDER
-from trackgen.pipeline.stubs import TrackSound
 from trackgen.schema.document import (
-    Channel,
-    EffectPatch,
     Header,
-    Master,
     Meta,
     NoteEvent,
     Role,
@@ -31,24 +28,9 @@ from trackgen.schema.document import (
 )
 from trackgen.schema.ir import GenerationPlan, Phrase, PhraseNote, SongForm
 from trackgen.seeds import to_base36
+from trackgen.sound.stage import SoundDesign
 
 _TICKS_PER_BAR = 1920
-
-# §8.3 stub engine mix table (track_id -> (volumeDb, pan)); mute is always False.
-_STUB_MIX: dict[str, tuple[float, float]] = {
-    "kick": (-2, 0),
-    "snare": (-4, 0),
-    "hats": (-4, 0.2),
-    "ride": (-4, -0.15),
-    "tom_low": (-4, 0),
-    "tom_mid": (-4, 0),
-    "tom_high": (-4, 0),
-    "perc": (-4, 0),
-    "crash": (-4, 0.1),
-    "bass": (-3, 0),
-    "comping": (-6, 0.1),
-    "pads": (-10, -0.1),
-}
 
 # Track emit order: the drum sub-order, then the pitched roles.
 _EMIT_ORDER: tuple[str, ...] = (*_TRACK_ORDER, "bass", "comping", "pads")
@@ -56,17 +38,12 @@ _EMIT_ORDER: tuple[str, ...] = (*_TRACK_ORDER, "bass", "comping", "pads")
 _GENERATOR_VERSION = "0.1.0"
 _TONE_VERSION = "^15.1.0"
 
-_MASTER_EFFECTS = (
-    EffectPatch(type="Compressor", options={"threshold": -24, "ratio": 4}),
-    EffectPatch(type="Limiter", options={"threshold": -1}),
-)
-
 
 def serialize(
     plan: GenerationPlan,
     form: SongForm,
     phrases: list[Phrase],
-    patches: dict[str, TrackSound],
+    design: SoundDesign,
     *,
     tempo_events: list[Tempo] | None = None,
     params: dict[str, object] | None = None,
@@ -83,9 +60,13 @@ def serialize(
         track
         for track_id in _EMIT_ORDER
         if track_id in grouped
-        for track in (_build_track(track_id, grouped[track_id], patches, song_end),)
+        for track in (_build_track(track_id, grouped[track_id], design, song_end),)
         if track is not None
     ]
+
+    # §7 bus-omission rule: keep only buses at least one emitted track sends to.
+    sent_buses = {send.bus for track in tracks for send in track.sends}
+    buses = [bus for bus in design.buses if bus.id in sent_buses]
 
     meta = Meta(
         generator_version=_GENERATOR_VERSION,
@@ -112,8 +93,8 @@ def serialize(
         meta=meta,
         header=header,
         sections=sections,
-        buses=[],
-        master=Master(effects=list(_MASTER_EFFECTS)),
+        buses=buses,
+        master=design.master,
         tracks=tracks,
     )
 
@@ -141,12 +122,13 @@ def _group_by_track(phrases: list[Phrase]) -> dict[str, list[Phrase]]:
 def _build_track(
     track_id: str,
     track_phrases: list[Phrase],
-    patches: dict[str, TrackSound],
+    design: SoundDesign,
     song_end: int,
 ) -> Track | None:
     role: Role = track_phrases[0].role
     is_drum = role == "drums"
-    trigger_midi = patches[track_id].midi if is_drum else None
+    sound = design.track_sounds[track_id]
+    trigger_midi = sound.midi if is_drum else None
 
     events: list[NoteEvent] = []
     for phrase in sorted(track_phrases, key=lambda p: p.start_tick):
@@ -160,16 +142,14 @@ def _build_track(
 
     events.sort(key=lambda e: (e.ticks, e.midi if e.midi is not None else -1))
 
-    sound = patches[track_id]
-    volume_db, pan = _STUB_MIX[track_id]
     return Track(
         id=track_id,
         role=role,
         name=track_id.replace("_", " ").title(),
         instrument=sound.instrument,
         effects=list(sound.effects),
-        channel=Channel(volume_db=volume_db, pan=pan, mute=False),
-        sends=[],
+        channel=sound.channel,
+        sends=list(sound.sends),
         notes=events,
     )
 

@@ -5,7 +5,7 @@ returns a serialized `TrackDocument`. It follows the authoritative code chain
 (SESSION_09 "Authoritative wiring facts" — the §8.1 pseudocode is stale): the
 same interpret -> form -> harmony -> arrange -> select_patterns -> generate x4
 loop the test-only `_drive_full` driver uses, then the real stages
-transitions -> humanize (Phase 6) -> sound_design (stub, Phase 7) -> serialize.
+transitions -> humanize (Phase 6) -> sound_design (Phase 7) -> serialize.
 
 The orchestrator itself makes **no** RNG draws: `generate_plan` is the entropy
 boundary (it derives the master seed), and every downstream stage receives its
@@ -21,10 +21,10 @@ from trackgen.packs import resolve_pack
 from trackgen.parts.generators import generate
 from trackgen.parts.selection import select_patterns
 from trackgen.pipeline.serialize import serialize
-from trackgen.pipeline.stubs import sound_design
 from trackgen.schema.document import Role, TrackDocument
 from trackgen.schema.ir import Phrase
 from trackgen.seeds import Rng, stream_rng
+from trackgen.sound.stage import sound_design
 from trackgen.transitions import transitions
 
 _ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
@@ -43,10 +43,15 @@ def generate_track(raw_params: dict[str, object]) -> TrackDocument:
     style_family = raw_params["styleFamily"]
     assert isinstance(style_family, str)
     pack = resolve_pack(style_family)
-    if pack is None or pack.forms is None or pack.progressions is None:
+    if (
+        pack is None
+        or pack.forms is None
+        or pack.progressions is None
+        or pack.timbres is None
+    ):
         raise ValueError(
-            f"styleFamily {style_family!r} did not resolve to a pack with forms "
-            f"and progressions (pack={pack!r})"
+            f"styleFamily {style_family!r} did not resolve to a pack with forms, "
+            f"progressions, and timbres (pack={pack!r})"
         )
 
     sf = form(plan, pack.forms)
@@ -76,8 +81,10 @@ def generate_track(raw_params: dict[str, object]) -> TrackDocument:
 
     phrases = transitions(phrases, sf, hp, ap, plan, pack)
     phrases, tempo_events = humanize(phrases, sf, plan)
-    patches = sound_design(plan, pack)
+    design = sound_design(
+        plan, pack.timbres, stream_rng(plan.seed.master, plan.seed.overrides, "sound")
+    )
 
     return serialize(
-        plan, sf, phrases, patches, tempo_events=tempo_events, params=raw_params
+        plan, sf, phrases, design, tempo_events=tempo_events, params=raw_params
     )

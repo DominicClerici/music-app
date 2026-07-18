@@ -10,12 +10,19 @@ extensions `sixth` (blues boogie cell) and `chord` (comping/pads voicing hits).
 Events also gain PHASE_5's `push` (pitched only) and `minDensity` fields.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
-from trackgen.schema.document import InstrumentPatch, Role
+from trackgen.schema.document import Role
+
+if TYPE_CHECKING:
+    # Real Phase-7 `timbres.yaml` schema. A runtime import would cycle
+    # (`sound.timbres` imports `PackModel` from this module), so the
+    # `StylePack.timbres` annotation stays a string forward ref, resolved by a
+    # `StylePack.model_rebuild()` at the bottom of `sound/timbres.py`.
+    from trackgen.sound.timbres import TimbresConfig
 
 Degree = Literal[
     "root",
@@ -1202,34 +1209,6 @@ class ProgressionsConfig(PackModel):
         return self
 
 
-# --- PHASE_5 §8.4 provisional `timbres.yaml` (Phase 7 owns the real schema) ---
-
-
-class TrackTimbre(PackModel):
-    """§8.4 one track's stub timbre: an `InstrumentPatch` plus an optional drum
-    trigger `midi`. Pitched roles and NoiseSynth drums (snare) carry no `midi`
-    (V5: the note supplies its own pitch, or none for NoiseSynth)."""
-
-    midi: int | None = None
-    instrument: InstrumentPatch
-
-
-# A drum kit maps a drum-track id (kick/snare/hats/ride/tom_*/perc) → its timbre.
-DrumKit = dict[str, TrackTimbre]
-
-
-class TimbresConfig(PackModel):
-    """§8.4 `timbres.yaml` — per role, each flavor id → a patch. Drums map a
-    flavor id to a whole kit (per-drum-track timbre); pitched roles map a flavor
-    id to a single timbre. Provisional stub: all flavors of a role reuse the
-    same recipe in v1 (flavor differentiation is Phase 7)."""
-
-    drums: dict[str, DrumKit]
-    bass: dict[str, TrackTimbre]
-    comping: dict[str, TrackTimbre]
-    pads: dict[str, TrackTimbre]
-
-
 # --- PHASE_6 §4.1 `transitions.yaml` -----------------------------------------
 
 
@@ -1363,7 +1342,7 @@ class StylePack(PackModel):
     interpreter: InterpreterConfig | None = None
     forms: FormsConfig | None = None
     progressions: ProgressionsConfig | None = None
-    timbres: TimbresConfig | None = None
+    timbres: "TimbresConfig | None" = None
     transitions: TransitionsSpec | None = None
     # PHASE_6 §3.3 — per-fill-id content windows `(start, end)` in ticks,
     # computed and cached at load (`None` field entry never appears; empty when

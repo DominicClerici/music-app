@@ -63,6 +63,11 @@ def _track(doc: TrackDocument, track_id: str) -> Track:
     return next(t for t in doc.tracks if t.id == track_id)
 
 
+@pytest.mark.xfail(
+    reason="Phase-7 flip changes the sound surface "
+    "(channel/mix/buses/master/instrument); re-blessed in T3",
+    strict=True,
+)
 @pytest.mark.parametrize("example", list(_EXAMPLES), ids=list(_EXAMPLES))
 def test_fixture_reserializes_identically(example: str) -> None:
     """DoD 10 — a fresh `generate_track` re-serializes structure-identically

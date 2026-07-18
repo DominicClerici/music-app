@@ -31,7 +31,6 @@ from trackgen.parts.generators import generate
 from trackgen.parts.selection import select_patterns
 from trackgen.pipeline import generate_track
 from trackgen.pipeline.serialize import serialize
-from trackgen.pipeline.stubs import sound_design
 from trackgen.schema.document import Role, Tempo, TrackDocument
 from trackgen.schema.ir import (
     GenerationPlan,
@@ -40,6 +39,7 @@ from trackgen.schema.ir import (
 )
 from trackgen.schema.validate import validate_document
 from trackgen.seeds import Rng, stream_rng
+from trackgen.sound.stage import sound_design
 from trackgen.transitions import transitions
 
 _ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
@@ -117,11 +117,12 @@ def test_orchestrator_matches_drive_full(params: dict[str, object]) -> None:
     the tempo events thread through. Serialize is deterministic, so an equal
     reference document proves the inputs feeding it are equal."""
     plan, pack, sf, phrases, tempo_events = _drive_full(params)
+    assert pack.timbres is not None
     reference = serialize(
         plan,
         sf,
         phrases,
-        sound_design(plan, pack),
+        sound_design(plan, pack.timbres, Rng(0)),
         tempo_events=tempo_events,
         params=params,
     )

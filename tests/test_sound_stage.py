@@ -1,11 +1,12 @@
 """Unit tests for the sound-design stage (PHASE_7 §7; SESSION_14 T1).
 
-Exercises the stage's evaluation paths against the real reference `timbres.yaml`
-fixtures (the same files T2 moves into `styles/`): the pitched + drum evaluation
-paths, the PolySynth `{type, voice, maxPolyphony, options}` emission, the
-reverb-send present/absent branch, the §6.2 bus evaluation at both endpoints and a
-midpoint, master-verbatim, and repeated-run identity. Field-for-field §9.1/§9.2
-goldens live in `test_sound_stage_goldens.py`.
+Exercises the stage's evaluation paths against the real reference
+`styles/{pack}/timbres.yaml` content (the single source of truth after the C2
+flip): the pitched + drum evaluation paths, the PolySynth
+`{type, voice, maxPolyphony, options}` emission, the reverb-send present/absent
+branch, the §6.2 bus evaluation at both endpoints and a midpoint, master-verbatim,
+and repeated-run identity. Field-for-field §9.1/§9.2 goldens live in
+`test_sound_stage_goldens.py`.
 """
 
 from pathlib import Path
@@ -15,15 +16,20 @@ import yaml
 
 from trackgen.interpreter.stage import generate_plan
 from trackgen.schema.ir import GenerationPlan, TimbreDirectives
+from trackgen.seeds import Rng
 from trackgen.sound.evaluate import round3
 from trackgen.sound.stage import SoundDesign, sound_design
 from trackgen.sound.timbres import KIT_VOICE_IDS, TimbresConfig
 
-_FIXTURES = Path(__file__).parent / "fixtures" / "timbres"
+_STYLES = Path(__file__).resolve().parents[1] / "styles"
+
+# The reserved `sound` seed stream: `sound_design` accepts it for interface
+# uniformity and never draws (D3), so any Rng gives identical output.
+_RNG = Rng(0)
 
 
 def _timbres(pack: str) -> TimbresConfig:
-    raw: Any = yaml.safe_load((_FIXTURES / f"{pack}.timbres.yaml").read_text())
+    raw: Any = yaml.safe_load((_STYLES / pack / "timbres.yaml").read_text())
     return TimbresConfig.model_validate(raw)
 
 
@@ -48,7 +54,7 @@ def _with_directives(
 
 def test_pitched_evaluation_bakes_mapped_params() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     bass = sd.track_sounds["bass"].instrument.options
     # electric_fingered has no `mod`; the MonoSynth bass defaults evaluate at
     # brightness 0.835 / attackHardness 0.66.
@@ -65,7 +71,7 @@ def test_pitched_evaluation_bakes_mapped_params() -> None:
 
 def test_drum_evaluation_bakes_mapped_voice_params() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     # snare carries the default brightness mapping (noise.playbackRate, linear).
     snare = sd.track_sounds["snare"].instrument.options
     assert snare["noise"]["playbackRate"] == round3(2.0 + 0.835 * (4.0 - 2.0))
@@ -76,9 +82,23 @@ def test_drum_evaluation_bakes_mapped_voice_params() -> None:
     assert "resonance" not in kick
 
 
+def test_drum_voice_carries_kit_midi_pitched_role_none() -> None:
+    """§7/D13 — each drum voice's `TrackSound.midi` is its kit trigger pitch (the
+    Serializer stamps it onto the voice's notes); a NoiseSynth voice and every
+    pitched role carry `None`."""
+    plan = _pop_plan()
+    ts = sound_design(plan, _timbres("pop_rock"), _RNG).track_sounds
+    assert ts["kick"].midi == 24
+    assert ts["hats"].midi == 80
+    assert ts["ride"].midi == 82
+    assert ts["snare"].midi is None  # NoiseSynth (V5)
+    for role in ("bass", "comping", "pads"):
+        assert ts[role].midi is None
+
+
 def test_all_nine_kit_voices_emitted() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     for voice in KIT_VOICE_IDS:
         assert voice in sd.track_sounds
     # Plus the three pitched roles.
@@ -91,7 +111,7 @@ def test_all_nine_kit_voices_emitted() -> None:
 
 def test_polysynth_emits_voice_and_polyphony() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     comping = sd.track_sounds["comping"].instrument
     assert comping.type == "PolySynth"
     assert comping.voice == "MonoSynth"
@@ -101,7 +121,7 @@ def test_polysynth_emits_voice_and_polyphony() -> None:
 
 def test_non_polysynth_omits_voice_and_polyphony() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     bass = sd.track_sounds["bass"].instrument
     assert bass.type == "MonoSynth"
     assert bass.voice is None
@@ -117,7 +137,7 @@ def test_non_polysynth_omits_voice_and_polyphony() -> None:
 
 def test_send_present_when_mix_carries_reverb() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     # comping inherits the space→mix.sends.reverb default (send evaluated).
     comping_sends = sd.track_sounds["comping"].sends
     assert len(comping_sends) == 1
@@ -131,7 +151,7 @@ def test_send_present_when_mix_carries_reverb() -> None:
 
 def test_send_absent_when_dry() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     # bass: space defaults are empty (dry) and no fixed send → no send.
     assert sd.track_sounds["bass"].sends == []
     # kick: no fixed send, no mapping → dry.
@@ -148,7 +168,7 @@ def test_bus_endpoints_and_midpoint() -> None:
     p_lo, p_hi = 0.01, 0.03
 
     def _bus(space: float) -> tuple[float, float, float]:
-        sd = sound_design(_with_directives(plan, 0.5, 0.5, space), timbres)
+        sd = sound_design(_with_directives(plan, 0.5, 0.5, space), timbres, _RNG)
         reverb = sd.buses[0].effects[0].options
         hpf = sd.buses[0].effects[1].options
         return reverb["decay"], reverb["preDelay"], hpf["frequency"]
@@ -170,7 +190,7 @@ def test_bus_endpoints_and_midpoint() -> None:
 
 def test_bus_always_carries_reverb_then_highpass() -> None:
     plan = _pop_plan()
-    sd = sound_design(plan, _timbres("pop_rock"))
+    sd = sound_design(plan, _timbres("pop_rock"), _RNG)
     assert len(sd.buses) == 1
     bus = sd.buses[0]
     assert bus.id == "reverb"
@@ -186,7 +206,7 @@ def test_bus_always_carries_reverb_then_highpass() -> None:
 
 def test_master_is_pack_chain_verbatim() -> None:
     timbres = _timbres("pop_rock")
-    sd = sound_design(_pop_plan(), timbres)
+    sd = sound_design(_pop_plan(), timbres, _RNG)
     assert sd.master.effects == list(timbres.master)
     assert sd.master.effects[-1].type == "Limiter"
 
@@ -197,8 +217,8 @@ def test_master_is_pack_chain_verbatim() -> None:
 def test_repeated_run_identity() -> None:
     plan = _pop_plan()
     timbres = _timbres("pop_rock")
-    first = sound_design(plan, timbres)
-    second = sound_design(plan, timbres)
+    first = sound_design(plan, timbres, _RNG)
+    second = sound_design(plan, timbres, _RNG)
     assert isinstance(first, SoundDesign)
     assert first == second
 
@@ -213,4 +233,4 @@ def test_repeated_run_identity_jazz() -> None:
         }
     )
     timbres = _timbres("jazz")
-    assert sound_design(plan, timbres) == sound_design(plan, timbres)
+    assert sound_design(plan, timbres, _RNG) == sound_design(plan, timbres, _RNG)

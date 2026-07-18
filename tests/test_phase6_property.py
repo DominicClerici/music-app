@@ -63,10 +63,11 @@ from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.pipeline import generate_track
 from trackgen.pipeline.serialize import serialize
-from trackgen.pipeline.stubs import sound_design
 from trackgen.schema.document import TrackDocument
 from trackgen.schema.ir import Phrase
 from trackgen.schema.validate import validate_document
+from trackgen.seeds import Rng
+from trackgen.sound.stage import sound_design
 from trackgen.transitions._common import BAR
 from trackgen.transitions.ending import find_t_last
 
@@ -96,9 +97,10 @@ def _wired(
     inp = drive(params)
     post_6b, final = stage6_passes(inp)
     humanized, tempo_events = humanize(final, inp.sf, inp.plan)
-    patches = sound_design(inp.plan, inp.pack)
+    assert inp.pack.timbres is not None
+    design = sound_design(inp.plan, inp.pack.timbres, Rng(0))
     doc = serialize(
-        inp.plan, inp.sf, humanized, patches, tempo_events=tempo_events, params=params
+        inp.plan, inp.sf, humanized, design, tempo_events=tempo_events, params=params
     )
     return inp, post_6b, final, doc
 

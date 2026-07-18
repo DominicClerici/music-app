@@ -1,16 +1,17 @@
 """The sound-design stage — pipeline stage 8 (PHASE_7 §7).
 
-``sound_design(plan, timbres) → SoundDesign``: a pure lookup+evaluate (D3, D6).
-For each role it selects the plan's flavor, merges the engine mod defaults with
-the flavor's overrides (§3.2), bakes the three directives into concrete Tone.js
-options (§3.4), and assembles per-track instrument/effects/channel/sends plus the
-shared reverb bus (§6.2) and the pack master chain. Zero RNG and no wall-clock
-(ROADMAP inv. 5): every value is a deterministic function of ``(plan, timbres)``.
+``sound_design(plan, timbres, rng) → SoundDesign``: a pure lookup+evaluate
+(D3, D6). For each role it selects the plan's flavor, merges the engine mod
+defaults with the flavor's overrides (§3.2), bakes the three directives into
+concrete Tone.js options (§3.4), and assembles per-track
+instrument/effects/channel/sends plus the shared reverb bus (§6.2) and the pack
+master chain. Zero RNG and no wall-clock (ROADMAP inv. 5): every value is a
+deterministic function of ``(plan, timbres)``; ``rng`` (the reserved ``sound``
+seed stream) is accepted for interface uniformity and never drawn from.
 
-Unwired here: the T2 Serializer consumes ``SoundDesign`` and selects the tracks
-that have phrases (it omits the reverb bus when nothing sends to it, §7). This
-stage always emits the full role map and the bus — that selection is not its
-concern.
+The Serializer consumes ``SoundDesign`` and selects the tracks that have phrases
+(it omits the reverb bus when nothing sends to it, §7). This stage always emits
+the full role map and the bus — that selection is not its concern.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from trackgen.schema.document import (
     Send,
 )
 from trackgen.schema.ir import GenerationPlan
+from trackgen.seeds import Rng
 from trackgen.sound._merge import (
     drum_defaults,
     drum_override,
@@ -61,12 +63,18 @@ class _SoundModel(BaseModel):
 
 class TrackSound(_SoundModel):
     """§7 one track's baked sound: the evaluated instrument patch, its identity
-    inserts, the channel strip, and its bus sends."""
+    inserts, the channel strip, and its bus sends.
+
+    `midi` is the drum trigger pitch the Serializer stamps onto this voice's
+    note events (D13/§4.3 — the kit voice owns the trigger pitch); it is `None`
+    for pitched roles (whose notes carry their own pitch) and for NoiseSynth kit
+    voices (V5)."""
 
     instrument: InstrumentPatch
     effects: list[EffectPatch] = Field(default_factory=list)
     channel: Channel
     sends: list[Send] = Field(default_factory=list)
+    midi: int | None = None
 
 
 class SoundDesign(_SoundModel):
@@ -153,14 +161,19 @@ def _drum_tracks(
         )
         instrument = InstrumentPatch(type=kit_voice.patch.type, options=options)
         out[voice] = TrackSound(
-            instrument=instrument, effects=[], channel=channel, sends=sends
+            instrument=instrument,
+            effects=[],
+            channel=channel,
+            sends=sends,
+            midi=kit_voice.midi,
         )
     return out
 
 
-def sound_design(plan: GenerationPlan, timbres: TimbresConfig) -> SoundDesign:
+def sound_design(plan: GenerationPlan, timbres: TimbresConfig, rng: Rng) -> SoundDesign:
     """PHASE_7 §7 — bake ``(plan, timbres)`` into the ``SoundDesign``. Pure, zero
-    draws (D3): the ``sound`` seed stream stays reserved."""
+    draws (D3): the ``sound`` seed stream (``rng``) is accepted for interface
+    uniformity with the other stages (§3.4) and never drawn from."""
     d = plan.timbre_directives
     directive_values: dict[str, float] = {
         "brightness": d.brightness,

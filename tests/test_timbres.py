@@ -1,33 +1,25 @@
-"""Timbres substrate + sound-design stub tests (PHASE_5 §8.4 / D-A / D-B, SESSION_09
-T1; crash timbre wired SESSION_12 T1).
+"""Real `timbres.yaml` loading + TB1-live tests (PHASE_7 §4/§4.5, SESSION_14 T2).
 
-Covers: both reference packs load with a non-None `.timbres`; every declared
-flavor id (interpreter.yaml) is present in the loaded `TimbresConfig`;
-`sound_design` returns the D-B track-id → `TrackSound` map with correct drum
-trigger midis; and `sound_design` performs zero RNG draws (immune to global
-`random` state).
+After the C2 flip, `resolve_pack` validates each pack's `timbres.yaml` with the
+real `sound.timbres.TimbresConfig` and runs TB1 (flavor completeness) against the
+pack's `interpreter.yaml`. These tests prove both reference packs load clean
+(DoD 1), that the loaded flavor-id sets equal the interpreter-declared sets, and
+that TB1 rejects a declared/recipe mismatch.
 """
 
 from __future__ import annotations
 
-import random
-from pathlib import Path
+import pytest
 
-from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
-from trackgen.packs.models import StylePack, TimbresConfig
-from trackgen.pipeline.stubs import TrackSound, sound_design
-from trackgen.schema.ir import GenerationPlan
+from trackgen.packs.models import StylePack
+from trackgen.sound.timbres import (
+    KIT_VOICE_IDS,
+    TimbresConfig,
+    check_flavor_completeness,
+)
 
-_POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
-_JAZZ: dict[str, object] = {
-    "styleFamily": "jazz",
-    "mood": "melancholic",
-    "maxLengthSec": 240,
-    "seed": "1ps9wxb",
-}
-
-# The flavor ids each pack's interpreter.yaml declares (D-A completeness list).
+# The flavor ids each pack's interpreter.yaml declares (TB1 must match exactly).
 _POP_FLAVORS: dict[str, set[str]] = {
     "drums": {"acoustic_kit", "tight_kit"},
     "bass": {"electric_fingered", "electric_picked"},
@@ -41,31 +33,6 @@ _JAZZ_FLAVORS: dict[str, set[str]] = {
     "pads": {"airy_strings", "organ_soft"},
 }
 
-_DRUM_TRACK_IDS = (
-    "kick",
-    "snare",
-    "hats",
-    "ride",
-    "tom_low",
-    "tom_mid",
-    "tom_high",
-    "perc",
-    "crash",
-)
-# Expected drum trigger midis (D-A + SESSION_12 crash); snare (NoiseSynth) carries
-# no midi (V5).
-_EXPECTED_DRUM_MIDI: dict[str, int | None] = {
-    "kick": 24,
-    "snare": None,
-    "hats": 80,
-    "ride": 82,
-    "tom_low": 43,
-    "tom_mid": 47,
-    "tom_high": 50,
-    "perc": 39,
-    "crash": 84,
-}
-
 
 def _pack(style: str) -> StylePack:
     pack = resolve_pack(style)
@@ -73,72 +40,32 @@ def _pack(style: str) -> StylePack:
     return pack
 
 
-def _plan(params: dict[str, object]) -> GenerationPlan:
-    return generate_plan(params)
-
-
-def test_both_packs_load_with_timbres() -> None:
-    """Both reference packs load with a non-None `.timbres` (TimbresConfig)."""
+def test_both_packs_load_with_real_timbres() -> None:
+    """DoD 1 — both reference packs load clean with a real `TimbresConfig`
+    (the loader validated TB1-TB9 + TB1-live without raising)."""
     for style in ("pop_rock", "jazz"):
-        pack = _pack(style)
-        assert isinstance(pack.timbres, TimbresConfig)
+        assert isinstance(_pack(style).timbres, TimbresConfig)
 
 
-def test_every_flavor_id_present() -> None:
-    """Every declared flavor id (interpreter.yaml) is keyed in the loaded
-    TimbresConfig for each role — drums as a kit, pitched roles as a timbre."""
+def test_loaded_flavor_ids_equal_declared() -> None:
+    """The loaded timbres flavor ids per role equal the interpreter-declared set
+    (TB1 is unconditional), and every drum kit defines the nine voices."""
     for style, expected in (("pop_rock", _POP_FLAVORS), ("jazz", _JAZZ_FLAVORS)):
         timbres = _pack(style).timbres
         assert timbres is not None
-        assert set(timbres.drums) == expected["drums"]
-        assert set(timbres.bass) == expected["bass"]
-        assert set(timbres.comping) == expected["comping"]
-        assert set(timbres.pads) == expected["pads"]
-        # Each drum kit is complete (all nine tracks present, incl. crash).
-        for kit in timbres.drums.values():
-            assert set(kit) == set(_DRUM_TRACK_IDS)
+        assert set(timbres.flavors.drums) == expected["drums"]
+        assert set(timbres.flavors.bass) == expected["bass"]
+        assert set(timbres.flavors.comping) == expected["comping"]
+        assert set(timbres.flavors.pads) == expected["pads"]
+        for kit_flavor in timbres.flavors.drums.values():
+            assert set(kit_flavor.kit) == set(KIT_VOICE_IDS)
 
 
-def test_sound_design_returns_all_tracks() -> None:
-    """`sound_design` returns a `TrackSound` for the nine drum track ids (incl.
-    crash) plus bass/comping/pads, for both worked examples (D-B)."""
-    for params in (_POP, _JAZZ):
-        sounds = sound_design(_plan(params), _pack(str(params["styleFamily"])))
-        assert set(sounds) == set(_DRUM_TRACK_IDS) | {"bass", "comping", "pads"}
-        for sound in sounds.values():
-            assert isinstance(sound, TrackSound)
-            assert sound.effects == []
-
-
-def test_sound_design_drum_trigger_midi() -> None:
-    """Drum trigger midis: snare None; kick/hats/ride 24/80/82;
-    tom_low/mid/high 43/47/50; perc 39. Pitched roles carry midi None."""
-    for params in (_POP, _JAZZ):
-        sounds = sound_design(_plan(params), _pack(str(params["styleFamily"])))
-        for track_id, expected_midi in _EXPECTED_DRUM_MIDI.items():
-            assert sounds[track_id].midi == expected_midi, (params, track_id)
-        assert sounds["snare"].midi is None
-        for role in ("bass", "comping", "pads"):
-            assert sounds[role].midi is None
-
-
-def test_sound_design_is_zero_draw() -> None:
-    """`sound_design` makes zero RNG draws: perturbing the global `random`
-    module state around it cannot change the output (mirrors the DoD-9
-    module-random-state pattern)."""
-    plan = _plan(_POP)
-    pack = _pack("pop_rock")
-    random.seed(1)
-    a = sound_design(plan, pack)
-    random.seed(9_999_991)
-    b = sound_design(plan, pack)
-    assert a == b
-
-
-def test_stubs_import_no_entropy_sources() -> None:
-    """Structural: the stubs module imports no `random`/`time`/`datetime`
-    (invariant 5 / TID251 — the reserved seed streams stay unused)."""
-    src = Path(__file__).resolve().parents[1] / "src" / "trackgen" / "pipeline"
-    text = (src / "stubs.py").read_text(encoding="utf-8")
-    for banned in ("import random", "import time", "import datetime", "from datetime"):
-        assert banned not in text, banned
+def test_tb1_rejects_declared_recipe_mismatch() -> None:
+    """TB1 fires on a dangling declaration (declared id with no recipe)."""
+    timbres = _pack("pop_rock").timbres
+    assert timbres is not None
+    declared = {role: set(ids) for role, ids in _POP_FLAVORS.items()}
+    declared["drums"] = declared["drums"] | {"phantom_kit"}
+    with pytest.raises(ValueError, match="TB1"):
+        check_flavor_completeness(timbres, declared)

@@ -1,4 +1,5 @@
 """Phase 7 sound-design engine data, evaluation, and the real `timbres.yaml`
-schema (PHASE_7). All modules here are unwired in Chunk 1 — nothing is read by
-`resolve_pack` or the pipeline yet (the reference packs stay on the PHASE_5 stub
-`TimbresConfig`); the flip lands in Chunk 2 (SESSION_13 §"Why Phase 7 is split")."""
+schema (PHASE_7). `resolve_pack` validates each pack's `timbres.yaml` with
+`sound.timbres.TimbresConfig` (running TB1 against `interpreter.yaml`), and the
+pipeline's stage 8 (`sound.stage.sound_design`) bakes the per-track sound the
+Serializer consumes (SESSION_14 C2 flip)."""

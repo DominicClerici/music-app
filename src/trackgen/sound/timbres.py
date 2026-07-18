@@ -488,3 +488,13 @@ def check_flavor_completeness(
                 f"interpreter-declared ids; dangling (declared, no recipe)="
                 f"{dangling}, orphan (recipe, undeclared)={orphan} (TB1)"
             )
+
+
+# Resolve the `StylePack.timbres` forward reference now that the real
+# `TimbresConfig` exists: `packs.models` can only name this type as a string (a
+# runtime import there would cycle back into this module), so its model schema is
+# completed here, where `TimbresConfig` is in scope (the pydantic cyclic-import
+# rebuild pattern). Import at the bottom so `TimbresConfig` is fully defined.
+from trackgen.packs.models import StylePack as _StylePack  # noqa: E402
+
+_StylePack.model_rebuild()

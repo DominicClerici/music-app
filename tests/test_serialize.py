@@ -19,8 +19,7 @@ from trackgen.packs import resolve_pack
 from trackgen.packs.models import StylePack
 from trackgen.parts.generators import generate
 from trackgen.parts.selection import select_patterns
-from trackgen.pipeline.serialize import _EMIT_ORDER, _STUB_MIX, serialize
-from trackgen.pipeline.stubs import sound_design
+from trackgen.pipeline.serialize import _EMIT_ORDER, serialize
 from trackgen.schema.document import Role, Tempo, TrackDocument
 from trackgen.schema.ir import (
     GenerationPlan,
@@ -30,6 +29,15 @@ from trackgen.schema.ir import (
 )
 from trackgen.schema.validate import validate_document
 from trackgen.seeds import Rng, stream_rng, to_base36
+from trackgen.sound.stage import SoundDesign, sound_design
+
+
+def _design(plan: GenerationPlan, pack: StylePack) -> SoundDesign:
+    """The sound-design stage output for the pack (the reserved `sound` stream is
+    never drawn, so any Rng is fine)."""
+    assert pack.timbres is not None
+    return sound_design(plan, pack.timbres, Rng(0))
+
 
 _ROLES: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
@@ -77,8 +85,8 @@ def _build_doc(
     params: dict[str, object],
 ) -> tuple[TrackDocument, SongForm, list[Phrase]]:
     plan, pack, sf, phrases = _drive(params)
-    patches = sound_design(plan, pack)
-    doc = serialize(plan, sf, phrases, patches, params=params)
+    design = _design(plan, pack)
+    doc = serialize(plan, sf, phrases, design, params=params)
     return doc, sf, phrases
 
 
@@ -141,7 +149,7 @@ def test_v8_truncation_and_duration_clamp(
     pop: tuple[TrackDocument, SongForm, list[Phrase]],
 ) -> None:
     plan, pack, sf, _ = _drive(_POP)
-    patches = sound_design(plan, pack)
+    design = _design(plan, pack)
     song_end = (sf.sections[-1].start_bar + sf.sections[-1].length_bars) * 1920
 
     phrases = [
@@ -158,7 +166,7 @@ def test_v8_truncation_and_duration_clamp(
             ],
         )
     ]
-    doc = serialize(plan, sf, phrases, patches, params=_POP)
+    doc = serialize(plan, sf, phrases, design, params=_POP)
     assert validate_document(doc) == []
     kick = next(t for t in doc.tracks if t.id == "kick")
     last = kick.notes[-1]
@@ -169,7 +177,7 @@ def test_v8_truncation_and_duration_clamp(
 
 def test_v8_note_at_song_end_is_dropped() -> None:
     plan, pack, sf, _ = _drive(_POP)
-    patches = sound_design(plan, pack)
+    design = _design(plan, pack)
     song_end = (sf.sections[-1].start_bar + sf.sections[-1].length_bars) * 1920
     phrases = [
         Phrase(
@@ -183,7 +191,7 @@ def test_v8_note_at_song_end_is_dropped() -> None:
             ],
         )
     ]
-    doc = serialize(plan, sf, phrases, patches, params=_POP)
+    doc = serialize(plan, sf, phrases, design, params=_POP)
     kick = next(t for t in doc.tracks if t.id == "kick")
     assert len(kick.notes) == 1
     assert kick.notes[0].ticks == 0
@@ -235,13 +243,13 @@ def test_tempo_events_thread_after_base_and_stay_valid() -> None:
     """A non-empty `tempo_events` list appends after the tick-0 base in order,
     and the document still passes V1 (first tempo at tick 0, ascending ticks)."""
     plan, pack, sf, phrases = _drive(_POP)
-    patches = sound_design(plan, pack)
+    design = _design(plan, pack)
     events = [
         Tempo(ticks=1000, bpm=118.0),
         Tempo(ticks=2000, bpm=110.0),
         Tempo(ticks=3000, bpm=100.0),
     ]
-    doc = serialize(plan, sf, phrases, patches, tempo_events=events, params=_POP)
+    doc = serialize(plan, sf, phrases, design, tempo_events=events, params=_POP)
     assert validate_document(doc) == []
     assert doc.header.tempos[0] == Tempo(ticks=0, bpm=plan.tempo_bpm)
     assert doc.header.tempos[1:] == events
@@ -251,8 +259,8 @@ def test_tempo_events_thread_after_base_and_stay_valid() -> None:
 def test_no_tempo_events_yields_single_base(events: list[Tempo] | None) -> None:
     """`tempo_events=None`/`[]` (a cold close) yields exactly the base tempo."""
     plan, pack, sf, phrases = _drive(_POP)
-    patches = sound_design(plan, pack)
-    doc = serialize(plan, sf, phrases, patches, tempo_events=events, params=_POP)
+    design = _design(plan, pack)
+    doc = serialize(plan, sf, phrases, design, tempo_events=events, params=_POP)
     assert doc.header.tempos == [Tempo(ticks=0, bpm=plan.tempo_bpm)]
 
 
@@ -261,9 +269,9 @@ def test_no_tempo_events_yields_single_base(events: list[Tempo] | None) -> None:
 
 def test_crash_track_serializes_with_trigger_midi() -> None:
     """A phrase set containing a `crash` drum track serializes a crash `Track`
-    carrying trigger midi 84 (the stub timbre) and its `_STUB_MIX` mix."""
+    carrying its kit trigger midi 84 and the sound-design stage's crash mix."""
     plan, pack, sf, _ = _drive(_POP)
-    patches = sound_design(plan, pack)
+    design = _design(plan, pack)
     song_end = (sf.sections[-1].start_bar + sf.sections[-1].length_bars) * 1920
     phrases = [
         Phrase(
@@ -276,14 +284,12 @@ def test_crash_track_serializes_with_trigger_midi() -> None:
             ],
         )
     ]
-    doc = serialize(plan, sf, phrases, patches, params=_POP)
+    doc = serialize(plan, sf, phrases, design, params=_POP)
     assert validate_document(doc) == []
     crash = next(t for t in doc.tracks if t.id == "crash")
     assert crash.role == "drums"
     assert [n.midi for n in crash.notes] == [84]
-    volume_db, pan = _STUB_MIX["crash"]
-    assert crash.channel.volume_db == volume_db
-    assert crash.channel.pan == pan
+    assert crash.channel == design.track_sounds["crash"].channel
 
 
 # --- Meta: seed / overrides / params echo -----------------------------------
@@ -304,25 +310,52 @@ def test_meta_seed_and_params(
     assert doc.meta.title is None
 
 
-# --- Stub mix table / master / buses ----------------------------------------
+# --- Sound design: per-track mix / sends / buses / master -------------------
 
 
-def test_stub_mix_master_and_buses(
-    pop: tuple[TrackDocument, SongForm, list[Phrase]],
-) -> None:
-    doc, _, _ = pop
+def test_mix_sends_buses_and_master_from_sound_design() -> None:
+    """Every emitted track takes its channel/effects/sends verbatim from the
+    sound-design stage; the reverb bus is included (senders exist) and the master
+    is the pack chain (PHASE_7 §7)."""
+    plan, pack, sf, phrases = _drive(_POP)
+    design = _design(plan, pack)
+    doc = serialize(plan, sf, phrases, design, params=_POP)
     for track in doc.tracks:
-        volume_db, pan = _STUB_MIX[track.id]
-        assert track.channel.volume_db == volume_db
-        assert track.channel.pan == pan
+        sound = design.track_sounds[track.id]
+        assert track.channel == sound.channel
         assert track.channel.mute is False
-        assert track.sends == []
-    assert doc.buses == []
-    master_types = [(e.type, e.options) for e in doc.master.effects]
-    assert master_types == [
-        ("Compressor", {"threshold": -24, "ratio": 4}),
-        ("Limiter", {"threshold": -1}),
+        assert track.effects == list(sound.effects)
+        assert track.sends == list(sound.sends)
+    # A pop document always has reverb senders (comping/pads/cymbals), so the bus
+    # is kept and every send targets it.
+    assert [bus.id for bus in doc.buses] == ["reverb"]
+    sent = {send.bus for track in doc.tracks for send in track.sends}
+    assert sent == {"reverb"}
+    assert doc.master == design.master
+    assert doc.master.effects[-1].type == "Limiter"
+
+
+def test_bus_omitted_when_no_emitted_track_sends() -> None:
+    """§7 omission rule — if no emitted track sends to the reverb bus, the
+    document omits the bus even though the stage always emits it."""
+    plan, pack, sf, _ = _drive(_POP)
+    design = _design(plan, pack)
+    song_end = (sf.sections[-1].start_bar + sf.sections[-1].length_bars) * 1920
+    # kick is dry (no reverb send), so a kick-only document sends to no bus.
+    phrases = [
+        Phrase(
+            track_id="kick",
+            role="drums",
+            start_tick=0,
+            end_tick=song_end,
+            notes=[PhraseNote(ticks=0, duration_ticks=100, midi=None, velocity=0.9)],
+        )
     ]
+    assert design.track_sounds["kick"].sends == []
+    doc = serialize(plan, sf, phrases, design, params=_POP)
+    assert [t.id for t in doc.tracks] == ["kick"]
+    assert doc.buses == []
+    assert validate_document(doc) == []
 
 
 # --- Track set / order + no tags in the dumped dict -------------------------

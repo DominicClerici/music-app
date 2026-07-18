@@ -22,7 +22,6 @@ from trackgen.packs.models import (
     PatternEnvelope,
     ProgressionsConfig,
     StylePack,
-    TimbresConfig,
     TransitionsSpec,
     VoicedBank,
     VoicingConfig,
@@ -396,6 +395,14 @@ def _window_and_check_fills(
 
 def load_pack(path: str | Path) -> StylePack:
     """Load and validate a style pack directory into a `StylePack`."""
+    # Lazy import to break the import cycle: `sound.timbres` imports `PackModel`
+    # from `packs.models`, and importing `packs.models` runs `packs.__init__`
+    # (which imports this loader), so a module-level import here would re-enter a
+    # partially-initialized `sound.timbres`. Deferring into the call site (run
+    # well after both modules finish loading) breaks it — the same idiom
+    # `InterpreterConfig._check_rules` uses for `interpreter.moods`.
+    from trackgen.sound.timbres import TimbresConfig, check_flavor_completeness
+
     pack_dir = Path(path)
 
     manifest_path = pack_dir / "manifest.yaml"
@@ -483,6 +490,18 @@ def load_pack(path: str | Path) -> StylePack:
             raise PackLoadError(
                 f"{timbres_path}: invalid timbres config\n{exc}"
             ) from exc
+        # TB1 (PHASE_7 §4.5) — the timbres flavor-id set must equal the
+        # interpreter-declared set. Cross-file, so it runs here rather than in a
+        # single-config model validator; guarded like the other cross-file
+        # checks (skipped when the pack declares no interpreter).
+        if interpreter is not None:
+            declared: dict[str, set[str]] = {
+                role: set(ids) for role, ids in interpreter.flavors.items()
+            }
+            try:
+                check_flavor_completeness(timbres, declared)
+            except ValueError as exc:
+                raise PackLoadError(f"{timbres_path}: {exc}") from exc
 
     # PHASE_6 §3.3 / TR6 / TR7 — cache fill windows for whatever fills exist.
     fill_windows = _window_and_check_fills(pack_dir, drums_bank)

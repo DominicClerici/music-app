@@ -27,15 +27,20 @@ import yaml
 
 from trackgen.interpreter.stage import generate_plan
 from trackgen.schema.ir import GenerationPlan
+from trackgen.seeds import Rng
 from trackgen.sound.evaluate import round3
 from trackgen.sound.stage import sound_design
 from trackgen.sound.timbres import TimbresConfig
 
-_FIXTURES = Path(__file__).parent / "fixtures" / "timbres"
+_STYLES = Path(__file__).resolve().parents[1] / "styles"
+
+# The reserved `sound` seed stream: `sound_design` never draws (D3), so any Rng
+# gives identical output.
+_RNG = Rng(0)
 
 
 def _timbres(pack: str) -> TimbresConfig:
-    raw: Any = yaml.safe_load((_FIXTURES / f"{pack}.timbres.yaml").read_text())
+    raw: Any = yaml.safe_load((_STYLES / pack / "timbres.yaml").read_text())
     return TimbresConfig.model_validate(raw)
 
 
@@ -96,7 +101,7 @@ def test_pop_9_1_field_for_field() -> None:
     b, a, s = 0.835, 0.66, 0.36
 
     t = _timbres("pop_rock")
-    ts = sound_design(plan, t).track_sounds
+    ts = sound_design(plan, t, _RNG).track_sounds
 
     kit = t.flavors.drums["acoustic_kit"].kit
     assert ts["kick"].instrument.options == _opts(kit["kick"].patch.options, {})
@@ -185,7 +190,7 @@ def test_pop_9_1_field_for_field() -> None:
         assert ts[dry].sends == []
 
     # Bus + master.
-    sd = sound_design(plan, t)
+    sd = sound_design(plan, t, _RNG)
     assert sd.buses[0].effects[0].options == {
         "decay": _exp(0.8, 3.0, s),
         "preDelay": _lin(0.01, 0.03, s),
@@ -225,7 +230,7 @@ def test_jazz_9_2_field_for_field() -> None:
     b, a, s = 0.333, 0.32, 0.657
 
     t = _timbres("jazz")
-    ts = sound_design(plan, t).track_sounds
+    ts = sound_design(plan, t, _RNG).track_sounds
 
     kit = t.flavors.drums["brush_kit"].kit
     assert ts["kick"].instrument.options == _opts(kit["kick"].patch.options, {})
@@ -310,7 +315,7 @@ def test_jazz_9_2_field_for_field() -> None:
         assert ts[dry].sends == []
 
     # Bus + master.
-    sd = sound_design(plan, t)
+    sd = sound_design(plan, t, _RNG)
     assert sd.buses[0].effects[0].options == {
         "decay": _exp(0.7, 2.2, s),
         "preDelay": _lin(0.01, 0.03, s),
