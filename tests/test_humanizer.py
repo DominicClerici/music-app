@@ -45,6 +45,7 @@ def _plan(
     swing: SwingSpec | None,
     dynamics_range: float = 0.21,
     master: int = _MASTER,
+    feel_table: str | None = None,
 ) -> GenerationPlan:
     return GenerationPlan(
         style_pack=StylePackRef(id="test", version="1.0.0"),
@@ -53,6 +54,7 @@ def _plan(
         tempo_bpm=tempo_bpm,
         time_signature=TimeSignature(numerator=4, denominator=4),
         swing=swing,
+        feel_table=feel_table,
         max_length_ticks=0,
         role_flavors={},
         mood_vector=MoodVector(valence=0.0, arousal=0.0),
@@ -176,6 +178,44 @@ def test_offset_drum_voice_keys_by_track_id_with_tom_collapse() -> None:
     tom_tick = _single_tick("drums", "tom_mid", _note(480), plan)
     assert snare_tick == round(480 + 3 * 0.984)  # 483
     assert tom_tick == 480  # toms offset 0
+
+
+# --- PHASE_8 §3.4 feelTable selection (DoD §14.1) -----------------------------
+
+
+def test_feel_table_selects_named_profile_over_swing_default() -> None:
+    # The positive selection path: a plan whose `feel_table` is SET must drive the
+    # humanizer to that NAMED profile, not the swing-derived default. With
+    # swing=None the default branch is `straight`, so `laidback` (whose offsets
+    # differ sharply from every other profile) is the discriminator. All shipped
+    # packs have feel_table=None, so goldens only ever exercise the else branch;
+    # this proves the pack->plan->profile chain end to end.
+    #
+    # Discrimination: if humanize ignored plan.feel_table and always took the else
+    # branch (or selected the wrong profile), the laidback assertions below would
+    # read a different offset (straight/swung/tight) and FAIL. The exact laidback
+    # values also rule OUT every other profile, not merely the default.
+    tpm = 480 * 123 / 60000  # 0.984 ticks/ms at 123 BPM
+
+    laidback = _plan(tempo_bpm=123, swing=None, feel_table="laidback")
+    straight = _plan(tempo_bpm=123, swing=None)  # feel_table=None -> straight default
+
+    # snare `down`: laidback +10 ms vs straight +4 ms (also != swung +3, tight +2).
+    snare = _note(0)
+    lb_snare = _single_tick("drums", "snare", snare, laidback)
+    st_snare = _single_tick("drums", "snare", snare, straight)
+    assert lb_snare == round(0 + 10 * tpm)  # 10
+    assert st_snare == round(0 + 4 * tpm)  # 4
+    assert lb_snare != st_snare  # selection actually happened
+
+    # hats scalar: laidback +6 ms vs straight -2 ms — an opposite-sign delta, so a
+    # displacement in the WRONG direction (the default) cannot masquerade as pass.
+    hats = _note(480)
+    lb_hats = _single_tick("drums", "hats", hats, laidback)
+    st_hats = _single_tick("drums", "hats", hats, straight)
+    assert lb_hats == round(480 + 6 * tpm)  # 486
+    assert st_hats == round(480 - 2 * tpm)  # 478
+    assert lb_hats > 480 > st_hats  # laidback pushes late, straight pulls early
 
 
 # --- §5.4 the tri helper ------------------------------------------------------
