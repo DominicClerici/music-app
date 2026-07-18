@@ -140,6 +140,20 @@ def test_is_legal_negatives() -> None:
     assert not allow.is_legal("PluckSynth", "attackNoise")
 
 
+# --- PHASE_8 §3.7 allowlist growth (Vibrato / AutoFilter) -------------------
+
+
+def test_allowlist_growth_vibrato_autofilter() -> None:
+    """PHASE_8 §3.7 (amends PHASE_7 §5.2): Vibrato/AutoFilter allowlist paths,
+    pre-seeded in Phase 7. Guards against removal or alteration of either
+    entry."""
+    allow = load_allowlist()
+    assert allow.classes["Vibrato"] == frozenset({"frequency", "depth", "wet"})
+    assert allow.classes["AutoFilter"] == frozenset(
+        {"frequency", "baseFrequency", "octaves", "depth", "wet"}
+    )
+
+
 # --- coverage: every mod_defaults param is legal for its reference class -----
 
 _PITCHED_REFERENCE_CLASS = {
