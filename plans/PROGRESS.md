@@ -6,14 +6,52 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 7 — Sound design, session 13 = Chunk 1 (foundations).** Plan written
-> (`plans/sessions/SESSION_13.md`); **AWAITING USER APPROVAL — no implementer dispatched** (PROMPT
-> step 1 gate). Phase 7 is split into **2 chunks** at the schema/content/stage flip seam (see the
-> Phase-7 chunk plan below). Chunk 1 builds the new `src/trackgen/sound/` package — engine data
-> (`allowlist.yaml`, `mod_defaults.yaml`) + the patch-evaluation model + the real `timbres.yaml`
-> schema & TB1–TB9 validators — **all unwired** (reference packs stay on the stub loader, pipeline
-> untouched, four gates green throughout). Targets **DoD 2, 3** fully + **DoD 1** partially. Chunk 2
-> (session 14) is the atomic flip + integration + whole-phase review (DoD 1-complete/4/5/6/7/8/9).
+> **Next:** **Phase 7 — Sound design, session 14 = Chunk 2 (the flip + integration + whole-phase).**
+> Read `ROADMAP.md`, `PHASE_7.md` in full + this handoff; **Chunk 1 is COMPLETE** (session 13). C2 is
+> the atomic flip — resume from the Phase-7 chunk plan below. **Get user approval on the C2 task plan
+> before dispatching implementers** (PROMPT step 1) since C2 is a large integrated landing.
+>
+> **Phase 7 — Chunk 1: COMPLETE** (session 13). New `src/trackgen/sound/` package landed, **all
+> unwired**; four gates green (**4364 tests**). **DoD 2, 3 PROVEN in full; DoD 1 PROVEN for its C1
+> slice.** Whole-chunk 2-lens review CLEAN (no blocker/major). Two review fixes, both tighten-to-design
+> (D4 drum-attackHardness bar; §4.2 send base-XOR-mod) — **no new CAVEATS.**
+>
+> **What C1 hands C2 (all committed, tested, UNWIRED):**
+>  - `src/trackgen/sound/models.py` — `MappingEntry` (`{param,min,max,curve}`; curve enum; `exp⇒min,max>0`;
+>    inverted ranges legal).
+>  - `sound/allowlist.py` + `allowlist.yaml` (D12) — `load_allowlist()` → `is_legal(cls, path)`; seeded
+>    fully-expanded, **coverage-proven against §5.1 + §8.1/§8.2 recipes + all 3 committed fixtures**, so
+>    C2's TB3/TB4/TB7 will not false-reject the real content. (Un-seeded classes DuoSynth/PluckSynth +
+>    unused effects enter by amendment when first used.)
+>  - `sound/mod_defaults.py` + `mod_defaults.yaml` — §5.1 verbatim; `load_mod_defaults()`.
+>  - `sound/evaluate.py` — `round3`/`evaluate_mapping`/`merge_mod`/`assert_base_xor_mod`/
+>    `apply_directives` + `get_by_path`/`set_by_path`. Reproduces the §9.1 anchors.
+>  - `sound/timbres.py` — the **real** `timbres.yaml` schema + TB1–TB9. TB1 is the standalone
+>    `check_flavor_completeness(timbres, declared)`; TB7 checks the **effective** (defaults-merged)
+>    mapping + the §4.2 send-XOR.
+>
+> **C2 must do (the flip, one integrated landing):** author the full real `styles/{pop_rock,jazz}/
+> timbres.yaml` (complete the §8 abridged entries — every §9-depended value stated in §8/§9); swap
+> `packs/loader.py::resolve_pack` to `sound.timbres.TimbresConfig` + wire TB1 live vs `interpreter.yaml`
+> ("both reference files load clean") + retype `StylePack.timbres`; write `sound_design(plan, pack) →
+> SoundDesign` (§7; `{trackSounds:{id:{instrument,effects,channel,sends}}, buses, master}`) **reusing
+> the C1 private normalization/keying helpers** (handoff note above); wire orchestrator + Serializer to
+> consume `SoundDesign` for `channel`/`sends`/`buses`/`master` and **delete** `_STUB_MIX`/
+> `_MASTER_EFFECTS`/stub-`buses` + `pipeline/stubs.py::sound_design` + the stub `packs/models.py::
+> TimbresConfig`; **re-bless both whole-document goldens (dedicated commit, arbitration rule 3)**; §9.1/
+> §9.2 stage goldens field-for-field (full patches/channels/sends/bus/master vs full-precision recompute
+> — note pop bass `envelope.attack` round3=**0.005**); zero-draw determinism (`sound` stream shim = 0
+> draws + repeated-run identity); property matrix (both packs × supported moods × every declared flavor
+> combo → whitelist/allowlist/V7/sends→reverb/volumeDb≤6/pan∈[−1,1]/bus-decay-in-range/master-ends-
+> Limiter); whole-PHASE 4-lens review; **full DoD 1(complete)/4/5/6/7/8(user audition)/9** + §12
+> amendment audit.
+>
+> **Env / gates:** `uv` manages Python 3.12; four gates (`uv run pytest` · `ruff check` · `ruff format
+> --check` · `mypy`); full suite **~7m25s / 4364 tests** — run pytest with an extended timeout.
+> Determinism enforced by TID251 (entropy only in `seeds.py`). **CAVEATS:** unchanged from Phase 6
+> (C-01/02/04/05/09 resolved; C-03/06/07/08/10/11/12 open — all latent/prose, none block Phase 7).
+> **Phase 6 §11.10 listening audition still pending user** (does not block Phase 7). **Phases 1–6
+> COMPLETE**; their contracts consumed unchanged.
 >
 > **Phase 6 — Transitions, variation & humanization: COMPLETE** (sessions 10, 11, 12). Both stages are
 > now **wired and live** in the pipeline. Full §11 DoD 1–11 proven (session-12 4-lens whole-phase review:
@@ -79,7 +117,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
 | 6 | Transitions, variation & humanization | done¹ | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). ¹§11.10 listening audition awaits user (like Phase 1 §9.6); all code/automated DoD complete |
-| 7 | Sound design | planning | 13 (C1) | **2-chunk split** (flip seam). C1 (session 13, AWAITING APPROVAL): new `sound/` package — engine data + evaluation model + real `timbres.yaml` schema/TB1–TB9, all unwired (DoD 2/3 + DoD 1 partial). C2 (session 14): flip content+loader+stage+wire, re-bless goldens, §9 goldens, property matrix, whole-phase review (DoD 1-complete/4/5/6/7/8/9) |
+| 7 | Sound design | in progress | 13 (C1) | **2-chunk split** (flip seam). **C1 DONE** (session 13): new `sound/` package — engine data + evaluation model + real `timbres.yaml` schema/TB1–TB9, all unwired; DoD 2/3 PROVEN + DoD 1 (C1 slice); whole-chunk review CLEAN; 2 tighten-to-design fixes, no caveats; 4364 tests. C2 (session 14): flip content+loader+stage+wire, re-bless goldens, §9 goldens, property matrix, whole-phase review (DoD 1-complete/4/5/6/7/8/9) |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
 
 ## Session log
@@ -88,6 +126,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 13 | 2026-07-17 | Phase 7 chunk 1 (foundations) | 3 opus tasks (T1 engine data → T2 evaluation model → T3 real timbres schema/TB1–TB9, serial) + T4 whole-chunk 2-lens review. New `src/trackgen/sound/` package, **all unwired** (`resolve_pack`/`pipeline/`/reference `timbres.yaml` untouched; pipeline still runs the stub). **DoD 2, 3 PROVEN full; DoD 1 PROVEN (C1 slice).** Per-task + whole-chunk review. Whole-chunk 2-lens (correctness/contract + test-quality/DoD): **both CLEAN** — correctness traced TB7 **live** through `TimbresConfig.model_validate` for the off-class §8 flavors (FM piano/upright, AM organ_soft) confirming §8 will validate in C2 with no false rejection + illegal params rejected; §5.1 faithful (zero arbitration flags); allowlist covers §8 by full dry-run. Test lens PROVEN (no vacuous tests; half-even ties on 1/16 & 3/16, effective-mapping base-XOR-mod discriminating). 2 review fixes, both **tighten-to-design** (D4 drum-attackHardness bar; §4.2 send base-XOR-mod) — **no new caveats.** Four gates green (**4364 tests**). C2 = the flip. | b86be4e engine-data · aeaf047 evaluate · acd87f4 timbres+TB · 8715ded review-fix(send-XOR) |
 | 12 | 2026-07-17 | Phase 6 chunk 3 (wiring + milestone + whole-phase) — **Phase 6 COMPLETE** | T1 wire real stages 6/7 + thread `tempoEvents` + crash serialize (`_STUB_MIX`/timbre midi 84/guard) + re-pin draw totals (pop 10277 / jazz 5304, decomposed against per-stage goldens) → then T2 ‖ T3 → T4 (audition) → T5 (whole-phase review + close-out). Per-task + **4-lens whole-phase review** (correctness / contract / test-DoD / code-quality across all 3 chunks): **no blocker, no major** — all clean/COMPLIANT/PROVEN/GOOD-WITH-NITS. **Full §11 DoD 1–11 PROVEN**; **DoD 11 §10 amendment audit** confirmed all 10 amendments present+consistent (ROADMAP §2/§3/§4, PHASE_1 §4/§4.5/Q5/§6, PHASE_5 PT12/§8.2/§8.1/§8.3, PHASE_2 §7.2). T2 re-blessed both whole-doc goldens (dedicated commit; 29/29 arbiter checks, jazz 40-entry tempo map, no §7 divergence). T3 property matrix = **1575 fully-wired docs** all §11.9-clean; P1-latent 0 trips, C-10 0 V3. Review fixes: stale mid-chunk docstrings refreshed, `BEAT` single-sourced, **C-12** logged (entry-crash velocity-0 latent). **DoD 10 §11.10 listening audition pending user** (all automated DoD complete). Four gates green (**4315 tests**). | 6c05caf wire · c6e81fc re-bless · 373cfdc+8fa46ac property · b3756ba review-fixes+C-12 |
 | 11 | 2026-07-17 | Phase 6 chunk 2 (stage-7 Humanizer) | 4 opus tasks (T1 feel loader → T2 engine → T3 ritard → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2734 tests**). **DoD 2+5+6 + humanizer slice of 7 PROVEN.** New `src/trackgen/humanize/` implements PHASE_6 §5 exactly (`feel.yaml`+loader/validator §5.3 → engine §5.1–§5.6/§5.8 → ritard §5.7); `humanize(phrases, form, plan) → (Phrase[], tempoEvents)`. **T4 arbiter: ZERO divergences** — every §7.2 value verbatim (head-1 bar-0 pre-jitter via the `_ZeroJitter` seam; full 39-event ritard table incl. all 11 anchors 68.5…45.5 + endpoints; two-feel legato 960→912) → no §7 amendment. Whole-chunk 2-lens review: correctness/contract **APPROVE** (engine matches §5 clause-by-clause; two reviewers independently recomputed RNG anchors + the full ritard curve), test-quality/DoD **APPROVE-WITH-NITS**. Fixes: T2-review made bass legato **track-level** (§5.6); T5 replaced a non-discriminating isolation test with the literal "regenerate-one-bar-in-isolation" test (empirically verified to fail a per-role RNG) + a direct §5.8 seed-anchor test + dropped a redundant golden. **No new caveats.** | 0ad958d feel · b46a08f engine · 8f0193a ritard · ec2cccf goldens · f71dffa review-fixes |
 | 10 | 2026-07-17 | Phase 6 chunk 1 (stage-6 Transition engine) | 4 opus tasks (T1 loader → T2 6a HOLD + 6b devices → T3 6c mutation → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2667 tests**, 25-seed property matrix). **DoD 1+3+4+8 + stage-6 slices of 7+9 PROVEN.** New `src/trackgen/transitions/` package implements PHASE_6 §3/§4 exactly (6a HOLD → 6b fill/stop/dropout/crash → 6c five mutation operators; `transitions.yaml` loader + fill windows). **T4 (independent arbiter): ZERO divergences** — every §7 sample reproduced verbatim (pop 14/38/9 & jazz 10/32/11 draws, fired-op lists incl. 4 no-ops, crash velocities, fill bar 3, HOLD both) → no §7 amendment (unlike C-09). Whole-chunk review: correctness/contract APPROVE-WITH-NITS (10/10 clauses CONFIRM), test-quality/DoD PROVEN-WITH-GAPS. Fixes: N1 crash-default 1440 pinned in `_DEFAULT_DUR` (§10.7); N2 fill drops stray crash voice; N3 `drop_ornament` beat-1 protection structural; property matrix 4→**25 seeds** (§11.9). **C-11 logged** (internal voice/ornament provenance tags, serialize-invisible). | 22bd551 loader · 9218e14 devices+HOLD · 7623216 mutation · 492935f goldens · (close-out this commit) |
@@ -125,8 +164,73 @@ four gates green throughout). Task list (T1 → T2 → T3 serial [T1/T2 share `s
 | --- | --- | --- | --- | --- |
 | T1 | Engine data: `sound/allowlist.yaml` (fully expanded, D12) + `sound/mod_defaults.yaml` (§5.1 verbatim) + loaders + shared `MappingEntry` (curve enum, `exp⇒min,max>0`; inverted ranges legal) + tests | opus | done | b86be4e |
 | T2 | Patch-evaluation model `sound/evaluate.py` (§3): linear/exp + `round3` half-even + inverted; `merge_mod` per-directive-key replacement (drums per-(directive,voice), empty-list disable); base-XOR-mod check; fixed brightness→attackHardness→space order + tests | opus | done | aeaf047 |
-| T3 | Real `timbres.yaml` schema `sound/timbres.py` (`PitchedFlavor`/`KitFlavor`/`MixBlock`/`ReverbBus`/`MasterChain`) + TB1(standalone fn)–TB9 validators + one rejection fixture per rule class; **unwired** (stub `TimbresConfig`/`resolve_pack` untouched) | opus | not started | — |
-| T4 | Whole-chunk 2-lens review (correctness/contract + test-quality/DoD) + DoD 2/3 + DoD 1 (C1 slice) + close-out (→ C2) | orchestrator | not started | — |
+| T3 | Real `timbres.yaml` schema `sound/timbres.py` (`PitchedFlavor`/`KitFlavor`/`MixBlock`/`ReverbBus`/`MasterChain`) + TB1(standalone fn)–TB9 validators + one rejection fixture per rule class; **unwired** (stub `TimbresConfig`/`resolve_pack` untouched) | opus | done | acd87f4 |
+| T4 | Whole-chunk 2-lens review (correctness/contract + test-quality/DoD) + DoD 2/3 + DoD 1 (C1 slice) + close-out (→ C2) | orchestrator | done | 8715ded |
+
+**Chunk 1 COMPLETE.** 3 opus implementer tasks (T1→T2→T3 serial) + T4 whole-chunk 2-lens review;
+per-task + whole-chunk review; four gates green (**4364 tests**). New `src/trackgen/sound/` package —
+engine data + evaluation model + real `timbres.yaml` schema/TB1–TB9 — **all unwired** (`resolve_pack`,
+`StylePack.timbres`, stub `packs/models.py::TimbresConfig`, `pipeline/`, and `styles/*/timbres.yaml`
+untouched; the pipeline still runs the stub `sound_design` + `_STUB_MIX`). **DoD 2, 3 PROVEN in full;
+DoD 1 PROVEN for its C1 slice** (validators + TB1 function + one rejection fixture per rule class).
+
+**Whole-chunk 2-lens review (fresh opus): both CLEAN, no blocker/major.** Correctness/contract
+**CONFIRM** — traced TB7 end-to-end LIVE through `TimbresConfig.model_validate` for the off-class §8
+flavors (FM `piano`/`upright`, AM `organ_soft`): the `_engine_class` PolySynth→voice resolution +
+allowlist + mod_defaults reshape all line up, so **§8 content will validate in C2 with no false
+rejection AND a genuinely-illegal param is rejected**; §5.1 faithful (zero arbitration flags);
+allowlist covers §8 by full dry-run; determinism + unwired-boundary confirmed. Test-quality/DoD
+**PROVEN** (DoD 1-C1/2/3) — no vacuous tests; the load-bearing proofs (§5.1 transcription,
+allowlist-covers-§5.1, half-even ties on 1/16 & 3/16, per-key/empty-list merge, fixed order, and the
+**effective-mapping** base-XOR-mod) all present and discriminating.
+
+**Review fixes (2 cycles, both tighten-to-design — NO caveats):** (1) **D4** — `KitMod` closed to
+`{brightness, space}`; a drum `attackHardness` override now rejects (`extra="forbid"`), honoring D4
+literally while still ⊆ TB7's set (+`test_tb7_rejects_drum_attack_hardness_mod`). (2) **§4.2 send-XOR
+(`8715ded`)** — `mix.sends.reverb` was exempt from base-XOR-mod (only from the allowlist path check);
+new `_check_send_xor` rejects a flavor/voice carrying BOTH a fixed `reverb` send and a space mapping
+onto that path, per §4.2 ("base send omitted when a mapping targets it"), on both the pitched and
+per-voice drum paths (+`test_tb7_rejects_fixed_send_with_space_mapping`). §8-safe.
+
+**No new CAVEATS.** Both fixes honor the pinned design (D4, §4.2/§3.3) rather than deviate from it.
+
+**DoD (§13) — Chunk 1 targets 2, 3 (full) + 1 (C1 slice) — all PROVEN:**
+- [x] §13.2 **Engine data PROVEN** (T1, `b86be4e`) — `sound/mod_defaults.yaml` transcribes §5.1
+  field-for-field (`test_sound_engine_data.py`: `_{bass,comping,pads,drums}_field_for_field` assert
+  every `{param,min,max,curve}`); `sound/allowlist.yaml` (D12) seeded fully-expanded and
+  coverage-proven (`test_mod_defaults_params_legal_for_reference_class` — every mapped param legal for
+  its reference class; a dropped path flips it) + spot-verified against §8 recipes + all 3 committed
+  fixtures; MappingEntry caps (curve enum; `exp⇒min,max>0`; inverted legal) with rejection fixtures.
+- [x] §13.3 **Evaluation PROVEN** (T2, `aeaf047`) — `sound/evaluate.py`: both curves
+  (endpoints/midpoint/inverted), `round3` half-even (genuine 1/16 & 3/16 ties), per-directive-key
+  `merge_mod` (replace / empty-list-disable / absent-keeps-default / drum per-`(directive,voice)`),
+  `assert_base_xor_mod`, fixed brightness→attackHardness→space order + mix-block routing + autovivify;
+  reproduces the §9.1 anchors (snare 3.67; bass 1514.763). 16 tests.
+- [x] §13.1 **Loader validators + rejection fixtures PROVEN for the C1 slice** (T3, `acd87f4` +
+  review fix `8715ded`) — `sound/timbres.py` real schema (`PitchedFlavor`/`KitFlavor`/`KitVoice`/
+  `MixBlock`/`ReverbBus`/`MasterChain`/`TimbresConfig`, frozen+strict) + **TB1–TB9**, one non-vacuous
+  rejection fixture per rule class (`test_timbres_schema.py`, 19); TB1 = standalone
+  `check_flavor_completeness` (dangling + orphan); TB7 checks the **effective** (defaults-merged)
+  mapping incl. the send-XOR. **The wired "both reference files load clean" + live TB1 vs
+  `interpreter.yaml` is C2.**
+
+**C2 handoff notes** (verified, carry forward):
+- **Reuse, don't re-derive:** the C2 `sound_design` stage needs the identical directive-name
+  normalization (`attack_hardness`→`attackHardness`) + drum `(directive,voice)` keying that live as
+  module-private helpers in `sound/timbres.py` (`_pitched_override`/`_pitched_defaults`/
+  `_drum_defaults`/`_drum_override`) — reuse them (extract to a shared spot) to avoid divergence. The
+  `apply_directives` `directive_values` keys already match `timbreDirectives` camelCase (pre-aligned).
+- **`apply_directives` working-dict convention:** the stage builds `{**options, "mix": mix_block}`,
+  runs `apply_directives`, then splits back via `result.pop("mix")`; top-level `"mix"` is reserved
+  (no whitelisted class emits an option named `mix` — safe).
+- **InstrumentPatch extra-key (Q9a, acceptable):** kit/pitched patches reuse the PHASE_1
+  `InstrumentPatch` (a `DocumentModel`, `extra="ignore"`), so a stray top-level patch key is silently
+  dropped (not applied) — non-semantic, no TB rule mis-fires. C2 may optionally wrap it with
+  `extra="forbid"` at the timbres boundary; not required.
+- **round3 vs §9 display:** pop bass `envelope.attack` golden is `round3=0.005` (§9.1's "0.0051" is a
+  >3-decimal readability display — §9 fixtures assert full round3).
+
+
 
 **T1 done** (`b86be4e`): `src/trackgen/sound/` package created — `models.py` (`MappingEntry`),
 `allowlist.py`+`allowlist.yaml`, `mod_defaults.py`+`mod_defaults.yaml` (§5.1 verbatim), 14 tests. All
