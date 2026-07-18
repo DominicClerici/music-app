@@ -159,9 +159,13 @@ def _run(
     feel = load_feel()
     ticks_per_ms = 480 * plan.tempo_bpm / 60000
     song_end = form.total_bars * BAR
-    profile = feel.offsets_ms.straight if plan.swing is None else feel.offsets_ms.swung
-    # A future PHASE_8 `feelTable` pack selector would replace this swing-derived
-    # default and require threading the pack into this signature (out of scope).
+    # PHASE_8 §3.4: an explicit pack `feelTable` names the profile; otherwise the
+    # swing-derived default (`straight` when unswung, else `swung`) applies.
+    if plan.feel_table is not None:
+        profile = feel.offsets_ms.profile(plan.feel_table)
+    else:
+        default = "straight" if plan.swing is None else "swung"
+        profile = feel.offsets_ms.profile(default)
 
     records = _deterministic_pass(phrases, plan, feel, profile, ticks_per_ms)
     _jitter_pass(records, plan, feel, ticks_per_ms, jitter)

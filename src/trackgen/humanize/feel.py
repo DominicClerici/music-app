@@ -12,7 +12,7 @@ without editing the committed YAML.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from pydantic import ValidationError, model_validator
@@ -105,11 +105,27 @@ class OffsetProfile(PackModel):
         return self
 
 
+# The engine's named offset-profile menu (PHASE_8 §3.4): the original two plus
+# `laidback` (lo-fi) and `tight` (fusion). A pack's `feelTable` selects by name.
+FEEL_PROFILES: tuple[str, ...] = ("straight", "swung", "laidback", "tight")
+
+
 class Offsets(PackModel):
-    """The named offset profiles (§5.3): `swung` and `straight`."""
+    """The named offset profiles (§5.3, PHASE_8 §3.4): `straight`, `swung`,
+    `laidback`, `tight`."""
 
     swung: OffsetProfile
     straight: OffsetProfile
+    laidback: OffsetProfile
+    tight: OffsetProfile
+
+    def profile(self, name: str) -> OffsetProfile:
+        """The named offset profile. `name` must be one of `FEEL_PROFILES`."""
+        if name not in FEEL_PROFILES:
+            raise ValueError(
+                f"unknown feel profile {name!r}; expected one of {FEEL_PROFILES}"
+            )
+        return cast(OffsetProfile, getattr(self, name))
 
 
 class JitterTable(PackModel):

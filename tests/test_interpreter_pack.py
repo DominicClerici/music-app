@@ -191,6 +191,17 @@ def test_rejects_swing_ratio_out_of_range() -> None:
         InterpreterConfig.model_validate(_mutated(swingRatio=0.9))
 
 
+def test_accepts_valid_feel_table() -> None:
+    # PHASE_8 §3.4: feelTable naming an engine profile loads clean.
+    config = InterpreterConfig.model_validate(_mutated(feelTable="laidback"))
+    assert config.feel_table == "laidback"
+
+
+def test_rejects_unknown_feel_table() -> None:
+    with pytest.raises(ValidationError, match="feelTable"):
+        InterpreterConfig.model_validate(_mutated(feelTable="bogus"))
+
+
 def test_rejects_role_missing_from_flavors() -> None:
     bad = _mutated()
     del bad["flavors"]["pads"]

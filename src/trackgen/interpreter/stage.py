@@ -249,6 +249,7 @@ def interpret(
             numerator=ts[0], denominator=cast(Literal[2, 4, 8, 16], ts[1])
         ),
         swing=swing,
+        feel_table=interp.feel_table,
         max_length_ticks=max_length_ticks,
         role_flavors=merged,
         mood_vector=MoodVector(valence=valence, arousal=arousal),

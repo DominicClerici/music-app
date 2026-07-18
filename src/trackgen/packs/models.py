@@ -514,6 +514,17 @@ class InterpreterConfig(PackModel):
                 f"swingRatio ({self.swing_ratio}) must be within [0.5, 0.75]"
             )
 
+        # Rule 9 (PHASE_8 §3.4): feelTable, when set, names an engine offset
+        # profile. Lazy import (mirrors the moods import above) breaks the
+        # `humanize.feel` -> `packs.models` import cycle.
+        if self.feel_table is not None:
+            from trackgen.humanize.feel import FEEL_PROFILES
+
+            if self.feel_table not in FEEL_PROFILES:
+                raise ValueError(
+                    f"feelTable {self.feel_table!r} must be one of {FEEL_PROFILES}"
+                )
+
         return self
 
 

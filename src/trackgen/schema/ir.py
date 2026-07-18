@@ -101,6 +101,7 @@ class GenerationPlan(IRModel):
     tempo_bpm: float = Field(gt=0)
     time_signature: TimeSignature
     swing: SwingSpec | None = None
+    feel_table: str | None = None
     max_length_ticks: int = Field(ge=0)
     role_flavors: dict[str, str] = Field(default_factory=dict)
     mood_vector: MoodVector

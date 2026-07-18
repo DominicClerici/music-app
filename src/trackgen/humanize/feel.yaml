@@ -28,6 +28,28 @@ offsetsMs:
     bass: 2
     comping: 5
     pads: 0
+  laidback:
+    kick: 0
+    snare: { down: 10, back2: 16, beat3: 12, back4: 16, "off": 10 }
+    hats: 6
+    ride: 0
+    toms: 8
+    crash: 0
+    perc: 8
+    bass: 6
+    comping: 12
+    pads: 0
+  tight:
+    kick: 0
+    snare: 2
+    hats: -2
+    ride: 0
+    toms: 0
+    crash: 0
+    perc: 0
+    bass: 0
+    comping: 3
+    pads: 0
 jitterMs: { kick: 4, snare: 5, hats: 5, ride: 4, toms: 5, crash: 0, perc: 5, bass: 6, comping: 8, pads: 0 }
 accent: { down: 0.03, back2: 0.0, beat3: 0.015, back4: 0.0, "off": -0.03 }
 velJitter: { base: 0.04, rangeScale: 0.08 }

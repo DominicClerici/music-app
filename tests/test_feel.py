@@ -44,6 +44,30 @@ def _valid_feel_dict() -> dict[str, Any]:
                 "comping": 5,
                 "pads": 0,
             },
+            "laidback": {
+                "kick": 0,
+                "snare": {"down": 10, "back2": 16, "beat3": 12, "back4": 16, "off": 10},
+                "hats": 6,
+                "ride": 0,
+                "toms": 8,
+                "crash": 0,
+                "perc": 8,
+                "bass": 6,
+                "comping": 12,
+                "pads": 0,
+            },
+            "tight": {
+                "kick": 0,
+                "snare": 2,
+                "hats": -2,
+                "ride": 0,
+                "toms": 0,
+                "crash": 0,
+                "perc": 0,
+                "bass": 0,
+                "comping": 3,
+                "pads": 0,
+            },
         },
         "jitterMs": {
             "kick": 4,
@@ -100,6 +124,56 @@ def test_load_feel_straight_offsets_field_for_field() -> None:
     assert straight.comping == 5
     assert straight.pads == 0
     assert straight.snare == BeatClassMap(down=4, back2=8, beat3=4, back4=6, off=4)
+
+
+def test_load_feel_laidback_offsets_field_for_field() -> None:
+    # PHASE_8 §3.4 verbatim: lo-fi, whole kit behind the grid, backbeats latest.
+    feel = load_feel()
+    laidback = feel.offsets_ms.laidback
+    assert laidback.kick == 0
+    assert laidback.snare == BeatClassMap(down=10, back2=16, beat3=12, back4=16, off=10)
+    assert laidback.hats == 6
+    assert laidback.ride == 0
+    assert laidback.toms == 8
+    assert laidback.crash == 0
+    assert laidback.perc == 8
+    assert laidback.bass == 6
+    assert laidback.comping == 12
+    assert laidback.pads == 0
+
+
+def test_load_feel_tight_offsets_field_for_field() -> None:
+    # PHASE_8 §3.4 verbatim: fusion, near-quantized; velocity does the talking.
+    feel = load_feel()
+    tight = feel.offsets_ms.tight
+    assert tight.kick == 0
+    assert tight.snare == 2
+    assert tight.hats == -2
+    assert tight.ride == 0
+    assert tight.toms == 0
+    assert tight.crash == 0
+    assert tight.perc == 0
+    assert tight.bass == 0
+    assert tight.comping == 3
+    assert tight.pads == 0
+
+
+def test_profile_accessor_returns_named_profiles() -> None:
+    feel = load_feel()
+    assert feel.offsets_ms.profile("straight") is feel.offsets_ms.straight
+    assert feel.offsets_ms.profile("swung") is feel.offsets_ms.swung
+    assert feel.offsets_ms.profile("laidback") is feel.offsets_ms.laidback
+    assert feel.offsets_ms.profile("tight") is feel.offsets_ms.tight
+
+
+def test_profile_accessor_rejects_unknown_name() -> None:
+    feel = load_feel()
+    with pytest.raises(ValueError, match="unknown feel profile"):
+        feel.offsets_ms.profile("bogus")
+
+
+def test_feel_profiles_menu() -> None:
+    assert feel_mod.FEEL_PROFILES == ("straight", "swung", "laidback", "tight")
 
 
 def test_load_feel_jitter_accent_veljitter_legato() -> None:
@@ -168,6 +242,14 @@ def test_valid_feel_dict_validates() -> None:
 def test_offset_over_cap_rejected() -> None:
     data = _valid_feel_dict()
     data["offsetsMs"]["swung"]["snare"] = 26  # otherwise-valid dict, one over-cap value
+    with pytest.raises(ValueError, match="offset"):
+        FeelData.model_validate(data)
+
+
+def test_new_profile_offset_over_cap_rejected() -> None:
+    # The ≤25 ms cap runs per OffsetProfile, so it covers the new profiles too.
+    data = _valid_feel_dict()
+    data["offsetsMs"]["laidback"]["toms"] = 30  # otherwise-valid, one over-cap value
     with pytest.raises(ValueError, match="offset"):
         FeelData.model_validate(data)
 
