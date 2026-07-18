@@ -277,16 +277,32 @@ packs × supported moods × every declared flavor combo → whitelist/allowlist/
 volumeDb≤6/pan∈[−1,1]/bus-decay-in-range/master-ends-Limiter); whole-PHASE 4-lens review; **full
 DoD 1(complete)/4/5/6/7/8(user audition)/9** + §12 amendment audit. **DoD 1, 4, 5, 6, 7, 8, 9.**
 
-**Planning — plan written (`plans/sessions/SESSION_14.md`), AWAITING USER APPROVAL; no task
-dispatched.** Task list (T1 → T2 → (T3 ‖ T4) → T5); all implementer tasks `opus` (none trivial):
+**Plan approved (`plans/sessions/SESSION_14.md`); T1 done — next is T2 (the atomic flip).** Task
+list (T1 → T2 → (T3 ‖ T4) → T5); all implementer tasks `opus` (none trivial):
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Stage `sound/stage.py` (`sound_design → SoundDesign`) + shared-helper extraction (`sound/_merge.py`) + real reference content authored as a **test fixture** (`tests/fixtures/timbres/*.yaml`) + §9.1/§9.2 stage goldens — **all unwired, green** | opus | not started | — |
+| T1 | Stage `sound/stage.py` (`sound_design → SoundDesign`) + shared-helper extraction (`sound/_merge.py`) + real reference content authored as a **test fixture** (`tests/fixtures/timbres/*.yaml`) + §9.1/§9.2 stage goldens — **all unwired, green** | opus | done | fa18869 |
 | T2 | The atomic flip: content → `styles/`; `resolve_pack`→real `TimbresConfig` + TB1 live + `StylePack.timbres` retype; orchestrator + Serializer consume `SoundDesign`; delete `_STUB_MIX`/`_MASTER_EFFECTS`/stub-`buses`/`stubs.py::sound_design`/stub `TimbresConfig`; **xfail** the 2 whole-doc reserialize goldens | opus | not started | — |
 | T3 | Re-bless both whole-document goldens (**dedicated commit**, arbitration rule 3); remove xfails; independent-arbiter verify V1–V8 + §9 sound anchors + note/timing byte-invariance | opus | not started | — |
 | T4 | DoD-6 property matrix (`test_phase7_property.py`) + zero-draw pipeline determinism (`test_sound_determinism.py`) | opus | not started | — |
 | T5 | Whole-**phase** 4-lens review (C1+C2) + full DoD 1/4/5/6/7/8/9 + §12 amendment audit + close-out (→ Phase 8) | orchestrator | not started | — |
+
+**T1 done** (`fa18869`): new `sound/stage.py` (`sound_design(plan, timbres) → SoundDesign`, §7) +
+shared helpers extracted to `sound/_merge.py` (re-imported by `timbres.py`, behavior byte-identical) +
+full real reference content authored as **test fixtures** (`tests/fixtures/timbres/{pop_rock,jazz}.timbres.yaml`,
+TB1–TB9 clean, every declared flavor) + §9.1/§9.2 field-for-field stage goldens (in-test full-precision
+recompute). **All unwired** — `resolve_pack`/`pipeline`/`styles/*/timbres.yaml` untouched; four gates
+green (**4377 tests**). Per-task opus review **APPROVE-WITH-NITS** (stage faithful to §7/§3; extraction
+behavior-preserving; content matches §8; goldens real & discriminating). **Arbitration C-13** (user
+sign-off 2026-07-18): §9.2 jazz upright `envelope.attack` printed sample mis-used brightness 0.333 as
+the exp exponent (param maps attackHardness 0.32) → faithful **0.018**; §9.2 amended, engine unchanged.
+**Review nit carried to T2:** `sound_design(plan, timbres)` omits the reserved `sound` seed stream that
+§3.4/DoD-5 reference — T2 wiring resolves how the DoD-5 zero-draw shim asserts against it (thread a
+counting-injectable `sound` Rng, or assert at stream construction). **C2 handoff facts** for T2: content
+files are authored to move **verbatim** into `styles/`; the extracted `_merge.py` public helpers
+(`pitched_defaults`/`pitched_override`/`drum_defaults`/`drum_override`/`engine_class`/`leaf_paths`) are
+the stage's + loader's shared normalization.
 
 Seam rationale: the flip is a single-file-set knot (real content is invalid under the stub loader and
 vice-versa; swapping the loader breaks the stub `sound_design` + whole-doc goldens), so T2 is atomic
