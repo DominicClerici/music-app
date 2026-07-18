@@ -32,9 +32,9 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 >  - **Milestone goldens re-blessed** (`fixtures/{pop_rock,jazz}.milestone.trackdoc.json`) — now carry
 >    the real sound surface; notes byte-identical to Phase 6 (pop 2790 / jazz 1275). `_regen_milestone_
 >    fixtures.py` re-blesses; `test_whole_document_goldens.py` is the whole-doc regression guard.
->  - **DoD 8 (Phase 7 listening audition) PENDING USER** — the Q1 loudness/mix ear-check on both milestone
->    docs (§13.8); automated DoD complete. Logged pending like Phase 1 §9.6 / Phase 6 §11.10; PHASE_8
->    §8.4 names the calibration listening tasks T1/T2 that fold this in — a natural early Phase-8 item.
+>  - **DoD 8 (Phase 7 listening audition) CLOSED** — user auditioned both milestone docs and confirmed
+>    the Q1 loudness/mix ear-check (2026-07-18); §13.8 fully proven. PHASE_8 §8.4 still names T1/T2 as
+>    the ongoing calibration listening tasks for future packs.
 >
 > **Env / gates:** `uv` manages Python 3.12; four gates (`uv run pytest` · `ruff check` · `ruff format
 > --check` · `mypy`); full suite **~11m20s / 4725 tests** — run pytest with an extended timeout.
@@ -47,7 +47,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 > entry-crash velocity floor — **a new pack setting `crash.velocity` lo=0 could reach it**), **C-14**
 > (`SoundDesign.TrackSound.midi` beyond §7's printed shape), **C-15** (§5.2 `envelope.*` prose imprecision
 > — a new envelope-bearing class must expand to the same ADSR+attackCurve set). Resolved: C-01/02/04/05/
-> 09/13. **Phase-6 §11.10 + Phase-7 §13.8 listening auditions still pending user** (neither blocks Phase 8).
+> 09/13. **Phase-6 §11.10 + Phase-7 §13.8 listening auditions CLOSED** (user-confirmed 2026-07-18).
 >
 > **Phase-7 defer notes (low priority):** module-level cache for `load_allowlist`/`load_mod_defaults`
 > (re-read per validation + per `sound_design` call); per-clause TB2/TB8 rejection fixtures (one-per-rule
@@ -66,8 +66,8 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 3 | Form & structure | done | 03 | All 8 DoD items proven; 339 tests green at 0122149. Caveat C-02 (ladder unreachable) resolved in post-review fix batch (349 tests) |
 | 4 | Harmony engine | done | 04, 05 | All 10 DoD proven. Chunk 1 (SESSION_04: theory+dressing+loader; DoD 1/2/3/8). Chunk 2 (SESSION_05: stage+goldens; DoD 4/5/6/7/9/10). 4-lens whole-phase review clean. 644 tests. No new caveats (turnaround-truncation fix was own-code) |
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
-| 6 | Transitions, variation & humanization | done¹ | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). ¹§11.10 listening audition awaits user (like Phase 1 §9.6); all code/automated DoD complete |
-| 7 | Sound design | done¹ | 13, 14 | **2-chunk split** (flip seam). C1 (13): new `sound/` package — engine data + evaluation + real `timbres.yaml` schema/TB1–TB9, unwired; DoD 2/3 + DoD 1(C1). C2 (14): the atomic flip — real `sound_design → SoundDesign` stage wired end to end, both `styles/*/timbres.yaml` authored, stubs deleted, goldens re-blessed (notes byte-identical), §9 field-for-field, 344-doc property matrix, zero-draw. Whole-phase 4-lens review **CLEAN/COMPLIANT/PROVEN/GOOD-WITH-NITS**; full §13 DoD 1–7,9 PROVEN; **4725 tests**. Caveats C-13 (§9.2 sample, resolved), C-14/C-15 (open, latent/prose). ¹DoD 8 listening audition awaits user (like Phase 1 §9.6) |
+| 6 | Transitions, variation & humanization | done | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). §11.10 listening checklist CLOSED (user-confirmed 2026-07-18) |
+| 7 | Sound design | done | 13, 14 | **2-chunk split** (flip seam). C1 (13): new `sound/` package — engine data + evaluation + real `timbres.yaml` schema/TB1–TB9, unwired; DoD 2/3 + DoD 1(C1). C2 (14): the atomic flip — real `sound_design → SoundDesign` stage wired end to end, both `styles/*/timbres.yaml` authored, stubs deleted, goldens re-blessed (notes byte-identical), §9 field-for-field, 344-doc property matrix, zero-draw. Whole-phase 4-lens review **CLEAN/COMPLIANT/PROVEN/GOOD-WITH-NITS**; full §13 DoD 1–9 PROVEN; **4725 tests**. Caveats C-13 (§9.2 sample, resolved), C-14/C-15 (open, latent/prose). DoD 8 listening checklist CLOSED (user-confirmed 2026-07-18) |
 | 8 | Quality, evaluation & pack expansion | not started | — | Multi-session, hard order: tooling → reference-pack refinement → chill_lofi → blues → fusion_jazz. Calibration bootstrap order per PHASE_8 §8.1 |
 
 ## Session log
@@ -76,9 +76,9 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
-| 14 | 2026-07-18 | Phase 7 chunk 2 (the flip + integration + whole-phase) — **Phase 7 COMPLETE** | 4 opus tasks (T1 stage+content+§9 goldens unwired → T2 the atomic flip → T3 re-bless ‖ T4 property+determinism) + T5 whole-phase 4-lens review + close-out. Per-task opus reviews (T1 APPROVE-WITH-NITS, T2 APPROVE); **whole-PHASE 4-lens review (C1+C2): correctness CLEAN / contract COMPLIANT / test-DoD PROVEN / code-quality GOOD-WITH-NITS — no blocker, no major**. The pipeline now runs the real stage 8 end to end (real `sound_design → SoundDesign`, both `styles/*/timbres.yaml` authored, all stubs deleted). **Full §13 DoD 1–7,9 PROVEN** (DoD 8 listening audition pending user). T3 re-bless: notes byte-identical to pre-flip (pop 2790/jazz 1275; V1–V8 clean; §9 sound anchors verified; invariant 2 held). T4: 344-doc property matrix (both packs × all moods × full flavor cross-product, non-vacuous) + 0 `sound`-stream draws + repeated-run identity. §12 amendment audit: all 6 present+consistent. **Arbitration C-13** (user sign-off): §9.2 upright attack sample mis-used brightness as the exp exponent → faithful 0.018, engine unchanged, §9.2 amended. New caveats **C-14** (TrackSound.midi fills §7's unspecified trigger-pitch delivery), **C-15** (§5.2 envelope.* prose imprecision, allowlist-resolved). Four gates green (**4725 tests**). | fa18869 stage+content · f773bb1 flip · 0b56ad9 re-bless · ab7292e property+determinism · (close-out this commit) |
+| 14 | 2026-07-18 | Phase 7 chunk 2 (the flip + integration + whole-phase) — **Phase 7 COMPLETE** | 4 opus tasks (T1 stage+content+§9 goldens unwired → T2 the atomic flip → T3 re-bless ‖ T4 property+determinism) + T5 whole-phase 4-lens review + close-out. Per-task opus reviews (T1 APPROVE-WITH-NITS, T2 APPROVE); **whole-PHASE 4-lens review (C1+C2): correctness CLEAN / contract COMPLIANT / test-DoD PROVEN / code-quality GOOD-WITH-NITS — no blocker, no major**. The pipeline now runs the real stage 8 end to end (real `sound_design → SoundDesign`, both `styles/*/timbres.yaml` authored, all stubs deleted). **Full §13 DoD 1–9 PROVEN** (DoD 8 listening checklist CLOSED, user-confirmed 2026-07-18). T3 re-bless: notes byte-identical to pre-flip (pop 2790/jazz 1275; V1–V8 clean; §9 sound anchors verified; invariant 2 held). T4: 344-doc property matrix (both packs × all moods × full flavor cross-product, non-vacuous) + 0 `sound`-stream draws + repeated-run identity. §12 amendment audit: all 6 present+consistent. **Arbitration C-13** (user sign-off): §9.2 upright attack sample mis-used brightness as the exp exponent → faithful 0.018, engine unchanged, §9.2 amended. New caveats **C-14** (TrackSound.midi fills §7's unspecified trigger-pitch delivery), **C-15** (§5.2 envelope.* prose imprecision, allowlist-resolved). Four gates green (**4725 tests**). | fa18869 stage+content · f773bb1 flip · 0b56ad9 re-bless · ab7292e property+determinism · (close-out this commit) |
 | 13 | 2026-07-17 | Phase 7 chunk 1 (foundations) | 3 opus tasks (T1 engine data → T2 evaluation model → T3 real timbres schema/TB1–TB9, serial) + T4 whole-chunk 2-lens review. New `src/trackgen/sound/` package, **all unwired** (`resolve_pack`/`pipeline/`/reference `timbres.yaml` untouched; pipeline still runs the stub). **DoD 2, 3 PROVEN full; DoD 1 PROVEN (C1 slice).** Per-task + whole-chunk review. Whole-chunk 2-lens (correctness/contract + test-quality/DoD): **both CLEAN** — correctness traced TB7 **live** through `TimbresConfig.model_validate` for the off-class §8 flavors (FM piano/upright, AM organ_soft) confirming §8 will validate in C2 with no false rejection + illegal params rejected; §5.1 faithful (zero arbitration flags); allowlist covers §8 by full dry-run. Test lens PROVEN (no vacuous tests; half-even ties on 1/16 & 3/16, effective-mapping base-XOR-mod discriminating). 2 review fixes, both **tighten-to-design** (D4 drum-attackHardness bar; §4.2 send base-XOR-mod) — **no new caveats.** Four gates green (**4364 tests**). C2 = the flip. | b86be4e engine-data · aeaf047 evaluate · acd87f4 timbres+TB · 8715ded review-fix(send-XOR) |
-| 12 | 2026-07-17 | Phase 6 chunk 3 (wiring + milestone + whole-phase) — **Phase 6 COMPLETE** | T1 wire real stages 6/7 + thread `tempoEvents` + crash serialize (`_STUB_MIX`/timbre midi 84/guard) + re-pin draw totals (pop 10277 / jazz 5304, decomposed against per-stage goldens) → then T2 ‖ T3 → T4 (audition) → T5 (whole-phase review + close-out). Per-task + **4-lens whole-phase review** (correctness / contract / test-DoD / code-quality across all 3 chunks): **no blocker, no major** — all clean/COMPLIANT/PROVEN/GOOD-WITH-NITS. **Full §11 DoD 1–11 PROVEN**; **DoD 11 §10 amendment audit** confirmed all 10 amendments present+consistent (ROADMAP §2/§3/§4, PHASE_1 §4/§4.5/Q5/§6, PHASE_5 PT12/§8.2/§8.1/§8.3, PHASE_2 §7.2). T2 re-blessed both whole-doc goldens (dedicated commit; 29/29 arbiter checks, jazz 40-entry tempo map, no §7 divergence). T3 property matrix = **1575 fully-wired docs** all §11.9-clean; P1-latent 0 trips, C-10 0 V3. Review fixes: stale mid-chunk docstrings refreshed, `BEAT` single-sourced, **C-12** logged (entry-crash velocity-0 latent). **DoD 10 §11.10 listening audition pending user** (all automated DoD complete). Four gates green (**4315 tests**). | 6c05caf wire · c6e81fc re-bless · 373cfdc+8fa46ac property · b3756ba review-fixes+C-12 |
+| 12 | 2026-07-17 | Phase 6 chunk 3 (wiring + milestone + whole-phase) — **Phase 6 COMPLETE** | T1 wire real stages 6/7 + thread `tempoEvents` + crash serialize (`_STUB_MIX`/timbre midi 84/guard) + re-pin draw totals (pop 10277 / jazz 5304, decomposed against per-stage goldens) → then T2 ‖ T3 → T4 (audition) → T5 (whole-phase review + close-out). Per-task + **4-lens whole-phase review** (correctness / contract / test-DoD / code-quality across all 3 chunks): **no blocker, no major** — all clean/COMPLIANT/PROVEN/GOOD-WITH-NITS. **Full §11 DoD 1–11 PROVEN**; **DoD 11 §10 amendment audit** confirmed all 10 amendments present+consistent (ROADMAP §2/§3/§4, PHASE_1 §4/§4.5/Q5/§6, PHASE_5 PT12/§8.2/§8.1/§8.3, PHASE_2 §7.2). T2 re-blessed both whole-doc goldens (dedicated commit; 29/29 arbiter checks, jazz 40-entry tempo map, no §7 divergence). T3 property matrix = **1575 fully-wired docs** all §11.9-clean; P1-latent 0 trips, C-10 0 V3. Review fixes: stale mid-chunk docstrings refreshed, `BEAT` single-sourced, **C-12** logged (entry-crash velocity-0 latent). **DoD 10 §11.10 listening checklist CLOSED** (user-confirmed 2026-07-18; all automated DoD complete). Four gates green (**4315 tests**). | 6c05caf wire · c6e81fc re-bless · 373cfdc+8fa46ac property · b3756ba review-fixes+C-12 |
 | 11 | 2026-07-17 | Phase 6 chunk 2 (stage-7 Humanizer) | 4 opus tasks (T1 feel loader → T2 engine → T3 ritard → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2734 tests**). **DoD 2+5+6 + humanizer slice of 7 PROVEN.** New `src/trackgen/humanize/` implements PHASE_6 §5 exactly (`feel.yaml`+loader/validator §5.3 → engine §5.1–§5.6/§5.8 → ritard §5.7); `humanize(phrases, form, plan) → (Phrase[], tempoEvents)`. **T4 arbiter: ZERO divergences** — every §7.2 value verbatim (head-1 bar-0 pre-jitter via the `_ZeroJitter` seam; full 39-event ritard table incl. all 11 anchors 68.5…45.5 + endpoints; two-feel legato 960→912) → no §7 amendment. Whole-chunk 2-lens review: correctness/contract **APPROVE** (engine matches §5 clause-by-clause; two reviewers independently recomputed RNG anchors + the full ritard curve), test-quality/DoD **APPROVE-WITH-NITS**. Fixes: T2-review made bass legato **track-level** (§5.6); T5 replaced a non-discriminating isolation test with the literal "regenerate-one-bar-in-isolation" test (empirically verified to fail a per-role RNG) + a direct §5.8 seed-anchor test + dropped a redundant golden. **No new caveats.** | 0ad958d feel · b46a08f engine · 8f0193a ritard · ec2cccf goldens · f71dffa review-fixes |
 | 10 | 2026-07-17 | Phase 6 chunk 1 (stage-6 Transition engine) | 4 opus tasks (T1 loader → T2 6a HOLD + 6b devices → T3 6c mutation → T4 goldens, serial) + T5 2-lens whole-chunk review. Per-task + whole-chunk review; four gates green (**2667 tests**, 25-seed property matrix). **DoD 1+3+4+8 + stage-6 slices of 7+9 PROVEN.** New `src/trackgen/transitions/` package implements PHASE_6 §3/§4 exactly (6a HOLD → 6b fill/stop/dropout/crash → 6c five mutation operators; `transitions.yaml` loader + fill windows). **T4 (independent arbiter): ZERO divergences** — every §7 sample reproduced verbatim (pop 14/38/9 & jazz 10/32/11 draws, fired-op lists incl. 4 no-ops, crash velocities, fill bar 3, HOLD both) → no §7 amendment (unlike C-09). Whole-chunk review: correctness/contract APPROVE-WITH-NITS (10/10 clauses CONFIRM), test-quality/DoD PROVEN-WITH-GAPS. Fixes: N1 crash-default 1440 pinned in `_DEFAULT_DUR` (§10.7); N2 fill drops stray crash voice; N3 `drop_ornament` beat-1 protection structural; property matrix 4→**25 seeds** (§11.9). **C-11 logged** (internal voice/ornament provenance tags, serialize-invisible). | 22bd551 loader · 9218e14 devices+HOLD · 7623216 mutation · 492935f goldens · (close-out this commit) |
 | 01 | 2026-07-14 | Phase 1 (all) | All 6 tasks built, reviewed, gates green (125 tests). DoD §9.1–§9.5 + §9.7 proven; §9.6 manual audition pending user. No CAVEATS (all §5.6 goldens reproduced exactly; no doc amendments). | e0643ee seeds · 5d32e8c schema · 41e3af8 packs · 7fc3a5f validator+export · 6fbaa7c fixture · cf2b490 playground · e27f704 review-fixes |
@@ -243,7 +243,7 @@ a dedicated-commit checkpoint); all implementer tasks `opus` (none trivial):
 flip) → T3 (re-bless, dedicated) ‖ T4 (property+determinism) → T5 (whole-phase review + close-out).
 The pipeline now runs the **real** stage 8 (sound design) end to end; only note/timing content is
 unchanged (invariant 2). Four gates green (**4725 tests**, 0 xfailed; orchestrator-verified full suite
-+ each per-task gate). **DoD 1(complete)/4/5/6/7/9 PROVEN; DoD 8 (listening audition) pending user.**
++ each per-task gate). **DoD 1(complete)/4/5/6/7/8/9 PROVEN — full §13 DoD complete.**
 
 **Whole-PHASE 4-lens review (fresh opus, C1+C2 together) — no blocker, no major:**
 - **Correctness CLEAN** — reproduced both §9 examples field-for-field by running `sound_design`; zero
@@ -296,10 +296,11 @@ COMPLIANT/PROVEN). **New caveats this phase: C-13 (§9.2 sample, resolved-with-s
   pan∈[−1,1]/bus-decay-in-range/master-ends-Limiter; non-vacuity guard (6 classes/688 PolySynth/3176 sends).
 - [x] **7 Serializer integration** (C2, `f773bb1`+`0b56ad9`) — stubs deleted; both milestone docs re-blessed
   through the real Phases 2–7, V1–V8 clean, notes byte-identical (pop 2790/jazz 1275); committed goldens.
-- [~] **8 Listening checklist** — **PENDING USER AUDITION** (like Phase 1 §9.6 / Phase 6 §11.10). Automated
-  portion proven: both docs load in the Phase-1 playground, all tracks present, kick/snare/bass centered,
-  cymbals off-center, pads wide, reverb on snare/comping/pads, kick/bass dry, master ends in Limiter (no
-  clip guaranteed structurally by −1 dBFS limiter). Q1 loudness ear-check awaits user.
+- [x] **8 Listening checklist** — **CLOSED (user-confirmed 2026-07-18)**. Automated portion proven: both
+  docs load in the Phase-1 playground, all tracks present, kick/snare/bass centered, cymbals off-center,
+  pads wide, reverb on snare/comping/pads, kick/bass dry, master ends in Limiter (no clip guaranteed
+  structurally by −1 dBFS limiter). User audition confirmed the Q1 loudness/mix ear-check and the mood
+  A/B (brightness/space) read as intended.
 - [x] **9 Amendments** (§12) — all six present + consistent (audit below).
 
 **§12 amendment audit (all present + consistent):** (1) PHASE_1 §7 Q4 `timbres.yaml` schema resolved;
@@ -348,7 +349,7 @@ and are tested but are **not yet wired** into the pipeline. Task list (T1 → th
 | T1 | Wire real stages into orchestrator (delete `transitions`/`humanize` stubs) + thread `tempoEvents` → serialize (`header.tempos=[base]+events`) + crash `_STUB_MIX`/stub-timbre (midi 84)/guard removal + unit tests; **xfail** the whole-doc goldens for T2 | opus | done | 6c05caf |
 | T2 | Re-bless both whole-document goldens (**dedicated commit**) via `_regen_milestone_fixtures.py`; verify V1–V8 + §9.4 anchors + §7.3 facts + jazz **40-entry** tempo map; independent-arbiter posture | opus | done | c6e81fc |
 | T3 | Whole-phase property matrix (DoD 9): both packs × supported moods × [None,180,240] × 25 seeds through the wired pipeline → §11.9 checks + confirm P1-latent & C-10 unreachable | opus | done | 373cfdc, 8fa46ac |
-| T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | awaiting user | — |
+| T4 | Milestone regen + Phase-1 playground audition + §11.10 checklist (**USER AUDITION GATE**, DoD 10) | opus | done | — |
 | T5 | Whole-PHASE 4-lens review (all 3 chunks) + full §11 DoD 1–11 + DoD 11/§10 amendment audit + close-out (→ Phase 7) | orchestrator | done | b3756ba |
 
 **Chunk 3 COMPLETE — Phase 6 COMPLETE.** T1 (wire) → T2 ‖ T3 → T4 (audition) → T5 (review + close-out).
@@ -356,12 +357,11 @@ Fixtures re-blessed through the real stages 6+7; the pipeline runs the real Tran
 Humanizer end to end (only `sound_design` remains a stub → Phase 7). **4-lens whole-phase review across
 all 3 chunks — no blocker, no major.** Four gates green (**4315 tests**).
 
-**T4 (DoD 10) — playground-ready, listening audition PENDING USER.** Both re-blessed fixtures load in the
-Phase-1 playground (all instruments whitelisted incl. the new `crash`=MetalSynth; the 40-event jazz
-ritard schedules as a real tempo ramp via the tick→seconds walk). Automated portion PROVEN (stubs
-deleted, real stages wired, fixtures re-serialize identically). The §11.10 ear-check (fills→crash, ritard
-reads as slowing, pop ending rings+releases, no byte-identical bar, swing survives ritard) awaits user
-confirmation — logged pending like PHASE_1 §9.6; does not block Phase 7.
+**T4 (DoD 10) — CLOSED.** Both re-blessed fixtures load in the Phase-1 playground (all instruments
+whitelisted incl. the new `crash`=MetalSynth; the 40-event jazz ritard schedules as a real tempo ramp
+via the tick→seconds walk). Automated portion PROVEN (stubs deleted, real stages wired, fixtures
+re-serialize identically). The §11.10 ear-check (fills→crash, ritard reads as slowing, pop ending
+rings+releases, no byte-identical bar, swing survives ritard) — user-confirmed 2026-07-18.
 
 **DoD (§11) — full 1–11 PROVEN** (chunks 1–3 together):
 - [x] **1 Loader** (C1, `22bd551`) — `test_transitions_pack.py`: TR1–TR7 each with a code-matched
@@ -387,9 +387,9 @@ confirmation — logged pending like PHASE_1 §9.6; does not block Phase 7.
   bars, no groove in rendered window, crash suppression [N/A — postchorus/breakdown never entered, asserted
   explicitly], no note <0/past-end, non-drum midi untouched by BOTH stages, backbeat snare protected,
   V1–V8). **P1 latent: 0 trips** (drums active at every device site); **C-10: 0 V3 violations**.
-- [~] **10 Milestone** (C3) — automated portion PROVEN (`c6e81fc` re-bless; `test_whole_document_goldens.py`
-  re-serialize identically; stubs deleted; playground-loadable verified). **§11.10 listening audition
-  pending user** (like PHASE_1 §9.6).
+- [x] **10 Milestone** (C3) — automated portion PROVEN (`c6e81fc` re-bless; `test_whole_document_goldens.py`
+  re-serialize identically; stubs deleted; playground-loadable verified). **§11.10 listening checklist
+  CLOSED** (user-confirmed 2026-07-18).
 - [x] **11 Amendments** (C3, this session) — all 10 §10 amendments verified present + consistent (ROADMAP
   §2/§3/§4; PHASE_1 §4 recap / §4.5 tags / Q5 / §6 layout; PHASE_5 PT12 / §8.2 crash-1440 / §8.1 stub
   replacement / §8.3 tempoEvents; PHASE_2 §7.2 dynamicsRange).
