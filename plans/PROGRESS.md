@@ -286,7 +286,7 @@ a dedicated-commit checkpoint); all implementer tasks `opus` (none trivial):
 | T1 | Stage `sound/stage.py` (`sound_design → SoundDesign`) + shared-helper extraction (`sound/_merge.py`) + real reference content authored as a **test fixture** (`tests/fixtures/timbres/*.yaml`) + §9.1/§9.2 stage goldens — **all unwired, green** | opus | done | fa18869 |
 | T2 | The atomic flip: content → `styles/`; `resolve_pack`→real `TimbresConfig` + TB1 live + `StylePack.timbres` retype; orchestrator + Serializer consume `SoundDesign`; delete `_STUB_MIX`/`_MASTER_EFFECTS`/stub-`buses`/`stubs.py::sound_design`/stub `TimbresConfig`; **xfail** the 2 whole-doc reserialize goldens | opus | done | f773bb1 |
 | T3 | Re-bless both whole-document goldens (**dedicated commit**, arbitration rule 3); remove xfails; independent-arbiter verify V1–V8 + §9 sound anchors + note/timing byte-invariance | opus | done | 0b56ad9 |
-| T4 | DoD-6 property matrix (`test_phase7_property.py`) + zero-draw pipeline determinism (`test_sound_determinism.py`) | opus | not started | — |
+| T4 | DoD-6 property matrix (`test_phase7_property.py`) + zero-draw pipeline determinism (`test_sound_determinism.py`) | opus | done | ab7292e |
 | T5 | Whole-**phase** 4-lens review (C1+C2) + full DoD 1/4/5/6/7/8/9 + §12 amendment audit + close-out (→ Phase 8) | orchestrator | not started | — |
 
 **T1 done** (`fa18869`): new `sound/stage.py` (`sound_design(plan, timbres) → SoundDesign`, §7) +
