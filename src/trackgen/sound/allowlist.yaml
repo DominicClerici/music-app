@@ -1,0 +1,166 @@
+# The (class, option-path) allowlist (PHASE_7 §5.2, D12) — fully expanded, no
+# wildcards. Seed = union of §5.2's illustrative blocks, every §5.1 mod_defaults
+# param, every §8 reference-recipe path, and every PHASE_1 milestone-fixture
+# path. `envelope.*` -> attack/decay/sustain/release/attackCurve;
+# `modulationEnvelope.*` -> attack/decay/sustain/release. Extended by amendment.
+
+# --- instruments ---
+
+MonoSynth:
+  - volume
+  - oscillator.type
+  - oscillator.count
+  - oscillator.spread
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+  - filter.type
+  - filter.Q
+  - filter.rolloff
+  - filterEnvelope.attack
+  - filterEnvelope.decay
+  - filterEnvelope.sustain
+  - filterEnvelope.release
+  - filterEnvelope.baseFrequency
+  - filterEnvelope.octaves
+  - filterEnvelope.exponent
+
+FMSynth:
+  - volume
+  - harmonicity
+  - modulationIndex
+  - oscillator.type
+  - oscillator.partials
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+  - modulation.type
+  - modulationEnvelope.attack
+  - modulationEnvelope.decay
+  - modulationEnvelope.sustain
+  - modulationEnvelope.release
+
+MetalSynth:
+  - volume
+  - frequency
+  - harmonicity
+  - modulationIndex
+  - resonance
+  - octaves
+  - envelope.attack
+  - envelope.decay
+  - envelope.release
+
+MembraneSynth:
+  - volume
+  - pitchDecay
+  - octaves
+  - oscillator.type
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+
+NoiseSynth:
+  - volume
+  - noise.type
+  - noise.playbackRate
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+
+AMSynth:
+  - volume
+  - harmonicity
+  - oscillator.type
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+  - modulation.type
+  - modulationEnvelope.attack
+  - modulationEnvelope.decay
+  - modulationEnvelope.sustain
+  - modulationEnvelope.release
+
+Synth:
+  - volume
+  - oscillator.type
+  - oscillator.partials
+  - oscillator.count
+  - oscillator.spread
+  - envelope.attack
+  - envelope.decay
+  - envelope.sustain
+  - envelope.release
+  - envelope.attackCurve
+
+# --- effects ---
+
+Reverb:
+  - decay
+  - preDelay
+  - wet
+
+Chorus:
+  - frequency
+  - delayTime
+  - depth
+  - spread
+  - wet
+
+Distortion:
+  - distortion
+  - oversample
+  - wet
+
+Filter:
+  - type
+  - frequency
+  - Q
+  - rolloff
+
+StereoWidener:
+  - width
+
+Tremolo:
+  - frequency
+  - depth
+  - spread
+  - wet
+
+Compressor:
+  - threshold
+  - ratio
+  - attack
+  - release
+
+Limiter:
+  - threshold
+
+EQ3:
+  - low
+  - mid
+  - high
+  - lowFrequency
+  - highFrequency
+
+Vibrato:
+  - frequency
+  - depth
+  - wet
+
+AutoFilter:
+  - frequency
+  - baseFrequency
+  - octaves
+  - depth
+  - wet

@@ -1,0 +1,43 @@
+# Engine modulation defaults (PHASE_7 §5.1) — one directive->mapping table per
+# role (drums: per voice). Verbatim transcription of §5.1; internal,
+# recalibratable. Reference engine classes: bass MonoSynth, comping/pads the
+# subtractive path; flavors on other classes override per §3.2.
+
+bass:
+  brightness:
+    - { param: filterEnvelope.baseFrequency, min: 120, max: 2500, curve: exp }
+    - { param: filter.Q, min: 0.8, max: 2.0, curve: linear }
+  attackHardness:
+    - { param: envelope.attack, min: 0.12, max: 0.001, curve: exp }        # inverted: hard = fast
+    - { param: filterEnvelope.octaves, min: 1.5, max: 3.5, curve: linear }
+  space: []          # bass stays dry regardless of space (mud; low-register roughness)
+
+comping:
+  brightness:
+    - { param: filterEnvelope.baseFrequency, min: 400, max: 8000, curve: exp }
+  attackHardness:
+    - { param: envelope.attack, min: 0.08, max: 0.001, curve: exp }
+  space:
+    - { param: mix.sends.reverb, min: -24, max: -9, curve: linear }
+
+pads:
+  brightness:
+    - { param: filterEnvelope.baseFrequency, min: 350, max: 9000, curve: exp }
+  attackHardness:
+    - { param: envelope.attack, min: 1.2, max: 0.005, curve: exp }
+  space:
+    - { param: mix.sends.reverb, min: -18, max: -6, curve: linear }
+
+drums:               # per voice; attackHardness deliberately absent (D4)
+  brightness:
+    hats:  [ { param: resonance, min: 2000, max: 5500, curve: exp } ]
+    ride:  [ { param: resonance, min: 3500, max: 7000, curve: exp } ]
+    crash: [ { param: resonance, min: 2500, max: 5000, curve: exp } ]
+    snare: [ { param: noise.playbackRate, min: 2.0, max: 4.0, curve: linear } ]
+  space:
+    snare:    [ { param: mix.sends.reverb, min: -18, max: -6, curve: linear } ]
+    tom_low:  [ { param: mix.sends.reverb, min: -16, max: -8, curve: linear } ]
+    tom_mid:  [ { param: mix.sends.reverb, min: -16, max: -8, curve: linear } ]
+    tom_high: [ { param: mix.sends.reverb, min: -16, max: -8, curve: linear } ]
+    crash:    [ { param: mix.sends.reverb, min: -14, max: -8, curve: linear } ]
+    # kick: none (dry); hats/ride: fixed base sends in the kit mix
