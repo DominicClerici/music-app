@@ -21,7 +21,7 @@ rules, TB2) plus a freeform ``base`` options dict (§4.2), so they do not reuse
 ``InstrumentPatch``.
 """
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import Field, model_validator
@@ -33,10 +33,17 @@ from trackgen.schema.document import (
     InstrumentType,
     PolySynthVoice,
 )
+from trackgen.sound._merge import (
+    drum_defaults,
+    drum_override,
+    engine_class,
+    leaf_paths,
+    pitched_defaults,
+    pitched_override,
+)
 from trackgen.sound.allowlist import Allowlist, load_allowlist
 from trackgen.sound.evaluate import assert_base_xor_mod, merge_mod
 from trackgen.sound.mod_defaults import (
-    ModDefaults,
     PitchedModDefaults,
     load_mod_defaults,
 )
@@ -269,10 +276,10 @@ class TimbresConfig(PackModel):
             ("pads", self.flavors.pads),
         ]
         for role, bank in pitched_banks:
-            merged_defaults = _pitched_defaults(role_defaults[role])
+            merged_defaults = pitched_defaults(role_defaults[role])
             for flavor_id, flavor in bank.items():
                 where = f"flavors.{role}.{flavor_id}"
-                cls_name = _engine_class(flavor.engine)
+                cls_name = engine_class(flavor.engine)
                 # TB3: every base option path legal for the engine class.
                 _check_option_paths(
                     cls_name, flavor.base, allow, f"{where}.base", "TB3"
@@ -289,7 +296,7 @@ class TimbresConfig(PackModel):
                 # TB7: effective (merged) mapping legality + base XOR mod.
                 _check_pitched_mod(flavor, cls_name, allow, merged_defaults, where)
 
-        drum_defaults = _drum_defaults(defaults)
+        drum_default_table = drum_defaults(defaults)
         for flavor_id, kit_flavor in self.flavors.drums.items():
             where = f"flavors.drums.{flavor_id}"
             for voice, kit_voice in kit_flavor.kit.items():
@@ -300,7 +307,7 @@ class TimbresConfig(PackModel):
                     f"{where}.kit.{voice}",
                     "TB3",
                 )
-            _check_drum_mod(kit_flavor, allow, drum_defaults, where)
+            _check_drum_mod(kit_flavor, allow, drum_default_table, where)
 
         # TB6 (sends half): every send targets a declared bus.
         declared_buses = set(type(self.bus).model_fields)
@@ -311,28 +318,6 @@ class TimbresConfig(PackModel):
 # --- validation helpers -----------------------------------------------------
 
 
-def _leaf_paths(options: Mapping[str, Any], prefix: str = "") -> Iterator[str]:
-    """Enumerate the dotted leaf option paths of a nested options dict — a leaf
-    is any value that is not itself a mapping (a list value, e.g.
-    `oscillator.partials`, is a leaf whose path is the option path)."""
-    for key, value in options.items():
-        path = f"{prefix}{key}"
-        if isinstance(value, Mapping):
-            yield from _leaf_paths(value, f"{path}.")
-        else:
-            yield path
-
-
-def _engine_class(engine: EngineSpec) -> str:
-    """The synthesis class the base options + mod params are validated against:
-    the PolySynth `voice` for a PolySynth engine, else the `type` itself. TB2
-    guarantees a PolySynth carries a `voice`, so the fallback is unreachable for
-    a PolySynth."""
-    if engine.type == "PolySynth" and engine.voice is not None:
-        return engine.voice
-    return engine.type
-
-
 def _check_option_paths(
     cls_name: str,
     options: Mapping[str, Any],
@@ -340,7 +325,7 @@ def _check_option_paths(
     where: str,
     code: str,
 ) -> None:
-    for path in _leaf_paths(options):
+    for path in leaf_paths(options):
         if not allow.is_legal(cls_name, path):
             raise ValueError(
                 f"{where}: option path {path!r} is not in the allowlist for "
@@ -374,35 +359,6 @@ def _check_master_chain(master: MasterChain, allow: Allowlist) -> None:
         )
 
 
-def _pitched_defaults(
-    role_md: PitchedModDefaults,
-) -> dict[str, tuple[MappingEntry, ...]]:
-    """The role's default mapping table in the directive-keyed shape `merge_mod`
-    consumes (normalising the `attack_hardness` field name to `attackHardness`)."""
-    return {
-        "brightness": role_md.brightness,
-        "attackHardness": role_md.attack_hardness,
-        "space": role_md.space,
-    }
-
-
-def _pitched_override(
-    mod: PitchedMod | None,
-) -> dict[str, tuple[MappingEntry, ...]] | None:
-    """The flavor's `mod` in `merge_mod` override shape: a directive appears iff
-    the flavor authored it (`None` = absent = keep default; `[]` = disable)."""
-    if mod is None:
-        return None
-    override: dict[str, tuple[MappingEntry, ...]] = {}
-    if mod.brightness is not None:
-        override["brightness"] = mod.brightness
-    if mod.attack_hardness is not None:
-        override["attackHardness"] = mod.attack_hardness
-    if mod.space is not None:
-        override["space"] = mod.space
-    return override or None
-
-
 def _check_pitched_mod(
     flavor: PitchedFlavor,
     cls_name: str,
@@ -416,7 +372,7 @@ def _check_pitched_mod(
     overrides nothing still inherits the role defaults, whose params must be
     legal for its engine class — so an off-class engine (e.g. FM) that does not
     override a filter-cutoff default would be caught here (§3.2)."""
-    merged = merge_mod(defaults, _pitched_override(flavor.mod))
+    merged = merge_mod(defaults, pitched_override(flavor.mod))
     mapped_option_paths: set[str] = set()
     maps_send = False
     for entries in merged.values():
@@ -430,44 +386,12 @@ def _check_pitched_mod(
                     f"class {cls_name!r} (TB7)"
                 )
             mapped_option_paths.add(entry.param)
-    assert_base_xor_mod(set(_leaf_paths(flavor.base)), mapped_option_paths)
+    assert_base_xor_mod(set(leaf_paths(flavor.base)), mapped_option_paths)
     # §4.2: the base `mix.sends.reverb` is omitted when a `space` mapping targets
     # it — a fixed send AND a send mapping are two authorities for one value, so
     # base XOR mod (§3.3) forbids both (the send authority lives in the mix
     # block, not `base`, so it needs this dedicated check).
     _check_send_xor(maps_send, flavor.mix, where)
-
-
-def _drum_defaults(
-    defaults: ModDefaults,
-) -> dict[tuple[str, str], tuple[MappingEntry, ...]]:
-    """The drum default table keyed by `(directive, voice)` — the shape
-    `merge_mod` uses for drums (§3.2). Drums carry brightness + space only (D4)."""
-    drums = defaults.drums
-    out: dict[tuple[str, str], tuple[MappingEntry, ...]] = {}
-    for voice, entries in drums.brightness.items():
-        out[("brightness", voice)] = entries
-    for voice, entries in drums.space.items():
-        out[("space", voice)] = entries
-    return out
-
-
-def _drum_override(
-    mod: KitMod | None,
-) -> dict[tuple[str, str], tuple[MappingEntry, ...]] | None:
-    if mod is None:
-        return None
-    out: dict[tuple[str, str], tuple[MappingEntry, ...]] = {}
-    # Drums carry brightness + space only — attackHardness is barred (D4).
-    for directive, table in (
-        ("brightness", mod.brightness),
-        ("space", mod.space),
-    ):
-        if table is None:
-            continue
-        for voice, entries in table.items():
-            out[(directive, voice)] = entries
-    return out or None
 
 
 def _check_drum_mod(
@@ -479,7 +403,7 @@ def _check_drum_mod(
     """TB7 for a kit flavor: per `(directive, voice)`, every effective mapping
     param is legal for THAT voice's patch class (or the mix send), and base XOR
     mod holds per voice."""
-    merged = merge_mod(defaults, _drum_override(flavor.mod))
+    merged = merge_mod(defaults, drum_override(flavor.mod))
     mapped_by_voice: dict[str, set[str]] = {}
     send_mapped_voices: set[str] = set()
     for (directive, voice), entries in merged.items():
@@ -502,7 +426,7 @@ def _check_drum_mod(
             mapped_by_voice.setdefault(voice, set()).add(entry.param)
     for voice, kit_voice in flavor.kit.items():
         assert_base_xor_mod(
-            set(_leaf_paths(kit_voice.patch.options)),
+            set(leaf_paths(kit_voice.patch.options)),
             mapped_by_voice.get(voice, set()),
         )
         # §4.2 (see _check_pitched_mod): a fixed send in the voice mix and a space

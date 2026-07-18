@@ -8,8 +8,9 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 > **Next:** **Phase 7 — Sound design, session 14 = Chunk 2 (the flip + integration + whole-phase).**
 > Read `ROADMAP.md`, `PHASE_7.md` in full + this handoff; **Chunk 1 is COMPLETE** (session 13). C2 is
-> the atomic flip — resume from the Phase-7 chunk plan below. **Get user approval on the C2 task plan
-> before dispatching implementers** (PROMPT step 1) since C2 is a large integrated landing.
+> the atomic flip — resume from the Phase-7 chunk plan below. **The C2 plan is now written
+> (`plans/sessions/SESSION_14.md`) and AWAITING USER APPROVAL — no implementer dispatched yet**
+> (PROMPT step 1), since C2 is a large integrated landing.
 >
 > **Phase 7 — Chunk 1: COMPLETE** (session 13). New `src/trackgen/sound/` package landed, **all
 > unwired**; four gates green (**4364 tests**). **DoD 2, 3 PROVEN in full; DoD 1 PROVEN for its C1
@@ -275,6 +276,25 @@ zero-draw determinism (`sound` stream shim = 0 draws, repeated-run identity); pr
 packs × supported moods × every declared flavor combo → whitelist/allowlist/V7/sends→reverb/
 volumeDb≤6/pan∈[−1,1]/bus-decay-in-range/master-ends-Limiter); whole-PHASE 4-lens review; **full
 DoD 1(complete)/4/5/6/7/8(user audition)/9** + §12 amendment audit. **DoD 1, 4, 5, 6, 7, 8, 9.**
+
+**Planning — plan written (`plans/sessions/SESSION_14.md`), AWAITING USER APPROVAL; no task
+dispatched.** Task list (T1 → T2 → (T3 ‖ T4) → T5); all implementer tasks `opus` (none trivial):
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Stage `sound/stage.py` (`sound_design → SoundDesign`) + shared-helper extraction (`sound/_merge.py`) + real reference content authored as a **test fixture** (`tests/fixtures/timbres/*.yaml`) + §9.1/§9.2 stage goldens — **all unwired, green** | opus | not started | — |
+| T2 | The atomic flip: content → `styles/`; `resolve_pack`→real `TimbresConfig` + TB1 live + `StylePack.timbres` retype; orchestrator + Serializer consume `SoundDesign`; delete `_STUB_MIX`/`_MASTER_EFFECTS`/stub-`buses`/`stubs.py::sound_design`/stub `TimbresConfig`; **xfail** the 2 whole-doc reserialize goldens | opus | not started | — |
+| T3 | Re-bless both whole-document goldens (**dedicated commit**, arbitration rule 3); remove xfails; independent-arbiter verify V1–V8 + §9 sound anchors + note/timing byte-invariance | opus | not started | — |
+| T4 | DoD-6 property matrix (`test_phase7_property.py`) + zero-draw pipeline determinism (`test_sound_determinism.py`) | opus | not started | — |
+| T5 | Whole-**phase** 4-lens review (C1+C2) + full DoD 1/4/5/6/7/8/9 + §12 amendment audit + close-out (→ Phase 8) | orchestrator | not started | — |
+
+Seam rationale: the flip is a single-file-set knot (real content is invalid under the stub loader and
+vice-versa; swapping the loader breaks the stub `sound_design` + whole-doc goldens), so T2 is atomic
+and lands with the 2 reserialize goldens xfailed, re-blessed in the dedicated T3 commit (Phase-6-C3
+precedent). T1 stays green by keeping the content in a **test fixture** (not `styles/`) so
+`resolve_pack` is untouched until T2. T3 ‖ T4 touch disjoint files, both depend only on T2.
+**§9 tables are an arbitration-risk surface** (C-09 precedent): T1/T3 recompute field-for-field and
+xfail+escalate on any divergence beyond the known pop-bass `0.005`/`0.0051` display case.
 
 ### Phase 6 — Transitions, variation & humanization (chunk plan)
 

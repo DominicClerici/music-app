@@ -569,7 +569,7 @@ Directives `{brightness: 0.333, attackHardness: 0.32, space: 0.657}`; flavors br
 | ride | `resonance` = 3500×2^0.333 ≈ **4408.7** | −12 (fixed) |
 | crash | `resonance` = 2500×2^0.333 ≈ **3149.1** | −14 + 0.657×6 = **−10.1** |
 | toms | — | −16 + 0.657×8 = **−10.7** |
-| bass (upright) | `modulationIndex` = 1.5×4^0.333 ≈ **2.380**; `envelope.attack` = 0.05×0.04^0.333 ≈ **0.0171 s** | none (dry) |
+| bass (upright) | `modulationIndex` = 1.5×4^0.333 ≈ **2.380**; `envelope.attack` = 0.05×0.04^0.32 ≈ **0.018 s** (attackHardness=0.32; amended — see C-13) | none (dry) |
 | comping (piano) | `modulationIndex` = 4×3.5^0.333 ≈ **6.071**; `envelope.attack` = 0.08×0.0125^0.32 ≈ **0.0197 s** | −24 + 0.657×15 = **−14.1** |
 
 Bus: `decay` = 0.7×3.143^0.657 ≈ **1.485 s**, `preDelay` = **0.0231**, return HPF 400. Master: §8.2 chain. Reading: dulled cymbals, a soft brush snare (playbackRate 0.57 vs pop's 3.67 — the override doing its job), a woody low-index upright, warm dark FM keys, and a chamber-sized room with generous sends — the melancholic quartet sounds like it plays in one room. The document's `reverb` bus, sends, and per-track channels replace every PHASE_5 stub value; V1–V8 still hold (this stage adds no notes).
