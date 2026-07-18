@@ -48,8 +48,9 @@ _EXAMPLES: dict[str, tuple[str, dict[str, object]]] = {
     ),
 }
 
-# Drum trigger midis the Serializer injects from the stub timbres (D-A / D-B):
-# snare (NoiseSynth) stays None; the rest carry their trigger pitch.
+# Drum trigger midis the Serializer injects from the real timbres.yaml voices:
+# kick 24, hats 80, ride 82 (crash 84, toms 43/47/50 also carry their trigger
+# pitch); snare/perc (NoiseSynth) stay None. This subset is asserted below.
 _TRIGGER_MIDI = {"kick": 24, "hats": 80, "ride": 82}
 
 
@@ -63,11 +64,6 @@ def _track(doc: TrackDocument, track_id: str) -> Track:
     return next(t for t in doc.tracks if t.id == track_id)
 
 
-@pytest.mark.xfail(
-    reason="Phase-7 flip changes the sound surface "
-    "(channel/mix/buses/master/instrument); re-blessed in T3",
-    strict=True,
-)
 @pytest.mark.parametrize("example", list(_EXAMPLES), ids=list(_EXAMPLES))
 def test_fixture_reserializes_identically(example: str) -> None:
     """DoD 10 — a fresh `generate_track` re-serializes structure-identically

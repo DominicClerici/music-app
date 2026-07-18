@@ -228,14 +228,38 @@
       "energy": 0.344
     }
   ],
-  "buses": [],
+  "buses": [
+    {
+      "id": "reverb",
+      "effects": [
+        {
+          "type": "Reverb",
+          "options": {
+            "decay": 1.485,
+            "preDelay": 0.023,
+            "wet": 1.0
+          }
+        },
+        {
+          "type": "Filter",
+          "options": {
+            "type": "highpass",
+            "frequency": 400.0,
+            "Q": 0.5
+          }
+        }
+      ]
+    }
+  ],
   "master": {
     "effects": [
       {
         "type": "Compressor",
         "options": {
-          "threshold": -24,
-          "ratio": 4
+          "threshold": -18,
+          "ratio": 1.5,
+          "attack": 0.03,
+          "release": 0.4
         }
       },
       {
@@ -254,27 +278,31 @@
       "instrument": {
         "type": "MembraneSynth",
         "options": {
-          "pitchDecay": 0.05,
-          "octaves": 4,
+          "pitchDecay": 0.08,
+          "octaves": 3,
           "oscillator": {
             "type": "sine"
           },
           "envelope": {
-            "attack": 0.001,
-            "decay": 0.4,
-            "sustain": 0.01,
-            "release": 1.4,
-            "attackCurve": "exponential"
+            "attack": 0.002,
+            "decay": 0.35,
+            "sustain": 0,
+            "release": 0.4
           }
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -2.0,
+        "volumeDb": -12.0,
         "pan": 0.0,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -18.0
+        }
+      ],
       "notes": [
         {
           "ticks": 23042,
@@ -387,25 +415,31 @@
       "instrument": {
         "type": "NoiseSynth",
         "options": {
+          "volume": -4,
           "noise": {
             "type": "pink",
-            "playbackRate": 3
+            "playbackRate": 0.567
           },
           "envelope": {
-            "attack": 0.001,
-            "decay": 0.13,
-            "sustain": 0,
-            "release": 0.03
+            "attack": 0.02,
+            "decay": 0.25,
+            "sustain": 0.05,
+            "release": 0.3
           }
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -4.0,
+        "volumeDb": -12.0,
         "pan": 0.0,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -10.116
+        }
+      ],
       "notes": [
         {
           "ticks": 7068,
@@ -641,25 +675,31 @@
       "instrument": {
         "type": "MetalSynth",
         "options": {
-          "frequency": 200,
-          "envelope": {
-            "attack": 0.001,
-            "decay": 0.1,
-            "release": 0.01
-          },
+          "volume": -12,
+          "frequency": 220,
           "harmonicity": 5.1,
           "modulationIndex": 32,
-          "resonance": 4000,
-          "octaves": 1.5
+          "octaves": 1.5,
+          "envelope": {
+            "attack": 0.001,
+            "decay": 0.06,
+            "release": 0.02
+          },
+          "resonance": 2801.095
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -4.0,
-        "pan": 0.2,
+        "volumeDb": -16.0,
+        "pan": 0.25,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -15.0
+        }
+      ],
       "notes": [
         {
           "ticks": 481,
@@ -1384,25 +1424,31 @@
       "instrument": {
         "type": "MetalSynth",
         "options": {
-          "frequency": 200,
+          "volume": -12,
+          "frequency": 420,
+          "harmonicity": 12,
+          "modulationIndex": 14,
+          "octaves": 1,
           "envelope": {
             "attack": 0.001,
-            "decay": 0.1,
-            "release": 0.01
+            "decay": 0.5,
+            "release": 0.8
           },
-          "harmonicity": 5.1,
-          "modulationIndex": 32,
-          "resonance": 4000,
-          "octaves": 1.5
+          "resonance": 4408.705
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -4.0,
-        "pan": -0.15,
+        "volumeDb": -13.0,
+        "pan": -0.2,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -12.0
+        }
+      ],
       "notes": [
         {
           "ticks": 1,
@@ -3465,25 +3511,31 @@
       "instrument": {
         "type": "MetalSynth",
         "options": {
-          "frequency": 200,
-          "envelope": {
-            "attack": 0.001,
-            "decay": 0.1,
-            "release": 0.01
-          },
+          "volume": -12,
+          "frequency": 300,
           "harmonicity": 5.1,
           "modulationIndex": 32,
-          "resonance": 4000,
-          "octaves": 1.5
+          "octaves": 1.5,
+          "envelope": {
+            "attack": 0.001,
+            "decay": 1.8,
+            "release": 1.5
+          },
+          "resonance": 3149.075
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -4.0,
-        "pan": 0.1,
+        "volumeDb": -15.0,
+        "pan": -0.3,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -10.058
+        }
+      ],
       "notes": [
         {
           "ticks": 23040,
@@ -3528,27 +3580,33 @@
       "role": "drums",
       "name": "Tom Mid",
       "instrument": {
-        "type": "MetalSynth",
+        "type": "MembraneSynth",
         "options": {
-          "frequency": 200,
+          "pitchDecay": 0.05,
+          "octaves": 5,
+          "oscillator": {
+            "type": "sine"
+          },
           "envelope": {
             "attack": 0.001,
-            "decay": 0.1,
-            "release": 0.01
-          },
-          "harmonicity": 5.1,
-          "modulationIndex": 32,
-          "resonance": 4000,
-          "octaves": 1.5
+            "decay": 0.35,
+            "sustain": 0,
+            "release": 0.3
+          }
         }
       },
       "effects": [],
       "channel": {
-        "volumeDb": -4.0,
-        "pan": 0.0,
+        "volumeDb": -14.0,
+        "pan": -0.05,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -10.744
+        }
+      ],
       "notes": [
         {
           "ticks": 7546,
@@ -3599,34 +3657,42 @@
       "role": "bass",
       "name": "Bass",
       "instrument": {
-        "type": "MonoSynth",
+        "type": "FMSynth",
         "options": {
+          "harmonicity": 1,
           "oscillator": {
-            "type": "sawtooth"
+            "type": "sine"
           },
           "envelope": {
-            "attack": 0.01,
-            "decay": 0.2,
-            "sustain": 0.4,
-            "release": 0.4
+            "decay": 0.6,
+            "sustain": 0,
+            "release": 0.4,
+            "attack": 0.018
           },
-          "filter": {
-            "Q": 2,
-            "type": "lowpass"
+          "modulation": {
+            "type": "sine"
           },
-          "filterEnvelope": {
-            "attack": 0.02,
-            "decay": 0.3,
-            "sustain": 0.3,
-            "release": 0.5,
-            "baseFrequency": 200,
-            "octaves": 3
-          }
+          "modulationEnvelope": {
+            "attack": 0.005,
+            "decay": 0.15,
+            "sustain": 0,
+            "release": 0.1
+          },
+          "modulationIndex": 2.38
         }
       },
-      "effects": [],
+      "effects": [
+        {
+          "type": "Filter",
+          "options": {
+            "type": "lowpass",
+            "frequency": 900,
+            "Q": 0.5
+          }
+        }
+      ],
       "channel": {
-        "volumeDb": -3.0,
+        "volumeDb": -10.0,
         "pan": 0.0,
         "mute": false
       },
@@ -4926,24 +4992,41 @@
         "type": "PolySynth",
         "options": {
           "harmonicity": 3,
-          "modulationIndex": 10,
+          "oscillator": {
+            "type": "sine"
+          },
           "envelope": {
-            "attack": 0.01,
-            "decay": 0.2,
-            "sustain": 0.3,
-            "release": 0.5
-          }
+            "decay": 1.4,
+            "sustain": 0.08,
+            "release": 1.4,
+            "attack": 0.02
+          },
+          "modulation": {
+            "type": "sine"
+          },
+          "modulationEnvelope": {
+            "attack": 0.002,
+            "decay": 0.25,
+            "sustain": 0,
+            "release": 0.2
+          },
+          "modulationIndex": 6.071
         },
         "voice": "FMSynth",
-        "maxPolyphony": 6
+        "maxPolyphony": 12
       },
       "effects": [],
       "channel": {
-        "volumeDb": -6.0,
-        "pan": 0.1,
+        "volumeDb": -12.0,
+        "pan": -0.25,
         "mute": false
       },
-      "sends": [],
+      "sends": [
+        {
+          "bus": "reverb",
+          "gainDb": -14.145
+        }
+      ],
       "notes": [
         {
           "ticks": 12,
