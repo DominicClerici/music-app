@@ -25,8 +25,10 @@ so both callers can adapt their pydantic models into them:
   prefix alone routes a value into the mix block. The stage assembles that dict
   as ``{**base_options, "mix": mix_block}`` and splits it back out afterwards.
 
-``get_by_path`` / ``set_by_path`` are exposed for reuse by the TB3/TB4/TB7
-allowlist path checks.
+``set_by_path`` (with autovivification of missing intermediates) backs
+``apply_directives``; ``get_by_path`` is its symmetric reader, exposed for tests.
+The TB3/TB4/TB7 allowlist path checks instead enumerate paths via
+``_merge.leaf_paths`` + the allowlist, so they do not use these two.
 """
 
 from __future__ import annotations
