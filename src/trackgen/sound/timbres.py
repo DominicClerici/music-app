@@ -348,6 +348,19 @@ def _check_option_paths(
             )
 
 
+def _check_send_xor(maps_send: bool, mix: MixBlock, where: str) -> None:
+    """§4.2/§3.3: base XOR mod for the reverb send. `assert_base_xor_mod` only
+    inspects patch options, but the send's base authority lives in the mix block
+    (`mix.sends.reverb`), so a fixed base send AND a space mapping targeting the
+    send are two authorities for one value — reject both."""
+    if maps_send and mix.sends is not None and "reverb" in mix.sends:
+        raise ValueError(
+            f"{where}: mix carries a fixed 'reverb' send while a space mapping "
+            f"also targets mix.sends.reverb — base XOR mod requires the fixed "
+            f"send be omitted when a mapping targets it (§4.2, TB7)"
+        )
+
+
 def _check_master_chain(master: MasterChain, allow: Allowlist) -> None:
     if not master:
         raise ValueError("master chain must be non-empty and end with a Limiter (TB4)")
@@ -405,9 +418,11 @@ def _check_pitched_mod(
     override a filter-cutoff default would be caught here (§3.2)."""
     merged = merge_mod(defaults, _pitched_override(flavor.mod))
     mapped_option_paths: set[str] = set()
+    maps_send = False
     for entries in merged.values():
         for entry in entries:
             if entry.param == _MIX_SEND_PARAM:
+                maps_send = True
                 continue
             if not allow.is_legal(cls_name, entry.param):
                 raise ValueError(
@@ -416,6 +431,11 @@ def _check_pitched_mod(
                 )
             mapped_option_paths.add(entry.param)
     assert_base_xor_mod(set(_leaf_paths(flavor.base)), mapped_option_paths)
+    # §4.2: the base `mix.sends.reverb` is omitted when a `space` mapping targets
+    # it — a fixed send AND a send mapping are two authorities for one value, so
+    # base XOR mod (§3.3) forbids both (the send authority lives in the mix
+    # block, not `base`, so it needs this dedicated check).
+    _check_send_xor(maps_send, flavor.mix, where)
 
 
 def _drum_defaults(
@@ -461,6 +481,7 @@ def _check_drum_mod(
     mod holds per voice."""
     merged = merge_mod(defaults, _drum_override(flavor.mod))
     mapped_by_voice: dict[str, set[str]] = {}
+    send_mapped_voices: set[str] = set()
     for (directive, voice), entries in merged.items():
         kit_voice = flavor.kit.get(voice)
         if kit_voice is None:
@@ -471,6 +492,7 @@ def _check_drum_mod(
         cls_name = kit_voice.patch.type
         for entry in entries:
             if entry.param == _MIX_SEND_PARAM:
+                send_mapped_voices.add(voice)
                 continue
             if not allow.is_legal(cls_name, entry.param):
                 raise ValueError(
@@ -482,6 +504,11 @@ def _check_drum_mod(
         assert_base_xor_mod(
             set(_leaf_paths(kit_voice.patch.options)),
             mapped_by_voice.get(voice, set()),
+        )
+        # §4.2 (see _check_pitched_mod): a fixed send in the voice mix and a space
+        # mapping onto the send are two authorities for one value — forbid both.
+        _check_send_xor(
+            voice in send_mapped_voices, kit_voice.mix, f"{where}.kit.{voice}"
         )
 
 

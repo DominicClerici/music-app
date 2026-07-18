@@ -398,6 +398,16 @@ def test_tb7_rejects_base_and_mod_targeting_same_path() -> None:
         TimbresConfig.model_validate(cfg)
 
 
+def test_tb7_rejects_fixed_send_with_space_mapping() -> None:
+    # §4.2: the base mix.sends.reverb is omitted when a space mapping targets it.
+    # comping inherits a space→mix.sends.reverb default, so authoring a fixed
+    # reverb send too is two authorities for one value (base XOR mod, §3.3).
+    cfg = _valid_config_dict()
+    cfg["flavors"]["comping"]["clean_electric"]["mix"]["sends"] = {"reverb": -12}
+    with pytest.raises(ValidationError, match="base XOR mod requires the fixed"):
+        TimbresConfig.model_validate(cfg)
+
+
 def test_tb7_rejects_drum_attack_hardness_mod() -> None:
     # D4: attackHardness never touches drums — the closed KitMod field set rejects
     # an authored `attackHardness` override as an extra key.
