@@ -213,9 +213,10 @@ def test_resolve_token_slash_bass(
         "",  # empty
         "~",  # bar-level hold, never a chord token
         "I~",
-        "I7(#9)",  # parenthesized extension group — Phase 8 scope
-        "bVI7(#11)",
-        "I(9)",
+        "I(9)",  # §3.5 grammar: extgroup after a bare degree (no quality suffix)
+        "I7()",  # empty extension group
+        "I7(9",  # unbalanced extension group
+        "I7(x9)",  # unknown extension name
         "Iø7",  # ø7 requires a lowercase (minor-third) numeral
         "i+",  # + requires an uppercase (major-third) numeral
         "Idim",  # dim requires a lowercase numeral
@@ -236,6 +237,41 @@ def test_resolve_token_slash_bass(
 def test_resolve_token_rejects(token: str) -> None:
     with pytest.raises(TokenError):
         resolve_token(token, C_MAJOR)
+
+
+# --- §3.5 authored extension groups (resolve) --------------------------------
+
+
+@pytest.mark.parametrize(
+    ("token", "key", "extensions", "symbol"),
+    [
+        ("I7(#9)", C_MAJOR, ["#9"], "C7#9"),
+        ("V7(#9)", C_MAJOR, ["#9"], "G7#9"),
+        ("bVI7(#11)", D_MINOR, ["#11"], "Bb7#11"),
+        ("I7(9,13)", C_MAJOR, ["9", "13"], "C7913"),
+    ],
+)
+def test_resolve_token_authored_extensions(
+    token: str, key: Key, extensions: list[str], symbol: str
+) -> None:
+    # §3.5: a parenthesized extgroup after an explicit quality resolves; the
+    # authored list is stored verbatim; `roman` echoes the token; `symbol` is
+    # spelled per §3.3 (unchanged extension-display logic).
+    spec = resolve_token(token, key)
+    assert spec.extensions == extensions
+    assert spec.roman == token
+    assert spec.symbol == symbol
+
+
+def test_resolve_token_defers_6_4_legality_to_loader() -> None:
+    # §3.5 P5-vs-P11 split: the theory layer parses the extgroup as grammar and
+    # does NOT enforce §6.4 quality-legality — `b9` is illegal on `maj7` but the
+    # token still resolves here. The loader's rule P11 rejects it (see
+    # tests/test_progressions_pack.py::test_p11_rejects_illegal_extension).
+    spec = resolve_token("Imaj7(b9)", C_MAJOR)
+    assert spec.quality == "maj7"
+    assert spec.extensions == ["b9"]
+    assert extensions_legal(spec.quality, spec.extensions) is False
 
 
 # --- §3.3 spelling across all 12 tonics × both table classes ------------------

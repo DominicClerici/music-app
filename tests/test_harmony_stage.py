@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 
-from trackgen.harmony.stage import harmony
+from trackgen.harmony.stage import _dress_slot, harmony
 from trackgen.packs.models import ProgressionsConfig
 from trackgen.schema.ir import (
     Budgets,
@@ -518,6 +518,32 @@ def test_final_close_replaces_final_bars_and_is_idempotent() -> None:
     # deterministic re-run → identical plan.
     out2 = harmony(_plan(), form, progs, _counting_rng())
     assert out1 == out2
+
+
+# --- §3.5 authored-extension pin: dressing is draw-free ----------------------
+
+
+def test_authored_extension_slot_consumes_zero_dressing_draws() -> None:
+    # §3.5 / DoD §14.1: an authored extension fully pins the slot — dressing
+    # yields a single option, so `_dress_slot` makes NO `weighted_choice` draw.
+    # At base tier 4 a *plain* V7 (D-function → effective tier 5) has >= 2
+    # options and WOULD draw (see the contrast test below); the `#9` pin removes
+    # that draw. Were the dressing guard removed, `draws` here would be 1.
+    key = Key(tonic_pc=0, mode="major")
+    rng = _counting_rng()
+    spec = _dress_slot("V7(#9)", key, base_tier=4, rng=rng)
+    assert spec.extensions == ["#9"]
+    assert spec.quality == "dom7"
+    assert rng.draws == 0
+
+
+def test_unextensioned_dom7_draws_at_same_tier_for_contrast() -> None:
+    # The discriminator for the pin test: an *un-extensioned* V7 at the identical
+    # tier/function DOES draw exactly once (>= 2 dressing options).
+    key = Key(tonic_pc=0, mode="major")
+    rng = _counting_rng()
+    _dress_slot("V7", key, base_tier=4, rng=rng)
+    assert rng.draws == 1
 
 
 # --- structural invariants ---------------------------------------------------

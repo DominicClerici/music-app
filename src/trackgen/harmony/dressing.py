@@ -183,6 +183,10 @@ def _dressing_class(spec: ChordSpec, was_bare: bool, function: Function) -> str 
         if spec.quality == "min":
             return "bare_min"
         return None  # defensive: a bare token resolves only to maj/min
+    if spec.extensions:
+        # §3.5: an authored extension group fully pins the slot — dressing skips
+        # it entirely (no options, no draw). Existing packs author none.
+        return None
     if spec.quality in ("dom7", "maj7", "min7"):
         return spec.quality
     return None

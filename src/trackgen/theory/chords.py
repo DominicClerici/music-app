@@ -8,8 +8,13 @@ availability, §7.4 chord-scale hints) are transcribed verbatim from PHASE_4;
 the printed worked-example numbers are derived samples — on divergence the
 table text wins (ROADMAP §3 golden-value arbitration).
 
-`resolve_token` never receives holds (`~`) or parenthesized extension groups —
-both are out of this session's scope (§14.1 scope note) and raise `TokenError`.
+`resolve_token` never receives holds (`~`); a `~` still raises `TokenError`.
+Parenthesized extension groups (PHASE_8 §3.5) are parsed here as pure grammar:
+an unknown extension name, a malformed group, or an extgroup after a bare
+(unsuffixed) degree raise `TokenError` (surfaced by the loader as P5). The §6.4
+quality-legality of an authored extension is *not* checked here — that is the
+loader's rule P11, so an illegal-but-well-formed group resolves to a spec whose
+extensions the loader then rejects.
 """
 
 from __future__ import annotations
@@ -387,30 +392,63 @@ def _spell(
 # --- Public resolution surface -----------------------------------------------
 
 
+def _split_extgroup(main: str, token: str) -> tuple[str, list[str]]:
+    """Split a trailing `extgroup` off `main` (`degree quality extgroup?`).
+
+    Returns `(degree_quality, extensions)`. Grammar (§3.5):
+    `extgroup := "(" ext ("," ext)* ")"`, `ext ∈ EXTENSION_OFFSETS`. Raises
+    `TokenError` on an unbalanced/empty group, trailing junk, or an unknown
+    extension name. Legality per §6.4 is deferred to the loader (P11)."""
+    if "(" not in main and ")" not in main:
+        return main, []
+    open_idx = main.find("(")
+    if (
+        open_idx < 0
+        or not main.endswith(")")
+        or main.count("(") != 1
+        or main.count(")") != 1
+    ):
+        raise TokenError(f"malformed extension group in token {token!r}")
+    body = main[open_idx + 1 : -1]
+    if not body:
+        raise TokenError(f"empty extension group in token {token!r}")
+    extensions = body.split(",")
+    for ext in extensions:
+        if ext not in EXTENSION_OFFSETS:
+            raise TokenError(f"unknown extension {ext!r} in token {token!r}")
+    return main[:open_idx], extensions
+
+
 def resolve_token(token: str, key: KeyLike) -> ChordSpec:
     """Resolve an authored chord token to a `ChordSpec` per PHASE_4 §3.
 
-    Grammar (§3.1): `("b"|"#")? numeral quality? ("/" ("b"|"#")? digit)?`.
-    Case carries the triad third (uppercase major, lowercase minor); degrees are
-    major-scale-relative and mode-independent. `symbol` is spelled per §3.3 and
-    `roman` echoes `token` verbatim.
+    Grammar (§3.1 as amended by §3.5):
+    `("b"|"#")? numeral quality? extgroup? ("/" ("b"|"#")? digit)?`, where
+    `extgroup := "(" ext ("," ext)* ")"`. Case carries the triad third
+    (uppercase major, lowercase minor); degrees are major-scale-relative and
+    mode-independent. `symbol` is spelled per §3.3 and `roman` echoes `token`
+    verbatim. Any authored `extensions` pass through to the spec verbatim.
 
-    Raises `TokenError` on: an empty token, a bar-level hold (`~`), a
-    parenthesized extension group (Phase 8 scope — out of scope here), a bad or
-    mixed-case numeral, an unrecognized suffix, a case/suffix mismatch, or a
-    malformed slash bass.
+    Raises `TokenError` on: an empty token, a bar-level hold (`~`), a malformed
+    or unknown-name extension group, an extgroup after a bare (unsuffixed)
+    degree (§3.5 — extensions are legal only after an explicit quality suffix),
+    a bad or mixed-case numeral, an unrecognized suffix, a case/suffix mismatch,
+    or a malformed slash bass. The §6.4 quality-legality of an extension is *not*
+    enforced here (loader rule P11) — a well-formed but illegal group resolves.
     """
     if not token:
         raise TokenError("empty token")
     if "~" in token:
         raise TokenError(f"hold {token!r} is a bar-level token, not a chord token")
-    if "(" in token or ")" in token:
-        raise TokenError(
-            f"extension group in {token!r} is out of scope (Phase 8, §3.5/P11)"
-        )
 
     main, sep, bass_text = token.partition("/")
-    parsed, suffix = _parse_degree(main)
+    degree_quality, extensions = _split_extgroup(main, token)
+    parsed, suffix = _parse_degree(degree_quality)
+    if extensions and suffix == "":
+        raise TokenError(
+            f"extension group in {token!r} requires an explicit quality suffix "
+            f"(§3.5): a bare degree is not extensible"
+        )
     quality = _resolve_quality(suffix, parsed.base_is_upper, token)
 
     bass: tuple[int, int] | None = None
@@ -420,7 +458,6 @@ def resolve_token(token: str, key: KeyLike) -> ChordSpec:
         bass_pc = _degree_pc(key.tonic_pc, bass[0], bass[1])
 
     root_pc = _degree_pc(key.tonic_pc, parsed.accidental, parsed.degree)
-    extensions: list[str] = []  # authored extension groups are rejected above
     symbol = _spell(key, parsed.accidental, parsed.degree, quality, extensions, bass)
 
     return ChordSpec(

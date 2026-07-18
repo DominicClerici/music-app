@@ -233,6 +233,46 @@ def test_p5_rejects_unparseable_token() -> None:
         )
 
 
+def test_p11_rejects_illegal_extension_in_pool() -> None:
+    """P11 — an authored extension must be §6.4-legal for its quality. `b9` is
+    illegal on `maj7`; the token parses (P5-clean) but the loader rejects it."""
+    with pytest.raises(ValidationError, match="P11"):
+        PoolEntry.model_validate(
+            {
+                "id": "x",
+                "weight": 1,
+                "modes": ["major"],
+                "phrases": {"a": [["Imaj7(b9)"]]},
+            }
+        )
+
+
+def test_p11_rejects_illegal_extension_in_final() -> None:
+    """P11 fires in the turnaround/final (`_BarsEntry`) validator too."""
+    with pytest.raises(ValidationError, match="P11"):
+        FinalEntry.model_validate(
+            {
+                "id": "x",
+                "weight": 1,
+                "modes": ["major"],
+                "bars": [["Imaj7(b9)"]],  # degree-1 (P9-clean) but b9 illegal on maj7
+            }
+        )
+
+
+def test_p11_accepts_legal_authored_extension() -> None:
+    """A §6.4-legal authored extension (`#9` on a `dom7`) loads clean."""
+    entry = PoolEntry.model_validate(
+        {
+            "id": "x",
+            "weight": 1,
+            "modes": ["minor"],
+            "phrases": {"a": [["i7"], ["V7(#9)"], ["i7"], ["V7"]]},
+        }
+    )
+    assert entry.id == "x"
+
+
 def test_p5_rejects_hold_in_first_bar() -> None:
     """P5 — `~` may never be a phrase's first bar."""
     with pytest.raises(ValidationError, match="first bar"):

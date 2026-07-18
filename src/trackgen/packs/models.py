@@ -1078,7 +1078,7 @@ class PoolEntry(_ProgressionEntry):
 
     @model_validator(mode="after")
     def _check_bars(self) -> "PoolEntry":
-        from trackgen.theory import TokenError, resolve_token
+        from trackgen.theory import TokenError, extensions_legal, resolve_token
 
         for label, bars in self.phrases.items():
             if not bars:
@@ -1104,11 +1104,18 @@ class PoolEntry(_ProgressionEntry):
                     )
                 for token in bar:
                     try:
-                        resolve_token(token, _NEUTRAL_KEY)
+                        spec = resolve_token(token, _NEUTRAL_KEY)
                     except TokenError as exc:
                         raise ValueError(
                             f"{loc}: token {token!r} does not parse (P5): {exc}"
                         ) from exc
+                    if spec.extensions and not extensions_legal(
+                        spec.quality, spec.extensions
+                    ):
+                        raise ValueError(
+                            f"{loc}: token {token!r} extensions {spec.extensions} "
+                            f"are illegal for quality {spec.quality!r} per §6.4 (P11)"
+                        )
         return self
 
     @property
@@ -1147,7 +1154,7 @@ class _BarsEntry(_ProgressionEntry):
 
     @model_validator(mode="after")
     def _check_bars(self) -> "_BarsEntry":
-        from trackgen.theory import TokenError, resolve_token
+        from trackgen.theory import TokenError, extensions_legal, resolve_token
 
         for bar_index, bar in enumerate(self.bars):
             loc = f"entry {self.id!r} bar {bar_index}"
@@ -1161,11 +1168,18 @@ class _BarsEntry(_ProgressionEntry):
                 )
             for token in bar:
                 try:
-                    resolve_token(token, _NEUTRAL_KEY)
+                    spec = resolve_token(token, _NEUTRAL_KEY)
                 except TokenError as exc:
                     raise ValueError(
                         f"{loc}: token {token!r} does not parse (P5): {exc}"
                     ) from exc
+                if spec.extensions and not extensions_legal(
+                    spec.quality, spec.extensions
+                ):
+                    raise ValueError(
+                        f"{loc}: token {token!r} extensions {spec.extensions} "
+                        f"are illegal for quality {spec.quality!r} per §6.4 (P11)"
+                    )
         return self
 
 
