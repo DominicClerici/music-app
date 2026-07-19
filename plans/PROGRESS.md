@@ -6,33 +6,43 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 2 (Session 16) — validator suite. IN PROGRESS. Plan approved
-> (`SESSION_16.md`, `6283f58`). T1 DONE — dispatch Wave B: T2 ‖ T3 ‖ T4 (disjoint files).**
-> Task DAG: T1 foundation ✅ → **T2 (W2/W5/W7 into `layer1.py`) ‖ T3 (`layer2.py` L2-1/L2-2) ‖ T4
-> (`layer3.py`+`calibration.py`)** → T5 review+DoD+close-out. Five ★ scoping decisions pinned in plan §4
-> (W6/C-11 tag strip, W2 policy-evidence, W7 per-Phrase grid, W4 selection-vs-budget recompute, W5
-> placement) — user-approved.
+> **Next:** **Phase 8, Chunk 3 (Session 17) — authoring tooling. FRESH CHUNK — run PROMPT step 0/1
+> (orient → scope → write `plans/sessions/SESSION_17.md` → USER APPROVAL GATE) before dispatching.**
+> C3 builds (PHASE_8 §9, DoD §14.7): **audition CLI** (`trackgen audition --pack --mood [--seed]
+> [--section] [--solo] [--mute] [--tempo] [--out|--play]`, §9.1); **pack linter** (`trackgen lint
+> styles/<pack>/` — errors = every loader rule with file context + the **five §9.2 warning classes**:
+> variety coverage / grid mixing / unreachable content / dangling gates / weight degeneracy; needs a
+> **collect-mode** loader variant, not raise-on-first `load_pack` — see C1 scoping fact); **`--explain`
+> selection log** (§9.3 — per-slot decision trace; instrument the only two draw sites, `weighted_choice`
+> + the interpreter `randrange`); **`trackgen calibrate styles/<pack>/`** → writes
+> `styles/<pack>/calibration.yaml` (drives the C2 `compute_bands`/`Calibration` core built this session).
+> Layout: `src/trackgen/tooling/{audition,lint,calibrate}.py` + `packs/lint.py` + CLI wiring in `cli.py`.
 >
-> **T1 DONE (`<pending>`):** new `src/trackgen/quality/` package — `_common.py` (helpers: `entry_index`,
-> `tick_to_section`, `section_span`, `governing_chord`, `INTERNAL_TAGS`/`strip_internal` single-sourced
-> from `generators._VOICE_TRACK` minus `crash` plus `ornament`), `layer1.py` (W1 lane / W3 ending / W4
-> density / W6 tag-vocab / W8 note-count + `_LAYER1_CHECKS` aggregator), `layer2.py` stub, `suite.py::
-> validate_pipeline(doc, trace)` = `validate_document` + `layer1_checks` + `layer2_checks`. 13 tests,
-> each violating fixture discriminating (fires its own W-rule only; real pop/jazz trace clean).
-> Per-task opus review APPROVE-WITH-NITS → 1 fix cycle: **W3 rewrite** — HOLD notes now identified by
-> the `"hold"` tag on `phrases_stage7` (exact) instead of a document onset-proximity band (reviewer
-> reproduced a false-fire on −5-tick negative humanizer displacement; regression test
-> `test_w3_negative_hold_displacement_does_not_fire` added); + W4 consistency-check comment + W8 typing.
-> Four gates green (**4770 tests**). No caveats (additive; W3 fix honors the C-11/§3.6 hold-tag mechanism).
+> **C2 (S16) COMPLETE** (commits `6283f58` plan · `2f2f5ca` T1 · `177afec` Wave B · this-commit
+> close-out): the 3-layer validator suite in `src/trackgen/quality/`. **DoD §14.4 PROVEN.** 2-lens
+> whole-chunk review: correctness/contract **CLEAN**, test/DoD **PROVEN** (→ 2 gaps closed by review-fix:
+> W2 dropout+fill branch fixtures, calibration read-back tests). **One new caveat C-16** (L2-2 co-attack
+> grain, user-ratified). What C3 leans on:
+>  - **`quality/suite.py`**: `validate_pipeline(doc, trace) -> list[str]` = gating **failures** only
+>    (V1–V8 + W1–W8 + L2-1); `pipeline_warnings(doc, trace)` = L2-2 **warns** (non-gating). Layer 3 is
+>    batch-only, NOT in the per-render path. The **warn/fail split** (§8.1 "warn by default, fail where
+>    marked") is the pinned convention — C3's smoke matrix gates on `validate_pipeline`, surfaces
+>    `pipeline_warnings`.
+>  - **`quality/calibration.py`**: `Calibration`/`PackMoodCalibration`/`Band` dataclasses + the
+>    `calibration.yaml` shape (per-`(pack,mood)`: `l2Thresholds{bass,comping}` + `bands{metric:[lo,hi]}`,
+>    per-role where applicable, `grooveConsistency` song-wide, camelCase), `compute_bands(batch)`
+>    (mean ± 2.5·**pstdev**), `load_calibration(pack)` (None when absent), `calibration_to_yaml_dict`/
+>    `_pmc_from_yaml_dict` round-trip. **C3's `trackgen calibrate` DRIVES `compute_bands` and WRITES this
+>    file** (C2 built the compute core, wrote no file). `quality/layer2.py::load_l2_thresholds(pack)`
+>    reads it (None→0.95/0.98 defaults today).
+>  - **`quality/layer3.py::compute_metrics(trace)`**: the six MusPy metrics (note-density, mean-IOI,
+>    pitch-range, empty-bar-rate, groove-consistency [song-wide, doc drum tracks by tick], scale-
+>    consistency). `pack_and_mood(trace)` = `(trace.plan.style_pack.id, meta.params["mood"] or default)`.
+>  - **Pipeline trace** `generate_trace(raw_params) -> GenerationTrace` (C1) is the substrate for
+>    `--explain` (instrument draws) and the audition `--out` fixture.
 >
-> **Facts for T2/T3/T4 (verified in T1):** `SelectionResult.by_section: dict[(section_id, role),
-> PatternEnvelope]`; per-event `min_density` on `PitchedEvent`/`DrumEvent` (from `packs.models`, NOT
-> `schema.ir`). Drum notes tagged with `event.voice` string + `"ornament"` (min_density events);
-> serialize drops all `PhraseNote.tags`. `Phrase.notes: list[PhraseNote]`; final-section end =
-> `(start_bar+length_bars)*1920`. Chord tone/scale pcs: `theory/chords.py::chord_tones(spec)` +
-> `scale_pcs(root_pc, name)`; per-event scale pre-attached on `ChordEvent.scale` (no key reconstruction).
-> `_common.governing_chord(trace, tick)` is built and ready for L2-1 / L3 scale-consistency. T2 slots
-> W2/W5/W7 into the `_LAYER1_CHECKS` list (no `suite.py` edit); may reuse the `"hold"`-tag pattern.
+> **C2 module map (built):** `src/trackgen/quality/{_common,layer1,layer2,layer3,calibration,suite,
+> __init__}.py`; tests `tests/test_quality_layer{1,2,3}.py`. `schema/validate.py` (V1–V8) byte-unchanged.
 > C2 builds the 3-layer validator suite (PHASE_8 §8.1) on the C1 trace: **Layer 1** hard pipeline
 > invariants **W1–W8** (each with one violating fixture; SUBSUMES the doc validator V1–V8; reads
 > `(doc, trace)` — W1 lane compliance from `ArrangementPlan`, W2 device-policy from stage-6 boundaries,
@@ -131,7 +141,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
 | 6 | Transitions, variation & humanization | done | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). §11.10 listening checklist CLOSED (user-confirmed 2026-07-18) |
 | 7 | Sound design | done | 13, 14 | **2-chunk split** (flip seam). C1 (13): new `sound/` package — engine data + evaluation + real `timbres.yaml` schema/TB1–TB9, unwired; DoD 2/3 + DoD 1(C1). C2 (14): the atomic flip — real `sound_design → SoundDesign` stage wired end to end, both `styles/*/timbres.yaml` authored, stubs deleted, goldens re-blessed (notes byte-identical), §9 field-for-field, 344-doc property matrix, zero-draw. Whole-phase 4-lens review **CLEAN/COMPLIANT/PROVEN/GOOD-WITH-NITS**; full §13 DoD 1–9 PROVEN; **4725 tests**. Caveats C-13 (§9.2 sample, resolved), C-14/C-15 (open, latent/prose). DoD 8 listening checklist CLOSED (user-confirmed 2026-07-18) |
-| 8 | Quality, evaluation & pack expansion | in progress | 15, 16… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments (feel profiles+feelTable, authored extensions+P11, allowlist verify); DoD §14.1 PROVEN; additive (pop/jazz byte-identical); 2-lens review CLEAN/PROVEN; no caveats; 4758 tests. **C2 (S16) IN PROGRESS** — validator suite W1–W8/L2/L3; plan `SESSION_16.md` approved; dispatching T1 (foundation). |
+| 8 | Quality, evaluation & pack expansion | in progress | 15, 16, 17… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; no caveats. **C2 (S16) DONE** — 3-layer validator suite (`quality/` W1–W8 hard / L2-1 fail + L2-2 warn / L3 metrics+bands), warn/fail suite split; DoD §14.4 PROVEN; 2-lens review CLEAN/PROVEN; C-16 (L2-2 co-attack grain, user-ratified). **Next: C3 (S17) authoring tooling** (audition CLI, pack linter+5 warnings, `--explain`, `calibrate`→`calibration.yaml`). |
 
 ## Session log
 
@@ -139,6 +149,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 16 | 2026-07-18 | Phase 8 chunk 2 (validator suite W1–W8 / L2 / L3) | 4 opus implementer waves + reconciliation + review-fix + 2-lens whole-chunk review. New `src/trackgen/quality/` package (PHASE_8 §8.1), reads the C1 `GenerationTrace`; **`schema/validate.py` V1–V8 byte-unchanged.** Waves: **T1** foundation (`_common` helpers + Layer-1 W1/W3/W4/W6/W8 + `suite.validate_pipeline`) → **T2 ‖ T3 ‖ T4** (W2/W5/W7 · Layer-2 L2-1/L2-2 · Layer-3 metrics+`calibration.py` bands, disjoint files) → reconciliation (**warn/fail split**: `validate_pipeline`=failures V+W+L2-1, `pipeline_warnings`=L2-2; Layer-3 batch-only) → T5. Per-task reviews + fixes: **T1** APPROVE-WITH-NITS → W3 HOLD-note identification switched from document onset-proximity band to the `"hold"` tag on `phrases_stage7` (reviewer reproduced a false-fire on −5-tick negative humanizer displacement; regression test added). **Whole-chunk 2-lens (fresh opus, full C2 diff): correctness/contract CLEAN** (every W/L2/L3 check traced load-bearing — tick math, governing chord, lane lookup, C-11 strip; V1–V8 frozen; determinism/TID251; no import cycle; only stdlib `statistics`+pinned `pyyaml`), **test/DoD PROVEN-WITH-GAPS → PROVEN** (all violating fixtures discriminating incl. W6 C-11-strip, W7 stage6-vs-7, L2-1 beat-set asymmetry, `compute_bands` mean±2.5SD exact; 2 gaps closed by review-fix — W2 dropout+fill-outside-fill-bar branch fixtures now assert their specific messages, calibration `.yaml` read-back round-trip + L2 threshold-override tests). **L2-2 grain decision: user-ratified CO-ATTACK** over the literal sustain-overlap (jazz walking-bass sustain = 44 noise-warns, 0 co-attack crossings) → **C-16** (warn-only, non-gating; doc-wording clarification deferred). **DoD §14.4 PROVEN.** Four gates green (**4806 tests**). | 6283f58 plan · 2f2f5ca T1 · 177afec Wave B · (close-out this commit) |
 | 15 | 2026-07-18 | Phase 8 chunk 1 (foundations: pipeline trace + machinery amendments) | 3 opus + 1 sonnet implementer tasks (T1 trace alone → T2 feel ‖ T4 allowlist → T3 extensions) + T5 whole-chunk 2-lens review + close-out. Foundational engine work, **no packs / no tooling; everything additive** (pop_rock/jazz byte-identical — whole-doc + humanizer + harmony goldens pass with NO fixture edits). **T1** `pipeline/trace.py` `generate_trace → GenerationTrace` exposes every IR boundary (phrases post-5/6/7 SEPARATELY + plan/sf/harmony/arr/selection/tempo/sound/doc); `generate_track` delegates, doc byte-identical — the substrate for C2 validators (W7/W8) / C3 `--explain` / C4 golden corpus / bless. **T2** `laidback`/`tight` feel profiles (§3.4 verbatim) + `feelTable` validated & threaded `GenerationPlan → interpreter → humanize` (mirrors `swing`). **T3** authored chord extensions (§3.5): `resolve_token` extgroup parse (grammar→P5, §6.4→P11 at loader), dressing passthrough guard makes an authored ext **draw-free** (discriminating zero-draw pin). **T4** allowlist Vibrato/AutoFilter already pre-seeded (Phase 7) — matched §3.7, added coverage test. Per-task reviews all APPROVE; **whole-chunk 2-lens: correctness CLEAN / test-DoD PROVEN** (one gap — positive feelTable selection — closed by a discriminating `_run`-path test, monkeypatch-verified). **DoD §14.1 PROVEN. No new CAVEATS** (all additive, no deviation). C-03 untouched (P8/P9 blind to extensions). Four gates green (**4758 tests**). | 3e93514 trace · dcdbd2b feel+feelTable · d64b0f7 allowlist · 0386b25 extensions+P11 · 68720e6 review-fix |
 | 14 | 2026-07-18 | Phase 7 chunk 2 (the flip + integration + whole-phase) — **Phase 7 COMPLETE** | 4 opus tasks (T1 stage+content+§9 goldens unwired → T2 the atomic flip → T3 re-bless ‖ T4 property+determinism) + T5 whole-phase 4-lens review + close-out. Per-task opus reviews (T1 APPROVE-WITH-NITS, T2 APPROVE); **whole-PHASE 4-lens review (C1+C2): correctness CLEAN / contract COMPLIANT / test-DoD PROVEN / code-quality GOOD-WITH-NITS — no blocker, no major**. The pipeline now runs the real stage 8 end to end (real `sound_design → SoundDesign`, both `styles/*/timbres.yaml` authored, all stubs deleted). **Full §13 DoD 1–9 PROVEN** (DoD 8 listening checklist CLOSED, user-confirmed 2026-07-18). T3 re-bless: notes byte-identical to pre-flip (pop 2790/jazz 1275; V1–V8 clean; §9 sound anchors verified; invariant 2 held). T4: 344-doc property matrix (both packs × all moods × full flavor cross-product, non-vacuous) + 0 `sound`-stream draws + repeated-run identity. §12 amendment audit: all 6 present+consistent. **Arbitration C-13** (user sign-off): §9.2 upright attack sample mis-used brightness as the exp exponent → faithful 0.018, engine unchanged, §9.2 amended. New caveats **C-14** (TrackSound.midi fills §7's unspecified trigger-pitch delivery), **C-15** (§5.2 envelope.* prose imprecision, allowlist-resolved). Four gates green (**4725 tests**). | fa18869 stage+content · f773bb1 flip · 0b56ad9 re-bless · ab7292e property+determinism · (close-out this commit) |
 | 13 | 2026-07-17 | Phase 7 chunk 1 (foundations) | 3 opus tasks (T1 engine data → T2 evaluation model → T3 real timbres schema/TB1–TB9, serial) + T4 whole-chunk 2-lens review. New `src/trackgen/sound/` package, **all unwired** (`resolve_pack`/`pipeline/`/reference `timbres.yaml` untouched; pipeline still runs the stub). **DoD 2, 3 PROVEN full; DoD 1 PROVEN (C1 slice).** Per-task + whole-chunk review. Whole-chunk 2-lens (correctness/contract + test-quality/DoD): **both CLEAN** — correctness traced TB7 **live** through `TimbresConfig.model_validate` for the off-class §8 flavors (FM piano/upright, AM organ_soft) confirming §8 will validate in C2 with no false rejection + illegal params rejected; §5.1 faithful (zero arbitration flags); allowlist covers §8 by full dry-run. Test lens PROVEN (no vacuous tests; half-even ties on 1/16 & 3/16, effective-mapping base-XOR-mod discriminating). 2 review fixes, both **tighten-to-design** (D4 drum-attackHardness bar; §4.2 send base-XOR-mod) — **no new caveats.** Four gates green (**4364 tests**). C2 = the flip. | b86be4e engine-data · aeaf047 evaluate · acd87f4 timbres+TB · 8715ded review-fix(send-XOR) |
@@ -253,6 +264,65 @@ note-count preservation), the C3 `--explain` log, the C4 golden corpus, and `ble
 independence for *unchanged* tracks is not asserted (harmless; revisit only if a future consumer
 mutates a snapshot in place). `_split_extgroup` permits duplicate extensions (`I7(9,9)`) — §6.4 does
 not forbid it; reference packs won't author it.
+
+#### Phase 8 — Chunk 2 — session 16 (`plans/sessions/SESSION_16.md`)
+
+**Chunk 2 COMPLETE.** The 3-layer validator suite (PHASE_8 §8.1), reading the C1 `GenerationTrace`.
+New `src/trackgen/quality/` package only — **no packs, no CLI, no `calibration.yaml` on disk**;
+`schema/validate.py` (V1–V8) byte-unchanged. Waves: T1 (foundation, alone) → T2 ‖ T3 ‖ T4 (disjoint
+files) → warn/fail reconciliation → T5. **DoD §14.4 PROVEN.**
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | `quality/_common.py` helpers + Layer-1 mechanical **W1/W3/W4/W6/W8** + `layer2.py` stub + `suite.py::validate_pipeline` | opus | done | 2f2f5ca |
+| T2 | Layer-1 substantial **W2** (device-policy evidence) / **W5** (regenerate, skippable) / **W7** (grid legality) into `layer1.py` | opus | done | 177afec |
+| T3 | Layer-2 **L2-1** (chord-tone ratio, fail) / **L2-2** (voice crossing, warn) + `load_l2_thresholds` hook | opus | done | 177afec |
+| T4 | Layer-3 `layer3.py` six metrics + `calibration.py` (`compute_bands` mean±2.5·pstdev, `calibration.yaml` shape, `load_calibration`) | opus | done | 177afec |
+| — | **Warn/fail split** reconciliation: `validate_pipeline`=failures (V+W+L2-1), `pipeline_warnings`=L2-2; Layer-3 batch-only | opus | done | 177afec |
+| T5 | Whole-chunk 2-lens review + review-fix (W2 branch fixtures + calibration read-back tests) + DoD 4 + close-out | orchestrator | done | (this commit) |
+
+**Per-task + whole-chunk reviews.** T1 opus review APPROVE-WITH-NITS → **W3 rewrite** (HOLD notes
+identified by the `"hold"` tag on `phrases_stage7`, exact, replacing a document onset-proximity band a
+reviewer reproduced false-firing on −5-tick negative humanizer displacement; +regression test). T2/T3/T4
+verified green in isolation; T2 flagged the L2-2/subsumption interaction that drove the warn/fail split.
+**Whole-chunk 2-lens (fresh opus, full C2 diff): correctness/contract CLEAN, test/DoD PROVEN-WITH-GAPS →
+PROVEN** — 2 gaps closed (W2 dropout + fill-outside-fill-bar branch fixtures now assert their specific
+messages; calibration `.yaml` round-trip + L2 threshold-override tests). **L2-2 grain: user-ratified
+CO-ATTACK** → **C-16** (warn-only). Four gates green.
+
+**DoD §14.4 — PROVEN:**
+- [x] **W1–W8 each with one violating fixture** (`test_quality_layer1.py`, all discriminating — fire own
+  rule only, real pop/jazz trace clean): W1 lane (`_fires_only_w1`, midi≤71 so V4 stays clean) · W2
+  device-policy — all four branches covered: crash-suppression, stray-midsection-crash, `breakdown`
+  dropout-truncation (`_breakdown_dropout_truncation_fires_w2`, asserts the specific dropout message),
+  fill-outside-fill-bar · W3 ending (non-degree-1 final, missing `final` tag, + `_negative_hold_
+  displacement_does_not_fire` regression) · W4 density (`_starved_ornament`) · W5 determinism
+  (`_disabled_by_default` + `_mismatch_fires_only_w5_when_enabled`) · W6 tag-vocab (`_stray_tag` +
+  `_c11_provenance_tags_do_not_fire`, proves the strip is load-bearing) · W7 grid (`_offgrid_stage6` +
+  `_reads_stage6_not_stage7`) · W8 note-count (`_note_count_mismatch`).
+- [x] **L2-1 / L2-2 with per-pack thresholds from `calibration.yaml`** (`test_quality_layer2.py`): L2-1
+  fail below 0.95/0.98 + beat-set asymmetry (bass beat-1 only vs comping beats 1&3), threshold-override
+  via a temp `calibration.yaml`; L2-2 co-attack crossing warn + non-gating separation (in
+  `pipeline_warnings`, absent from `validate_pipeline`). Bootstrap order §8.1: defaults gate in C2, the
+  file is written by C3's `calibrate`.
+- [x] **L3 metrics + band computation** (`test_quality_layer3.py`): `compute_metrics` six metrics
+  (hand-checked note-density = notes/bars exact); `compute_bands` = mean±2.5·pstdev exact
+  (`[2,4,4,6]→4±2.5√2`); `calibration.yaml` round-trip; **Layer 3 not wired into `suite.py`** (batch-only,
+  asserted).
+- [x] **V1–V8 unchanged and passing everywhere** — `git diff` on `schema/validate.py` empty;
+  `validate_pipeline` subsumes `validate_document` (both `[]` on real traces); `test_validate.py` +
+  every V-caller green in the full suite.
+
+**Deliverables C3 consumes:** the warn/fail suite (`validate_pipeline` gate / `pipeline_warnings`), the
+`Calibration`/`compute_bands` core + `calibration.yaml` shape (C3's `calibrate` writes it), `compute_
+metrics`, and `load_l2_thresholds`/`load_calibration` (None→defaults today). See the handoff block.
+
+**Deferred (low-priority, not blocking):** W2 fill-window is assumed ≤1 bar (`ticks//1920 == fill_bar`) —
+safe for both reference packs; a multi-bar authored fill would need a spillover guard (latent, C-10
+pattern). W3 drum-count sub-branches (missing kick / unexpected HOLD drum track) are logic-reviewed but
+not fixtured. `_TICKS_PER_BAR = 1920` is hardcoded per-file (v1 4/4); fold into `_common` if it's touched
+again. L3 folds all drum voice-tracks into one `drums` role band (intended per the `calibration.yaml`
+shape). The sustain-overlap L2-2 sweep could be restored behind the warn/fail split (C-16; §8.1 Q4).
 
 ### Phase 7 — Sound design (chunk plan)
 
