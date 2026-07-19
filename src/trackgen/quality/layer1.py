@@ -6,20 +6,29 @@ just the document (which is why they live beside — not inside —
 human-readable messages, each prefixed with its rule id (`"W1: ..."`), mirroring
 `validate.py`'s `_check_vN` style.
 
-This module (task T1) implements the five *mechanical* checks **W1, W3, W4, W6,
-W8**. The substantial checks **W2, W5, W7** are added by task T2 into the same
-`layer1_checks` aggregator (a list of check callables, so they slot in cleanly).
+This module implements the five *mechanical* checks **W1, W3, W4, W6, W8**
+(task T1) plus the three substantial checks **W2, W5, W7** (task T2), all in the
+same `layer1_checks` aggregator (a list of check callables, so they slot in
+cleanly).
 
 The SESSION_16 §4 scoping decisions this file honors:
 - **W1** (§4 non-star): per-`(section, role)` lane membership, strengthening V4.
+- **W2** (§4 decision 2): a policy-consistency *evidence* check — for every
+  section boundary, the rendered `phrases_stage6` devices legal for the entered
+  section type per PHASE_6 §3.2 (not a per-boundary RNG re-derivation).
 - **W3** (§4 non-star): ending integrity — final chord degree-1-rooted + `final`
   tags present + the §3.6 HOLD shape on `phrases_stage7` (identified by the
   `"hold"` tag, which survives into the phrases but not the tagless document).
 - **W4** (§4 decision 4): a drums-only density-gate recompute using the C-11
   `ornament` backmap on `phrases_stage5` — the only role that exposes a
   note-to-event provenance link.
+- **W5** (§4 decision 5): determinism — regenerating from `meta.params`
+  reproduces a byte-identical document. Doubles render cost, so it is gated
+  behind a module toggle (`REGENERATE_CHECK_ENABLED`, default off).
 - **W6** (§4 decision 1): output-tag vocabulary over `phrases_stage7`, stripping
   the C-11 internal provenance tags first.
+- **W7** (§4 decision 3): pre-humanizer grid legality on `phrases_stage6` —
+  every non-exempt onset on the straight or triplet grid, one grid per Phrase.
 - **W8** (§4 non-star): per-`track_id` note-count preservation stage 6 -> 7.
 """
 
@@ -31,7 +40,8 @@ from collections.abc import Callable
 from trackgen.packs.models import DrumEvent
 from trackgen.parts.dynamics import is_event_active
 from trackgen.parts.generators import _VOICE_TRACK, _tile
-from trackgen.pipeline.trace import GenerationTrace
+from trackgen.pipeline.serialize import to_json
+from trackgen.pipeline.trace import GenerationTrace, generate_trace
 from trackgen.quality._common import (
     entry_index,
     section_span,
@@ -41,6 +51,23 @@ from trackgen.quality._common import (
 )
 from trackgen.schema.document import TrackDocument
 from trackgen.schema.ir import Phrase
+
+_TICKS_PER_BEAT = 480
+_TICKS_PER_BAR = 1920
+
+# §3.2 suppression classes: the entered section types that carry no entry crash
+# ("smooth continuation" / "clean cut into the thinned texture").
+_SUPPRESSION_TYPES: frozenset[str] = frozenset({"postchorus", "breakdown"})
+
+# W7 grid sets (§3.1). Straight = the union of the legal 16th (`{0,120,240,360}`)
+# and 8th (`{0,240}`) straight positions; triplet = `{0,160,320}`. `0` is on both
+# — a pos-0 onset is grid-neutral and constrains a Phrase to neither grid.
+_STRAIGHT_GRID: frozenset[int] = frozenset({0, 120, 240, 360})
+_TRIPLET_GRID: frozenset[int] = frozenset({0, 160, 320})
+
+# W7 grid-exempt tags (§4 decision 3): mutation/device artifacts, not authored
+# pattern onsets, so they are not held to the pattern grid.
+_GRID_EXEMPT_TAGS: frozenset[str] = frozenset({"var", "crash", "hold"})
 
 # The pinned §3.9 output-tag vocabulary (PHASE_6 contributes fill/crash/var/hold;
 # push/ghost come from earlier stages). W6 asserts every non-provenance note tag
@@ -295,15 +322,180 @@ def _check_w8_note_counts(doc: TrackDocument, trace: GenerationTrace) -> list[st
     return violations
 
 
+# --- W2: device-policy compliance ---------------------------------------------
+
+
+def _check_w2_device_policy(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
+    """Rendered stage-6 devices are legal for each entered section type (§3.2).
+
+    Per §4 decision 2 this is a *policy-consistency evidence* check, not a
+    per-boundary RNG re-derivation (fill-vs-stop and phrase-fill inclusion are
+    draws, so the exact device fired is not statically knowable). It asserts the
+    devices that ARE present are legal for the entered section type:
+
+      * a `"crash"`-tagged event only lands on a legal entered downbeat — a
+        section-boundary downbeat whose entered type is not a suppression class.
+        Suppression classes (`postchorus`, `breakdown`) therefore carry no entry
+        crash, and a crash mid-section (or at a suppressed boundary) fires.
+      * a `"fill"`-tagged event only lands in a fill bar — the last bar of an
+        outgoing section (a section boundary) or the bar before an interior
+        phrase start. (`stop` deletes rather than tags, so a rendered stop window
+        contributes no fill tags to check against.)
+      * a `breakdown` entry shows the §3.5 dropout truncation: no note sustains
+        across the entered downbeat.
+
+    `"crash"` here is unambiguously the §3.9 output tag: groove/fill generation
+    skips the `crash` voice entirely (generators §6.1 / devices §3.3), so the
+    only `"crash"`-tagged stage-6 notes are the §3.7 entry crash+kick. The HOLD
+    final crash is tagged `"hold"`, not `"crash"`. `breakdown`/`postchorus` are
+    produced by no v1 reference form, so those branches are exercised only by a
+    synthetic fixture."""
+    violations: list[str] = []
+    sections = trace.song_form.sections
+
+    legal_crash_ticks: set[int] = set()
+    legal_fill_bars: set[int] = set()
+    breakdown_ticks: list[int] = []
+    for outgoing, entered in zip(sections, sections[1:], strict=False):
+        entered_tick = entered.start_bar * _TICKS_PER_BAR
+        legal_fill_bars.add(outgoing.start_bar + outgoing.length_bars - 1)
+        if entered.type not in _SUPPRESSION_TYPES:
+            legal_crash_ticks.add(entered_tick)
+        if entered.type == "breakdown":
+            breakdown_ticks.append(entered_tick)
+    for section in sections:  # interior phrase-boundary fill bars (§3.1).
+        bar = section.start_bar
+        for idx, section_phrase in enumerate(section.phrases):
+            if idx > 0:
+                legal_fill_bars.add(bar - 1)
+            bar += section_phrase.bars
+
+    for phrase in trace.phrases_stage6:
+        for note in phrase.notes:
+            if "crash" in note.tags and note.ticks not in legal_crash_ticks:
+                violations.append(
+                    f"W2: track '{phrase.track_id}' has a 'crash'-tagged event at "
+                    f"ticks={note.ticks} that is not a legal entered downbeat "
+                    f"(no non-suppression section boundary enters there)"
+                )
+            if (
+                "fill" in note.tags
+                and note.ticks // _TICKS_PER_BAR not in legal_fill_bars
+            ):
+                violations.append(
+                    f"W2: track '{phrase.track_id}' has a 'fill'-tagged event at "
+                    f"ticks={note.ticks} (bar {note.ticks // _TICKS_PER_BAR}) "
+                    f"outside any fill bar"
+                )
+
+    for entered_tick in breakdown_ticks:
+        for phrase in trace.phrases_stage6:
+            for note in phrase.notes:
+                if note.ticks < entered_tick < note.ticks + note.duration_ticks:
+                    violations.append(
+                        f"W2: breakdown entry at ticks={entered_tick}: track "
+                        f"'{phrase.track_id}' note at ticks={note.ticks} sustains "
+                        f"across it (§3.5 dropout truncation not applied)"
+                    )
+
+    return violations
+
+
+# --- W5: determinism (regenerate from meta) -----------------------------------
+
+# W5 re-runs the whole pipeline, so it roughly doubles render cost. It is wired
+# into the roster but gated behind this toggle (default off) — its primary home
+# is the C4 smoke matrix, and the per-render suite should not pay for it on every
+# call. A caller that wants the determinism guarantee flips this to `True`.
+REGENERATE_CHECK_ENABLED: bool = False
+
+
+def regenerate_matches(doc: TrackDocument) -> bool:
+    """Re-render from `doc.meta.params` and compare the contract JSON byte-for-byte.
+
+    `serialize(..., params=raw_params)` echoes the exact `raw_params` (incl. the
+    seed) into `meta.params`, so `generate_trace(doc.meta.params)` re-runs the
+    identical seeded pipeline; determinism (ROADMAP invariant 5) then guarantees a
+    byte-identical `TrackDocument`. Uses only the existing seeded path — no new
+    RNG draw, no wall-clock."""
+    regenerated = generate_trace(doc.meta.params).document
+    return to_json(regenerated) == to_json(doc)
+
+
+def _check_w5_determinism(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
+    """Regenerating from `meta.params` reproduces a byte-identical document.
+
+    Skipped unless `REGENERATE_CHECK_ENABLED` is set (it doubles render cost)."""
+    if not REGENERATE_CHECK_ENABLED:
+        return []
+    if not regenerate_matches(doc):
+        return [
+            "W5: regenerating from meta.params does not reproduce a byte-identical "
+            "document (determinism broken)"
+        ]
+    return []
+
+
+# --- W7: pre-humanizer grid legality ------------------------------------------
+
+
+def _check_w7_grid_legality(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
+    """Every pre-humanizer onset lies on the straight or triplet grid (§3.1).
+
+    Reads `phrases_stage6` (the humanizer legitimately moves onsets off-grid via
+    swing/jitter, which is why the trace keeps the pre-humanizer snapshot). Per
+    §4 decision 3: `pos_in_beat = ticks % 480` must be on the straight grid
+    (`{0,120,240,360}`) or the triplet grid (`{0,160,320}`). Mutation/device
+    artifacts (`var`/`crash`/`hold` tags) are grid-exempt.
+
+    One-grid-per-pattern homogeneity (§3.1's flam rule) is enforced at the
+    per-`Phrase` grouping — a Phrase is one `(section, role)` span. True
+    per-source-pattern grouping is lost after tiling/mutation, so per-Phrase is
+    the faithful mechanical proxy: a single Phrase's non-exempt onsets must be
+    entirely straight OR entirely triplet, never mixed. (`pos 0` is on both grids,
+    so it is grid-neutral and never forces a Phrase onto one grid.)"""
+    violations: list[str] = []
+    for phrase in trace.phrases_stage6:
+        has_straight = False
+        has_triplet = False
+        for note in phrase.notes:
+            if any(tag in _GRID_EXEMPT_TAGS for tag in note.tags):
+                continue
+            pos = note.ticks % _TICKS_PER_BEAT
+            on_straight = pos in _STRAIGHT_GRID
+            on_triplet = pos in _TRIPLET_GRID
+            if not on_straight and not on_triplet:
+                violations.append(
+                    f"W7: track '{phrase.track_id}' onset at ticks={note.ticks} "
+                    f"(pos_in_beat={pos}) is on neither the straight grid "
+                    f"{sorted(_STRAIGHT_GRID)} nor the triplet grid "
+                    f"{sorted(_TRIPLET_GRID)}"
+                )
+            elif on_straight and not on_triplet:
+                has_straight = True
+            elif on_triplet and not on_straight:
+                has_triplet = True
+        if has_straight and has_triplet:
+            violations.append(
+                f"W7: track '{phrase.track_id}' mixes straight-grid and "
+                f"triplet-grid onsets within one Phrase (§3.1 one-grid-per-pattern)"
+            )
+    return violations
+
+
 # --- aggregator ---------------------------------------------------------------
 
-# The check roster. W2/W5/W7 (task T2) append their callables here; each has the
-# `(doc, trace) -> list[str]` shape, so the aggregator needs no other change.
+# The check roster. Each check has the `(doc, trace) -> list[str]` shape, so the
+# aggregator needs no per-check special-casing. W5 is gated internally by
+# `REGENERATE_CHECK_ENABLED` (default off) — see `_check_w5_determinism`.
 _LAYER1_CHECKS: list[Callable[[TrackDocument, GenerationTrace], list[str]]] = [
     _check_w1_lane_compliance,
+    _check_w2_device_policy,
     _check_w3_ending_integrity,
     _check_w4_density_gate,
+    _check_w5_determinism,
     _check_w6_tag_vocabulary,
+    _check_w7_grid_legality,
     _check_w8_note_counts,
 ]
 

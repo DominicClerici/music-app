@@ -17,6 +17,7 @@ import pytest
 from trackgen.packs.models import DrumEvent
 from trackgen.parts.generators import _VOICE_TRACK, _tile
 from trackgen.pipeline.trace import GenerationTrace, generate_trace
+from trackgen.quality import layer1
 from trackgen.quality._common import (
     INTERNAL_TAGS,
     entry_index,
@@ -24,8 +25,13 @@ from trackgen.quality._common import (
     sections_by_id,
     tick_to_section,
 )
-from trackgen.quality.layer1 import layer1_checks
+from trackgen.quality.layer1 import (
+    _GRID_EXEMPT_TAGS,
+    layer1_checks,
+    regenerate_matches,
+)
 from trackgen.quality.suite import validate_pipeline
+from trackgen.schema.ir import Phrase
 from trackgen.schema.validate import validate_document
 from trackgen.transitions.ending import find_t_last
 
@@ -37,7 +43,9 @@ _JAZZ: dict[str, object] = {
     "seed": "1ps9wxb",
 }
 
-_W_RULES = ("W1", "W3", "W4", "W6", "W8")
+_TICKS_PER_BAR = 1920
+
+_W_RULES = ("W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8")
 
 
 def _w_rules_fired(messages: list[str]) -> set[str]:
@@ -311,3 +319,305 @@ def test_w8_note_count_mismatch_fires_only_w8() -> None:
     messages = validate_pipeline(trace.document, trace)
     assert _w_rules_fired(messages) == {"W8"}
     assert any(m.startswith("W8:") and track_id in m for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# W2 — device-policy compliance
+# ---------------------------------------------------------------------------
+
+
+def _flip_entered_section_to_breakdown(
+    trace: GenerationTrace,
+) -> tuple[GenerationTrace, int]:
+    """Retype an *entered* section (one at a section boundary) whose downbeat
+    already carries a real entry crash to `"breakdown"`. That downbeat is now a
+    suppression-class entry, so the real `"crash"`-tagged event there is illegal.
+
+    This exercises W2's crash-suppression branch ONLY. It does NOT reach the §3.5
+    dropout-truncation branch: no real note happens to sustain strictly across the
+    retyped downbeat, so `entered_tick` never lands inside a note's
+    `[ticks, ticks + duration_ticks)` span. The dropout branch is covered
+    separately by `_sustain_note_across_breakdown_entry`, which forces such a
+    sustain (all of this produced by no v1 reference form)."""
+    sections = trace.song_form.sections
+    for i in range(1, len(sections)):  # index >= 1 => entered at a section boundary.
+        entered_tick = sections[i].start_bar * 1920
+        has_crash = any(
+            "crash" in note.tags and note.ticks == entered_tick
+            for phrase in trace.phrases_stage6
+            for note in phrase.notes
+        )
+        if not has_crash:
+            continue
+        new_sections = list(sections)
+        new_sections[i] = sections[i].model_copy(update={"type": "breakdown"})
+        new_form = trace.song_form.model_copy(update={"sections": new_sections})
+        return replace(trace, song_form=new_form), entered_tick
+    raise AssertionError("no entered section with an entry crash to retype")
+
+
+def test_w2_breakdown_suppression_fires_only_w2() -> None:
+    """A section retyped to `breakdown` whose downbeat still carries the (now
+    illegal) entry crash fires W2 — the suppression-class branch — and no other
+    W-rule."""
+    base = generate_trace(_POP)
+    trace, entered_tick = _flip_entered_section_to_breakdown(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W2"}
+    assert any(
+        m.startswith("W2:") and "crash" in m and str(entered_tick) in m
+        for m in messages
+    )
+    # discriminating: the document is untouched, so V1-V8 stay clean.
+    assert validate_document(trace.document) == []
+
+
+def _add_stray_midsection_crash(
+    trace: GenerationTrace,
+) -> tuple[GenerationTrace, str]:
+    """Tag one interior groove note `"crash"` at a position that is no section
+    boundary's entered downbeat — a stray entry-crash artifact."""
+    boundary_ticks = {s.start_bar * 1920 for s in trace.song_form.sections}
+    phrases = list(trace.phrases_stage6)
+    for pi, phrase in enumerate(phrases):
+        for ni, note in enumerate(phrase.notes):
+            if note.ticks in boundary_ticks or "crash" in note.tags:
+                continue
+            new_notes = list(phrase.notes)
+            new_notes[ni] = note.model_copy(update={"tags": [*note.tags, "crash"]})
+            phrases[pi] = phrase.model_copy(update={"notes": new_notes})
+            return replace(trace, phrases_stage6=phrases), phrase.track_id
+    raise AssertionError("no interior note to mark with a stray crash")
+
+
+def test_w2_stray_midsection_crash_fires_only_w2() -> None:
+    """A `"crash"`-tagged event that lands mid-section (no boundary enters there)
+    fires W2 only."""
+    base = generate_trace(_POP)
+    trace, track_id = _add_stray_midsection_crash(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W2"}
+    assert any(
+        m.startswith("W2:") and "not a legal entered downbeat" in m for m in messages
+    )
+    assert not any(m.startswith("L2-1:") for m in messages)
+
+
+def _sustain_note_across_breakdown_entry(
+    trace: GenerationTrace,
+) -> tuple[GenerationTrace, int, int]:
+    """Retype the first *entered* section to `"breakdown"` AND stretch one
+    stage-6 note so it sustains STRICTLY across that entered downbeat
+    (`ticks < entered_tick < ticks + duration_ticks`), forcing W2's §3.5
+    dropout-truncation branch — the branch `_flip_entered_section_to_breakdown`
+    never reaches, since no real note happens to cross the boundary.
+
+    Every real entered downbeat in the reference forms also carries an entry
+    crash (§3.7), so retyping to a suppression class trips the crash branch too;
+    both are W2 messages, so the fixture stays discriminating (`_w_rules_fired ==
+    {"W2"}`) while the dropout message is asserted explicitly. Returns
+    `(trace, entered_tick, sustaining_note_ticks)`."""
+    sections = trace.song_form.sections
+    entered_tick = sections[1].start_bar * _TICKS_PER_BAR
+    new_phrases = list(trace.phrases_stage6)
+    for pi, phrase in enumerate(new_phrases):
+        for ni, note in enumerate(phrase.notes):
+            if note.ticks >= entered_tick:
+                continue
+            # stretch this note one tick past the entered downbeat.
+            new_dur = entered_tick - note.ticks + 1
+            new_notes = list(phrase.notes)
+            new_notes[ni] = note.model_copy(update={"duration_ticks": new_dur})
+            new_phrases[pi] = phrase.model_copy(update={"notes": new_notes})
+            new_sections = list(sections)
+            new_sections[1] = sections[1].model_copy(update={"type": "breakdown"})
+            new_form = trace.song_form.model_copy(update={"sections": new_sections})
+            return (
+                replace(trace, song_form=new_form, phrases_stage6=new_phrases),
+                entered_tick,
+                note.ticks,
+            )
+    raise AssertionError("no stage-6 note before the entered downbeat to stretch")
+
+
+def test_w2_breakdown_dropout_truncation_fires_w2() -> None:
+    """A note sustaining strictly across a `breakdown` entered downbeat trips the
+    §3.5 dropout-truncation branch. The reference entered downbeat also carries an
+    entry crash (now illegal under the retyped suppression class), so the crash
+    branch fires too — both are W2, so only W2 is in the fired set — while the
+    specific dropout message is asserted to prove that branch is genuinely
+    reached (a non-firing dropout branch would fail this assertion)."""
+    base = generate_trace(_POP)
+    trace, entered_tick, note_ticks = _sustain_note_across_breakdown_entry(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W2"}
+    assert any(
+        m.startswith("W2:")
+        and "dropout truncation not applied" in m
+        and f"ticks={entered_tick}" in m
+        and f"ticks={note_ticks}" in m
+        for m in messages
+    )
+    assert not any(m.startswith("L2-1:") for m in messages)
+    # discriminating: only the trace IRs were mutated, so V1-V8 stay clean.
+    assert validate_document(trace.document) == []
+
+
+def _tag_note_fill_outside_fill_bar(
+    trace: GenerationTrace,
+) -> tuple[GenerationTrace, str, int]:
+    """Tag one stage-6 note `"fill"` in a bar that is NOT a legal fill bar — not
+    the last bar of an outgoing section, not the bar before an interior phrase
+    start (§3.1) — so W2's fill-outside-fill-bar branch fires. The chosen note is
+    an existing on-grid onset (its onset is untouched, so W7 stays clean) and
+    carries no crash tag. Recomputes `legal_fill_bars` exactly as
+    `_check_w2_device_policy` does. Returns `(trace, track_id, note_ticks)`."""
+    sections = trace.song_form.sections
+    legal_fill_bars: set[int] = set()
+    for outgoing, _entered in zip(sections, sections[1:], strict=False):
+        legal_fill_bars.add(outgoing.start_bar + outgoing.length_bars - 1)
+    for section in sections:
+        bar = section.start_bar
+        for idx, section_phrase in enumerate(section.phrases):
+            if idx > 0:
+                legal_fill_bars.add(bar - 1)
+            bar += section_phrase.bars
+
+    new_phrases = list(trace.phrases_stage6)
+    for pi, phrase in enumerate(new_phrases):
+        for ni, note in enumerate(phrase.notes):
+            bar = note.ticks // _TICKS_PER_BAR
+            if bar in legal_fill_bars or "fill" in note.tags or "crash" in note.tags:
+                continue
+            new_notes = list(phrase.notes)
+            new_notes[ni] = note.model_copy(update={"tags": [*note.tags, "fill"]})
+            new_phrases[pi] = phrase.model_copy(update={"notes": new_notes})
+            return (
+                replace(trace, phrases_stage6=new_phrases),
+                phrase.track_id,
+                note.ticks,
+            )
+    raise AssertionError("no interior note in a non-fill bar to tag 'fill'")
+
+
+def test_w2_fill_outside_fill_bar_fires_only_w2() -> None:
+    """A `"fill"`-tagged event in a bar that is no legal fill bar fires W2's
+    fill-placement branch, and only W2."""
+    base = generate_trace(_POP)
+    trace, track_id, note_ticks = _tag_note_fill_outside_fill_bar(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W2"}
+    assert any(
+        m.startswith("W2:")
+        and "outside any fill bar" in m
+        and track_id in m
+        and f"ticks={note_ticks}" in m
+        for m in messages
+    )
+    assert not any(m.startswith("L2-1:") for m in messages)
+    # discriminating: the document is untouched, so V1-V8 stay clean.
+    assert validate_document(trace.document) == []
+
+
+# ---------------------------------------------------------------------------
+# W5 — determinism (regenerate from meta)
+# ---------------------------------------------------------------------------
+
+
+def _corrupt_doc_velocity(trace: GenerationTrace) -> GenerationTrace:
+    """Change one document note's velocity to a different valid value — leaving
+    `meta.params` intact — so regenerating from `meta` no longer reproduces this
+    document, yet V1-V8 and every other W-rule stay clean."""
+    doc = trace.document
+    for ti, track in enumerate(doc.tracks):
+        for ni, note in enumerate(track.notes):
+            new_v = round(note.velocity / 2, 3) if note.velocity > 0.2 else 0.5
+            if new_v == note.velocity:
+                continue
+            new_notes = list(track.notes)
+            new_notes[ni] = note.model_copy(update={"velocity": new_v})
+            new_tracks = list(doc.tracks)
+            new_tracks[ti] = track.model_copy(update={"notes": new_notes})
+            new_doc = doc.model_copy(update={"tracks": new_tracks})
+            return replace(trace, document=new_doc)
+    raise AssertionError("no document note to corrupt")
+
+
+@pytest.mark.parametrize("params", [_POP, _JAZZ], ids=["pop", "jazz"])
+def test_w5_regenerate_matches_real_trace(params: dict[str, object]) -> None:
+    """`regenerate_matches` is True on a real document and `meta.params`
+    round-trips the exact `raw_params` (incl. seed) that `serialize` echoed."""
+    trace = generate_trace(params)
+    assert trace.document.meta.params == params
+    assert regenerate_matches(trace.document) is True
+
+
+def test_w5_disabled_by_default_even_when_document_mismatches() -> None:
+    """W5 doubles render cost, so it is skipped unless explicitly enabled: a
+    corrupted document does NOT fire W5 under the default toggle."""
+    assert layer1.REGENERATE_CHECK_ENABLED is False
+    base = generate_trace(_POP)
+    trace = _corrupt_doc_velocity(base)
+    assert not regenerate_matches(trace.document)  # the mismatch is real...
+    # ...but skipped under the default toggle.
+    assert "W5" not in _w_rules_fired(layer1_checks(trace.document, trace))
+
+
+def test_w5_mismatch_fires_only_w5_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """With the regenerate check enabled, a document that no longer reproduces
+    from its own `meta` fires W5 — and only W5; the untouched document passes."""
+    monkeypatch.setattr(layer1, "REGENERATE_CHECK_ENABLED", True)
+    base = generate_trace(_POP)
+    assert _w_rules_fired(layer1_checks(base.document, base)) == set()
+    trace = _corrupt_doc_velocity(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W5"}
+    assert any(m.startswith("W5:") for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# W7 — pre-humanizer grid legality
+# ---------------------------------------------------------------------------
+
+
+def _shift_first_nonexempt_onset(
+    phrases: list[Phrase], off: int = 37
+) -> tuple[list[Phrase], str]:
+    """Shift the first grid-non-exempt, non-fill onset by `off` ticks (off both
+    grids: any legal pos + 37 lands on neither the straight nor triplet grid)."""
+    phrases = list(phrases)
+    for pi, phrase in enumerate(phrases):
+        for ni, note in enumerate(phrase.notes):
+            if any(t in _GRID_EXEMPT_TAGS for t in note.tags) or "fill" in note.tags:
+                continue
+            new_notes = list(phrase.notes)
+            new_notes[ni] = note.model_copy(update={"ticks": note.ticks + off})
+            new_notes.sort(
+                key=lambda n: (n.ticks, n.midi if n.midi is not None else -1)
+            )
+            phrases[pi] = phrase.model_copy(update={"notes": new_notes})
+            return phrases, phrase.track_id
+    raise AssertionError("no non-exempt onset to displace")
+
+
+def test_w7_offgrid_stage6_onset_fires_only_w7() -> None:
+    base = generate_trace(_POP)
+    new_phrases, track_id = _shift_first_nonexempt_onset(base.phrases_stage6)
+    trace = replace(base, phrases_stage6=new_phrases)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W7"}
+    assert any(
+        m.startswith("W7:") and track_id in m and "neither" in m for m in messages
+    )
+
+
+def test_w7_reads_stage6_not_stage7() -> None:
+    """The identical off-grid displacement applied to `phrases_stage7` (where
+    swing/jitter legitimately move onsets off-grid) does NOT trip W7 — W7 reads
+    the pre-humanizer stage-6 snapshot."""
+    base = generate_trace(_POP)
+    new_phrases, _ = _shift_first_nonexempt_onset(base.phrases_stage7)
+    trace = replace(base, phrases_stage7=new_phrases)
+    assert "W7" not in _w_rules_fired(validate_pipeline(trace.document, trace))

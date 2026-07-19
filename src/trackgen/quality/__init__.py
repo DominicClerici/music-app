@@ -7,9 +7,10 @@ helpers, and nothing under `schema/`/`pipeline/`/`parts/` imports it back.
 
 The suite entry point is `validate_pipeline(doc, trace)` (see `suite.py`), which
 subsumes the document validator by *calling* it and appending the pipeline-aware
-Layer-1 (and, later, Layer-2) checks.
+Layer-1 and Layer-2 fail checks. Soft, non-gating warnings (Layer-2 L2-2) are
+surfaced separately by `pipeline_warnings(doc, trace)`.
 """
 
-from trackgen.quality.suite import validate_pipeline
+from trackgen.quality.suite import pipeline_warnings, validate_pipeline
 
-__all__ = ["validate_pipeline"]
+__all__ = ["pipeline_warnings", "validate_pipeline"]
