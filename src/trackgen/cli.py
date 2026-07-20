@@ -9,6 +9,7 @@ import typer
 from trackgen.pipeline import generate_track, to_json
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
 from trackgen.tooling.audition import build_audition, open_playground
+from trackgen.tooling.lint import run_lint
 
 app = typer.Typer(help="trackgen: deterministic backing-track generation pipeline.")
 
@@ -167,6 +168,21 @@ def audition_command(
         open_playground(rendered)
     if out is None and not play:
         typer.echo(rendered)
+
+
+@app.command("lint")
+def lint_command(
+    pack_dir: Annotated[
+        Path,
+        typer.Argument(help="Style pack directory, e.g. styles/pop_rock/."),
+    ],
+) -> None:
+    """Lint a style pack: loader-rule errors + authoring-quality warnings (§9.2).
+
+    Exit code is non-zero iff any error fired; warnings never fail the command.
+    """
+    code = run_lint(pack_dir)
+    raise typer.Exit(code)
 
 
 if __name__ == "__main__":
