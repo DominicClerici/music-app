@@ -14,6 +14,7 @@ passes proves the real pipeline output was compared, not a stubbed one.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -362,6 +363,189 @@ def test_refusal_covers_a_mixed_batch(tmp_path: Path) -> None:
     assert result.refusal is not None
     assert cell_id(_JAZZ_CELL) in result.refusal
     assert result.written == ()
+
+
+# --- the version-stamp refresh (a bump must leave the corpus reproducible) ----
+#
+# `meta.generatorVersion` is excluded from the semantic diff (S18-8) but IS
+# written into every cell's `document.json`. A bump therefore changes all 24
+# cells' bytes while `bless` reports only the cells that moved musically, and
+# blessing just those leaves the corpus on mixed stamps — provably not
+# byte-reproducible while the tool says it is fine. These tests pin the
+# write-side fix: the report stays clean, the corpus still gets restamped.
+
+# A fixed, deterministic mtime (no wall-clock — ROADMAP invariant 5). Used to
+# prove *which* files a run rewrote, since a refreshed IR stage would be
+# byte-identical and so invisible to a content compare.
+_PINNED_MTIME_NS = 1_000_000_000 * 1_000_000_000
+
+
+def _pin_mtimes(cell: corpus.Cell, root: Path) -> None:
+    for path in corpus.cell_dir(cell, root=root).glob("*.json"):
+        os.utime(path, ns=(_PINNED_MTIME_NS, _PINNED_MTIME_NS))
+
+
+def _rewritten_files(cell: corpus.Cell, root: Path) -> set[str]:
+    """Names of the cell's stage files whose pinned mtime no longer holds."""
+    return {
+        path.name
+        for path in corpus.cell_dir(cell, root=root).glob("*.json")
+        if path.stat().st_mtime_ns != _PINNED_MTIME_NS
+    }
+
+
+def _snapshot(root: Path) -> dict[str, str]:
+    return {
+        str(path.relative_to(root)): path.read_text(encoding="utf-8")
+        for path in sorted(root.rglob("*.json"))
+    }
+
+
+def _assert_byte_reproducible(cell: corpus.Cell, root: Path) -> None:
+    """Every committed byte of `cell` equals what a fresh render would write."""
+    trace = corpus.render_cell(cell)
+    directory = corpus.cell_dir(cell, root=root)
+    for stage in corpus.STAGES:
+        committed = (directory / f"{stage}.json").read_text(encoding="utf-8")
+        assert committed == corpus.encode_stage(trace, stage), (
+            f"{cell_id(cell)}: {stage}.json is not byte-reproducible"
+        )
+
+
+def test_version_only_change_still_reports_clean(tmp_path: Path) -> None:
+    """The exclusion stays: a pure bump must not flood the report (S18-8)."""
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _write_baseline(cell, tmp_path, version="0.0.9")
+
+    result = bless(cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.ok
+    assert result.divergent == ()
+    assert format_result(result) == "bless report — 2 cell(s), no divergence."
+
+
+def test_plain_run_with_a_stale_version_writes_nothing(tmp_path: Path) -> None:
+    """The refresh is an `--approve`-only act; a plain run stays read-only."""
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _write_baseline(cell, tmp_path, version="0.0.9")
+    before = _snapshot(tmp_path)
+
+    result = bless(cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.written == ()
+    assert _snapshot(tmp_path) == before
+    assert result.refreshed == ()
+
+
+def test_approve_refreshes_every_stale_version_stamp(tmp_path: Path) -> None:
+    """The rehearsal's gap: a bump must not leave the corpus on mixed stamps."""
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _write_baseline(cell, tmp_path, version="0.0.9")
+        _pin_mtimes(cell, tmp_path)
+
+    result = bless(approve=True, cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.refusal is None
+    assert result.written == (), "no cell diverged semantically"
+
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        # The property the corpus exists for — asserted first, so the unfixed
+        # behavior fails on the corpus itself, not on a missing attribute.
+        _assert_byte_reproducible(cell, tmp_path)
+        # Minimal write: the nine IR stages carry no version and stay untouched.
+        assert _rewritten_files(cell, tmp_path) == {"document.json"}
+        document = json.loads(
+            (corpus.cell_dir(cell, root=tmp_path) / "document.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert document["meta"]["generatorVersion"] != "0.0.9"
+
+    assert result.refreshed == (cell_id(_POP_CELL), cell_id(_JAZZ_CELL))
+
+    # And the run is now idempotent: nothing left to refresh.
+    again = bless(approve=True, cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+    assert again.written == () and again.refreshed == ()
+
+
+def test_refresh_verdict_names_its_reason(tmp_path: Path) -> None:
+    """A human must see why 2 cells moved when 0 changed musically."""
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _write_baseline(cell, tmp_path, version="0.0.9")
+
+    result = bless(approve=True, cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+    report = format_result(result, approve=True)
+
+    assert "version-stamp refresh: 2 cell(s)" in report
+    assert "document.json only" in report
+    assert "excluded from the semantic diff" in report
+    assert "blessed" not in report, "nothing changed musically"
+    assert "nothing to bless" not in report
+    assert cell_id(_POP_CELL) in report and cell_id(_JAZZ_CELL) in report
+    assert result.generator_version is not None
+    assert result.generator_version in report
+
+
+def test_mixed_semantic_change_and_version_bump(tmp_path: Path) -> None:
+    """The real rehearsal shape: some cells moved musically, all moved stamps."""
+    _write_baseline(_POP_CELL, tmp_path, mutate=_move_first_note, version="0.0.9")
+    _write_baseline(_JAZZ_CELL, tmp_path, version="0.0.9")
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _pin_mtimes(cell, tmp_path)
+
+    result = bless(approve=True, cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.refusal is None
+    assert result.written == (cell_id(_POP_CELL),)
+    for cell in (_POP_CELL, _JAZZ_CELL):
+        _assert_byte_reproducible(cell, tmp_path)
+    # The diverging cell is rewritten in full; the clean one, document only.
+    assert _rewritten_files(_POP_CELL, tmp_path) == {
+        f"{stage}.json" for stage in corpus.STAGES
+    }
+    assert _rewritten_files(_JAZZ_CELL, tmp_path) == {"document.json"}
+    assert result.refreshed == (cell_id(_JAZZ_CELL),)
+
+    report = format_result(result, approve=True)
+    assert "blessed 1 cell(s)" in report
+    assert "version-stamp refresh: 1 cell(s)" in report
+
+
+def test_refusal_still_blocks_the_version_refresh(tmp_path: Path) -> None:
+    """S18-8 keeps precedence: a refused run writes nothing at all."""
+    # pop moves notes at an UNCHANGED version -> refusal; jazz is merely stale.
+    _write_baseline(_POP_CELL, tmp_path, mutate=_move_first_note)
+    _write_baseline(_JAZZ_CELL, tmp_path, version="0.0.9")
+    before = _snapshot(tmp_path)
+
+    result = bless(approve=True, cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.refusal is not None
+    assert result.written == ()
+    assert _snapshot(tmp_path) == before
+    assert result.refreshed == ()
+
+
+def test_bumping_generator_version_procedure_is_documented() -> None:
+    """The out-of-scope blast radius a bump causes must be written down.
+
+    `bless` rewrites the golden corpus and nothing else. These artifacts also
+    embed the version and no tool here can fix them, so the module docstring
+    names them by path rather than letting a bump fail three tests silently.
+    """
+    import trackgen.tooling.bless as bless_module
+
+    doc = bless_module.__doc__ or ""
+    assert "Bumping `generatorVersion`" in doc
+    for path in (
+        "src/trackgen/pipeline/serialize.py:38",
+        "fixtures/pop_rock.milestone.trackdoc.json",
+        "fixtures/jazz.milestone.trackdoc.json",
+        "fixtures/milestone.trackdoc.json",
+        "tests/test_whole_document_goldens.py::test_fixture_reserializes_identically",
+        "tests/test_serialize.py::test_meta_seed_and_params",
+    ):
+        assert path in doc, path
 
 
 # --- the Layer-3 baseline adapter --------------------------------------------

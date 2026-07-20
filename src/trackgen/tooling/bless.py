@@ -54,6 +54,42 @@ with zero violations and no error — a silently disarmed validator. So the
 synthesized field is `_RebuiltSelection`, which **raises**
 `RebuiltSelectionError` on any read rather than answering "nothing selected".
 
+**The version-stamp refresh.** `meta.generatorVersion` is excluded from the
+semantic diff (S18-8) so that a bump does not report as a divergence in all 24
+cells and drown the real signal. That exclusion is right for the *report* and
+wrong for the *corpus*: the field is written into every cell's `document.json`,
+so a bump makes every baseline byte-diverge from a fresh render while `bless`
+truthfully reports "no divergence". A corpus that is not byte-reproducible is
+not worth having, so the corpus wins on the write side: when `--approve`
+proceeds and a cell's baseline records a different `generatorVersion` than the
+fresh render, that cell's `document.json` is rewritten **even when the cell is
+semantically clean**. Only `document.json` — the nine IR stages do not carry the
+field and are left untouched. The diff itself is unchanged; this is a write-side
+fix, and `format_result` reports the two write reasons separately so a reader
+sees why 24 cells were touched when 6 changed musically.
+
+**Bumping `generatorVersion` — the procedure.**
+
+`_GENERATOR_VERSION` lives in `src/trackgen/pipeline/serialize.py:38`. A bump is
+a deliberate, dedicated commit (§8.2), and it moves artifacts **outside this
+module's reach**. `bless` rewrites the golden corpus and nothing else; it cannot
+fix the following and must not pretend to. In the same commit, a human updates:
+
+1. `fixtures/pop_rock.milestone.trackdoc.json`,
+   `fixtures/jazz.milestone.trackdoc.json` and
+   `fixtures/milestone.trackdoc.json` — each embeds `meta.generatorVersion`.
+   The first two are re-serialized by
+   `tests/test_whole_document_goldens.py::test_fixture_reserializes_identically`
+   (**2 failures** until regenerated).
+2. `tests/test_serialize.py::test_meta_seed_and_params` — asserts the version as
+   a hardcoded literal (`assert doc.meta.generator_version == "0.1.0"`)
+   (**1 failure** until updated).
+
+The full sequence, then, is: edit `serialize.py` → `uv run trackgen bless
+--approve` (blesses the semantic change and refreshes every stale stamp) →
+regenerate the three `fixtures/*.milestone.trackdoc.json` → update the
+`test_serialize.py` literal → run all four gates → commit as one bless commit.
+
 Nothing here prints: `format_result` returns a string and `cli.py` echoes it,
 matching the C3 tooling split between computation and formatting.
 """
@@ -307,10 +343,21 @@ class _CellRun:
 
 @dataclass(frozen=True)
 class BlessResult:
-    """The outcome of one `bless()` run — what `format_result` consumes."""
+    """The outcome of one `bless()` run — what `format_result` consumes.
+
+    `written` and `refreshed` are disjoint and name the two reasons a baseline
+    moved: `written` is a blessed *semantic* change (or a first capture) and
+    rewrites all ten stages; `refreshed` is a semantically clean cell whose
+    `document.json` alone was rewritten to carry the current
+    `meta.generatorVersion`. Keeping them apart is the point — a bump touches
+    every cell, and a reader must be able to tell those apart from the handful
+    that actually changed musically.
+    """
 
     diffs: tuple[CellDiff, ...]
     written: tuple[str, ...] = ()
+    refreshed: tuple[str, ...] = ()
+    generator_version: str | None = None
     refusal: str | None = None
 
     @property
@@ -428,6 +475,36 @@ def _refusal_message(
     return None
 
 
+def _needs_version_refresh(run: _CellRun) -> bool:
+    """True iff this cell is semantically clean but records a stale version.
+
+    Restricted to `diff.clean` cells on purpose: a divergent cell is rewritten
+    in full by `write_cell` anyway, and a first capture has no stored stamp to
+    be stale. `clean` also implies a complete, readable baseline, so the two
+    versions being compared are both real reads.
+    """
+    return run.diff.clean and run.baseline_version != run.fresh_version
+
+
+def _write_document_stage(
+    trace: GenerationTrace, cell: corpus.Cell, *, root: Path | None = None
+) -> Path:
+    """Rewrite only `document.json` for `cell` — the minimal stamp refresh.
+
+    Deliberately not `corpus.write_cell`: the nine IR stages do not carry
+    `meta.generatorVersion`, so rewriting them would touch nine files to change
+    nothing and blur which cells the run actually moved.
+    """
+    target = corpus.cell_dir(cell, root=root)
+    target.mkdir(parents=True, exist_ok=True)
+    path = target / f"{_DOCUMENT_STAGE}.json"
+    path.write_text(
+        corpus.encode_stage(trace, _DOCUMENT_STAGE),
+        encoding="utf-8",
+    )
+    return path
+
+
 def bless(
     *,
     approve: bool = False,
@@ -507,17 +584,41 @@ def bless(
         )
 
     diffs = tuple(run.diff for run in runs)
+    fresh_version = next((run.fresh_version for run in runs), None)
     if not approve:
-        return BlessResult(diffs=diffs)
+        return BlessResult(diffs=diffs, generator_version=fresh_version)
 
     refusal = _refusal_message(runs, root=root)
     if refusal is not None:
-        return BlessResult(diffs=diffs, refusal=refusal)
+        return BlessResult(
+            diffs=diffs, generator_version=fresh_version, refusal=refusal
+        )
 
     written = [run for run in runs if not run.diff.clean]
     for run in written:
         corpus.write_cell(run.trace, run.cell, root=root)
-    return BlessResult(diffs=diffs, written=tuple(run.diff.cell_id for run in written))
+
+    # A semantically clean cell whose stored stamp is stale: the diff excludes
+    # meta.generatorVersion (S18-8), so it reports clean while its committed
+    # bytes provably differ from a fresh render. Only `document.json` carries
+    # the field, so only `document.json` is rewritten.
+    refreshed = [run for run in runs if _needs_version_refresh(run)]
+    for run in refreshed:
+        _write_document_stage(run.trace, run.cell, root=root)
+
+    return BlessResult(
+        diffs=diffs,
+        written=tuple(run.diff.cell_id for run in written),
+        refreshed=tuple(run.diff.cell_id for run in refreshed),
+        generator_version=fresh_version,
+    )
+
+
+def _cell_list(cell_ids: Sequence[str]) -> str:
+    """`cell_ids` joined, elided past `_MAX_WRITTEN_ROWS` with the count named."""
+    shown = ", ".join(cell_ids[:_MAX_WRITTEN_ROWS])
+    elided = len(cell_ids) - _MAX_WRITTEN_ROWS
+    return f"{shown}, … and {elided} more" if elided > 0 else shown
 
 
 def format_result(result: BlessResult, *, approve: bool = False) -> str:
@@ -533,11 +634,29 @@ def format_result(result: BlessResult, *, approve: bool = False) -> str:
         lines.extend(["", result.refusal])
         return "\n".join(lines)
 
-    if result.written:
-        shown = ", ".join(result.written[:_MAX_WRITTEN_ROWS])
-        elided = len(result.written) - _MAX_WRITTEN_ROWS
-        suffix = f", … and {elided} more" if elided > 0 else ""
-        lines.extend(["", f"blessed {len(result.written)} cell(s): {shown}{suffix}"])
+    if result.written or result.refreshed:
+        lines.append("")
+        if result.written:
+            lines.append(
+                f"blessed {len(result.written)} cell(s) — semantic change, all "
+                f"stages rewritten: {_cell_list(result.written)}"
+            )
+        if result.refreshed:
+            version = (
+                "unknown"
+                if result.generator_version is None
+                else repr(result.generator_version)
+            )
+            lines.append(
+                f"version-stamp refresh: {len(result.refreshed)} cell(s) — "
+                f"semantically clean, document.json only, restamped to "
+                f"generatorVersion {version}: {_cell_list(result.refreshed)}"
+            )
+            lines.append(
+                "  (meta.generatorVersion is excluded from the semantic diff "
+                "(S18-8), so these cells report clean; their baselines are "
+                "rewritten anyway to keep the corpus byte-reproducible.)"
+            )
         lines.append(
             "Commit these baselines on their own (§8.2: a dedicated bless commit)."
         )
