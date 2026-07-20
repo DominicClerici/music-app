@@ -10,7 +10,9 @@ from trackgen.packs.loader import STYLES_ROOT
 from trackgen.pipeline import generate_trace, to_json
 from trackgen.pipeline.explain import ExplainCollector, render_explain
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
+from trackgen.tooling import corpus
 from trackgen.tooling.audition import build_audition, open_playground
+from trackgen.tooling.bless import bless, format_result
 from trackgen.tooling.calibrate import calibrate
 from trackgen.tooling.lint import run_lint
 
@@ -231,6 +233,49 @@ def calibrate_command(
     calibrate(pack_id, out_path=out, report=True)
     target = out if out is not None else STYLES_ROOT / pack_id / "calibration.yaml"
     typer.echo(f"Wrote calibration to {target}")
+
+
+@app.command("bless")
+def bless_command(
+    approve: Annotated[
+        bool,
+        typer.Option(
+            "--approve",
+            help="Rewrite the golden baselines (commit them on their own).",
+        ),
+    ] = False,
+    pack: Annotated[
+        str | None,
+        typer.Option(
+            "--pack",
+            help="Only bless this pack's corpus cells, e.g. pop_rock (default: all).",
+        ),
+    ] = None,
+) -> None:
+    """Re-render the golden corpus and report its semantic diff (§8.2).
+
+    Exit code is non-zero iff a divergence exists and `--approve` was not passed.
+    `--approve` refuses when a note-affecting change is not accompanied by a
+    `generatorVersion` bump; a first capture is never a divergence.
+
+    `--pack` scopes the run to one pack, so investigating a pack-data change does
+    not re-render and re-report every cell in the corpus.
+    """
+    cells: list[corpus.Cell] | None = None
+    if pack is not None:
+        all_cells = corpus.corpus_cells()
+        known = sorted({cell.pack for cell in all_cells})
+        if pack not in known:
+            raise typer.BadParameter(
+                f"unknown corpus pack {pack!r}; expected one of {', '.join(known)}",
+                param_hint="--pack",
+            )
+        cells = [cell for cell in all_cells if cell.pack == pack]
+
+    result = bless(approve=approve, cells=cells)
+    typer.echo(format_result(result, approve=approve))
+    if result.refusal is not None or (result.divergent and not approve):
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
