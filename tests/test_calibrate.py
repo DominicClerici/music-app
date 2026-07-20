@@ -167,6 +167,64 @@ def test_calibrate_report_renders_expected_sections(
     assert "vs manifest range" in out
 
 
+def test_report_tempo_out_of_band_base_still_violates() -> None:
+    """A genuinely out-of-band BASE (steady) tempo is still flagged OUT of range —
+    the fix narrows the band check to the steady tempo, it does not disable it."""
+    from dataclasses import replace
+
+    from trackgen.tooling.calibrate import _report_tempo
+
+    base = generate_trace({"styleFamily": "pop_rock", "mood": "happy", "seed": "1"})
+    hot = replace(base, plan=base.plan.model_copy(update={"tempo_bpm": 250.0}))
+
+    lines = _report_tempo("pop_rock", [hot])
+    steady = next(line for line in lines if "tempo (steady)" in line)
+    assert "OUT of range" in steady
+    assert "250.0" in steady
+
+
+def test_report_tempo_ritard_tail_below_floor_does_not_violate() -> None:
+    """A jazz slow-mood ritard tail dips well below the manifest floor (60), yet the
+    steady line reports NO violation — the sub-band values are the ritard tail,
+    reported on their own labelled line, not counted against the band."""
+    from trackgen.tooling.calibrate import _report_tempo
+
+    traces = [
+        generate_trace({"styleFamily": "jazz", "mood": "melancholic", "seed": s})
+        for s in ("1", "2", "3")
+    ]
+    lines = _report_tempo("jazz", traces)
+
+    steady = next(line for line in lines if "tempo (steady)" in line)
+    assert "OUT of range" not in steady
+
+    tail = next(line for line in lines if "tempo (ritard tail)" in line)
+    assert "not a violation" in tail
+    # The tail genuinely reaches below the manifest floor of 60.
+    tail_lo = min(round(tempo.bpm, 1) for t in traces for tempo in t.tempo_events)
+    assert tail_lo < 60
+    assert f"{tail_lo:.1f}" in tail
+
+
+def test_report_tempo_labels_ritard_tail_separately() -> None:
+    """The ritard tail is reported on its own labelled line for a ritard-closing
+    pack (jazz), and that line is absent for a cold-closing pack (pop_rock) whose
+    renders emit no tail events."""
+    from trackgen.tooling.calibrate import _report_tempo
+
+    jazz = [generate_trace({"styleFamily": "jazz", "mood": "calm", "seed": "1"})]
+    jazz_lines = _report_tempo("jazz", jazz)
+    assert any("tempo (steady)" in line for line in jazz_lines)
+    assert any(
+        "tempo (ritard tail)" in line and "PHASE_6 §5.7" in line for line in jazz_lines
+    )
+
+    pop = [generate_trace({"styleFamily": "pop_rock", "mood": "calm", "seed": "1"})]
+    pop_lines = _report_tempo("pop_rock", pop)
+    assert any("tempo (steady)" in line for line in pop_lines)
+    assert not any("tempo (ritard tail)" in line for line in pop_lines)
+
+
 def test_calibrate_unused_layer2_styles_root_removed() -> None:
     """Guard: layer2 no longer carries a `STYLES_ROOT` global (it delegates the
     read to `calibration.load_calibration`), so the reconciliation cannot silently

@@ -153,12 +153,35 @@ def _report_section_density(traces: list[GenerationTrace]) -> list[str]:
 
 
 def _report_tempo(pack_id: str, traces: list[GenerationTrace]) -> list[str]:
+    """Report the steady (base) tempo against the manifest band, plus — labelled
+    separately — the ritard tail.
+
+    Only the *steady* per-render base tempo (`plan.tempo_bpm`, the tick-0 event
+    the Serializer prepends) is a band candidate. The Friberg-Sundberg final
+    ritard (PHASE_6 §5.7) deliberately brakes the tail toward `v_end · base`
+    (0.65·base), so its stepped tempo events sit below the band *by design* — they
+    are the render being correct, not a violation. Folding them into the band
+    check would flag every slow-mood track by construction, so they are reported
+    on their own line and never counted as out-of-range.
+    """
     pack = resolve_pack(pack_id)
     lo, hi = pack.manifest.tempo_range if pack is not None else (0, 0)
-    bpms = sorted(
-        {tempo.bpm for trace in traces for tempo in trace.document.header.tempos}
+
+    steady = sorted({round(trace.plan.tempo_bpm, 1) for trace in traces})
+    ritard = sorted(
+        {round(tempo.bpm, 1) for trace in traces for tempo in trace.tempo_events}
     )
-    observed = ", ".join(f"{bpm:.1f}" for bpm in bpms) or "(none)"
-    out_of_band = [bpm for bpm in bpms if not lo <= bpm <= hi]
+
+    observed = ", ".join(f"{bpm:.1f}" for bpm in steady) or "(none)"
+    out_of_band = [bpm for bpm in steady if not lo <= bpm <= hi]
     note = f" — OUT of range: {out_of_band}" if out_of_band else ""
-    return [f"  tempo: observed [{observed}] vs manifest range [{lo}, {hi}]{note}"]
+    lines = [
+        f"  tempo (steady): observed [{observed}] vs manifest range [{lo}, {hi}]{note}"
+    ]
+    if ritard:
+        span = f"{ritard[0]:.1f}–{ritard[-1]:.1f}"
+        lines.append(
+            f"  tempo (ritard tail): observed [{span}] — end-of-song braking "
+            "below band is expected (PHASE_6 §5.7), not a violation"
+        )
+    return lines
