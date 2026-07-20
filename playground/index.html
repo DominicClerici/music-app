@@ -462,10 +462,13 @@
   });
 
   async function loadDefault() {
+    // ?doc=<relative> overrides the default fixture (audition --play writes here).
+    const docParam = new URLSearchParams(location.search).get("doc");
+    const url = docParam || "../fixtures/milestone.trackdoc.json";
     try {
-      const res = await fetch("../fixtures/milestone.trackdoc.json");
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      loadDoc(await res.json(), "../fixtures/milestone.trackdoc.json");
+      loadDoc(await res.json(), url);
     } catch (e) {
       showError(
         `could not fetch default fixture (${e.message}). ` +

@@ -324,6 +324,26 @@ not fixtured. `_TICKS_PER_BAR = 1920` is hardcoded per-file (v1 4/4); fold into 
 again. L3 folds all drum voice-tracks into one `drums` role band (intended per the `calibration.yaml`
 shape). The sustain-overlap L2-2 sweep could be restored behind the warn/fail split (C-16; §8.1 Q4).
 
+#### Phase 8 — Chunk 3 — session 17 (`plans/sessions/SESSION_17.md`)
+
+**PLANNING — plan written, AWAITING USER APPROVAL; no implementation agent dispatched.** Authoring
+tooling (PHASE_8 §9, proves DoD §14.7), all additive on the C1 trace + C2 quality suite. Serial task
+order (D13-pinned: audition → linter → `--explain` → calibrate); all `opus`:
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Audition CLI core (§9.1): `tooling/audition.py` + `@app.command("audition")`; `--section`/`--solo`/`--mute`/`--tempo`/`--out`/`--play`; filter upstream of `serialize`; minimal playground `?doc=` loader | opus | done | _pending_ |
+| T2 | Pack linter (§9.2): `packs/lint.py` collect-mode errors + 5 warning classes (variety/grid/unreachable/dangling/degeneracy) + `tooling/lint.py` + `@app.command("lint")` | opus | not started | — |
+| T3 | `--explain` selection log (§9.3): `pipeline/explain.py` collector + thread `explain=None` through the §9.3 draw sites; `--explain` flag on `audition`/`generate`; **byte-identity proof** | opus | not started | — |
+| T4 | `trackgen calibrate` (§9.3): `tooling/calibrate.py` batch → `compute_bands` → write `calibration.yaml`; reconcile the `load_l2_thresholds` shape mismatch (escalation valve); ref packs NOT committed | opus | not started | — |
+| T5 | Whole-chunk 3-lens review + DoD §14.7 + close-out (→ C4) | orchestrator | not started | — |
+
+Scope boundaries (out): golden corpus/`bless`/smoke matrix (C4); reference-pack refinement + listening
++ committing blessed `calibration.yaml` (C5); the three new packs (C6–C8). Two flagged risk points:
+T2 collect-mode granularity (bounded — accumulate what's cheap), T4 L2-threshold reader reconciliation
+(escalate if it ripples beyond a local reader swap). Session-17 scoping (2 opus agents) mapped every
+seam — see SESSION_17.md §2.
+
 ### Phase 7 — Sound design (chunk plan)
 
 **Split into 2 chunks** (flip seam). The real `timbres.yaml` **schema**, its reference **content**,

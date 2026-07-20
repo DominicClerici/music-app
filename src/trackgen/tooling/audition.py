@@ -1,0 +1,143 @@
+"""Audition core (PHASE_8 §9.1) — the edit->hear authoring loop.
+
+`build_audition` renders a `TrackDocument` from `(pack, mood, seed)` and applies
+the `--section`/`--solo`/`--mute` filters. Filtering happens on the **phrase
+list** upstream of `serialize`, never on the emitted (frozen) document, so the
+§7 reverb-bus omission rule and the rest of sound-design recompute from the
+surviving tracks (a post-filter of `doc.tracks` would leave `buses` stale).
+
+With no filters the phrase list is `trace.phrases_stage7` verbatim and `serialize`
+is a pure function, so the output is byte-identical to
+`to_json(generate_track(raw_params))` — audition adds no divergence on the
+production path.
+"""
+
+from __future__ import annotations
+
+import webbrowser
+from pathlib import Path
+
+import typer
+
+from trackgen.parts.generators import _TRACK_ORDER, _VOICE_TRACK
+from trackgen.pipeline import generate_trace, serialize
+from trackgen.schema.document import TrackDocument
+from trackgen.schema.ir import Phrase, SongForm
+
+_TICKS_PER_BAR = 1920
+
+_ROLES: frozenset[str] = frozenset({"drums", "bass", "comping", "pads"})
+_DRUM_TRACK_IDS: frozenset[str] = frozenset(_VOICE_TRACK.values()) | frozenset(
+    _TRACK_ORDER
+)
+
+_PLAY_DOC_NAME = "audition.trackdoc.json"
+
+
+def build_audition(
+    raw_params: dict[str, object],
+    *,
+    section: str | None = None,
+    solo: str | None = None,
+    mute: str | None = None,
+) -> TrackDocument:
+    """Render `raw_params` and apply the audition filters (§9.1).
+
+    `--solo` and `--mute` are applied solo-then-mute when both are given.
+    Filtering is upstream of `serialize` so `buses`/sound-design recompute.
+    """
+    trace = generate_trace(raw_params)
+    phrases: list[Phrase] = trace.phrases_stage7
+
+    if section is not None:
+        phrases = _filter_section(phrases, trace.song_form, section)
+    if solo is not None:
+        phrases = _apply_target(phrases, solo, keep=True)
+    if mute is not None:
+        phrases = _apply_target(phrases, mute, keep=False)
+
+    return serialize(
+        trace.plan,
+        trace.song_form,
+        phrases,
+        trace.sound_design,
+        tempo_events=trace.tempo_events,
+        params=raw_params,
+    )
+
+
+def _filter_section(
+    phrases: list[Phrase], form: SongForm, section_id: str
+) -> list[Phrase]:
+    """Keep only phrase notes whose absolute tick lies in `section_id`'s span."""
+    match = next((s for s in form.sections if s.id == section_id), None)
+    if match is None:
+        valid = ", ".join(s.id for s in form.sections)
+        raise typer.BadParameter(
+            f"unknown --section {section_id!r}; valid ids: {valid}"
+        )
+    start = match.start_bar * _TICKS_PER_BAR
+    end = (match.start_bar + match.length_bars) * _TICKS_PER_BAR
+    return [
+        phrase.model_copy(
+            update={"notes": [n for n in phrase.notes if start <= n.ticks < end]}
+        )
+        for phrase in phrases
+    ]
+
+
+def _apply_target(phrases: list[Phrase], target: str, *, keep: bool) -> list[Phrase]:
+    """Solo (`keep=True`) or mute (`keep=False`) a role or drum sub-track id.
+
+    Role targets act on whole phrases; a drum sub-track id acts on the drum
+    phrase notes whose C-11 voice provenance tag maps to that track id.
+    """
+    if target in _ROLES:
+        return [p for p in phrases if (p.role == target) == keep]
+
+    if target in _DRUM_TRACK_IDS:
+        voices = {str(v) for v, tid in _VOICE_TRACK.items() if tid == target}
+        return _filter_drum_voices(phrases, voices, keep=keep)
+
+    valid = ", ".join(sorted(_ROLES) + sorted(_DRUM_TRACK_IDS))
+    raise typer.BadParameter(f"unknown target {target!r}; valid: {valid}")
+
+
+def _filter_drum_voices(
+    phrases: list[Phrase], voices: set[str], *, keep: bool
+) -> list[Phrase]:
+    out: list[Phrase] = []
+    for phrase in phrases:
+        if phrase.role != "drums":
+            # Solo isolates the drum sub-track (drop other roles); mute leaves
+            # them untouched.
+            if not keep:
+                out.append(phrase)
+            continue
+        notes = [n for n in phrase.notes if _matches_voice(n.tags, voices) == keep]
+        out.append(phrase.model_copy(update={"notes": notes}))
+    return out
+
+
+def _matches_voice(tags: list[str], voices: set[str]) -> bool:
+    return any(tag in voices for tag in tags)
+
+
+def open_playground(rendered_json: str) -> None:
+    """Write the doc into the playground and open it with a `?doc=` loader.
+
+    A static server may be needed for the page's `fetch` (file:// is often
+    blocked); we print the hint rather than manage a server process.
+    """
+    playground = Path(__file__).resolve().parents[3] / "playground"
+    target = playground / _PLAY_DOC_NAME
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(rendered_json + "\n", encoding="utf-8")
+
+    url = (playground / "index.html").as_uri() + f"?doc={_PLAY_DOC_NAME}"
+    typer.echo(
+        "If the page can't fetch the doc (file:// is often blocked), serve it: "
+        "`uv run python -m http.server` from the playground dir, then open "
+        f"http://localhost:8000/index.html?doc={_PLAY_DOC_NAME}"
+    )
+    webbrowser.open(url)

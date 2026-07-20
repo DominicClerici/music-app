@@ -8,6 +8,7 @@ import typer
 
 from trackgen.pipeline import generate_track, to_json
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
+from trackgen.tooling.audition import build_audition, open_playground
 
 app = typer.Typer(help="trackgen: deterministic backing-track generation pipeline.")
 
@@ -108,6 +109,63 @@ def generate_command(
         out.write_text(rendered + "\n", encoding="utf-8")
         typer.echo(f"Wrote track to {out}")
     else:
+        typer.echo(rendered)
+
+
+@app.command("audition")
+def audition_command(
+    pack: Annotated[
+        str, typer.Option("--pack", help="Style pack id (-> styleFamily), required.")
+    ],
+    mood: Annotated[
+        str | None, typer.Option("--mood", help="Mood id, e.g. happy or melancholic.")
+    ] = None,
+    seed: Annotated[
+        str | None, typer.Option("--seed", help="Base36 u64 master seed.")
+    ] = None,
+    tempo: Annotated[
+        int | None, typer.Option("--tempo", help="Override the tempo (-> tempoBpm).")
+    ] = None,
+    section: Annotated[
+        str | None,
+        typer.Option("--section", help="Render one section's tick span, e.g. solo-2."),
+    ] = None,
+    solo: Annotated[
+        str | None,
+        typer.Option("--solo", help="Keep only this role or drum sub-track id."),
+    ] = None,
+    mute: Annotated[
+        str | None,
+        typer.Option("--mute", help="Drop this role or drum sub-track id."),
+    ] = None,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Write the TrackDocument JSON here."),
+    ] = None,
+    play: Annotated[
+        bool,
+        typer.Option("--play", help="Write into the playground and open it."),
+    ] = False,
+) -> None:
+    """Render a track for the edit->hear loop, optionally filtered (§9.1)."""
+    raw_params: dict[str, object] = {"styleFamily": pack}
+    if mood is not None:
+        raw_params["mood"] = mood
+    if seed is not None:
+        raw_params["seed"] = seed
+    if tempo is not None:
+        raw_params["tempoBpm"] = tempo
+
+    doc = build_audition(raw_params, section=section, solo=solo, mute=mute)
+    rendered = to_json(doc)
+
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(rendered + "\n", encoding="utf-8")
+        typer.echo(f"Wrote track to {out}")
+    if play:
+        open_playground(rendered)
+    if out is None and not play:
         typer.echo(rendered)
 
 
