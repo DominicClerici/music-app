@@ -27,6 +27,8 @@ from trackgen.quality.layer3 import compute_metrics
 from trackgen.tooling import corpus
 from trackgen.tooling.bless import (
     _MAX_WRITTEN_ROWS,
+    _VERSION_SOURCE,
+    _VERSION_SYMBOL,
     BlessResult,
     RebuiltSelectionError,
     baseline_metrics,
@@ -34,10 +36,13 @@ from trackgen.tooling.bless import (
     cell_id,
     encode_trace,
     format_result,
+    is_downgrade,
     note_affecting,
     read_baseline,
     trace_from_stages,
+    version_key,
 )
+from trackgen.tooling.blessdiff import CellDiff, NoteDelta
 
 _CELLS = corpus.corpus_cells()
 
@@ -90,6 +95,22 @@ def _move_note_and_drop_version(document: dict[str, Any]) -> None:
     """A note-affecting baseline whose `meta.generatorVersion` is unreadable."""
     _move_first_note(document)
     del document["meta"]["generatorVersion"]
+
+
+def _rename_first_section(cell: corpus.Cell, root: Path) -> tuple[str, str]:
+    """Rename the baseline's first `FormSection.id`, leaving the document alone.
+
+    The real S18-8 shape the `note_affecting` conjunction exists for: `songform`
+    diverges, `document.json` stays byte-identical, and every note in the renamed
+    span is re-attributed to a different bucket. Returns `(old_id, new_id)`.
+    """
+    path = corpus.cell_dir(cell, root=root) / "songform.json"
+    form = json.loads(path.read_text(encoding="utf-8"))
+    old = str(form["sections"][0]["id"])
+    new = f"{old.rsplit('-', 1)[0]}-9"
+    form["sections"][0]["id"] = new
+    path.write_text(json.dumps(form, separators=(",", ":")) + "\n", encoding="utf-8")
+    return old, new
 
 
 # --- first capture ------------------------------------------------------------
@@ -229,7 +250,11 @@ def test_matching_baseline_is_clean(cell: corpus.Cell, tmp_path: Path) -> None:
     result = bless(cells=[cell], root=tmp_path)
     assert result.ok
     assert result.diffs[0].clean
-    assert format_result(result) == "bless report — 1 cell(s), no divergence."
+    # One cell of 24 is a scoped run, so the diff report is followed by the
+    # scope notice; the verdict itself is still the single clean line.
+    assert format_result(result).splitlines()[0] == (
+        "bless report — 1 cell(s), no divergence."
+    )
 
 
 @pytest.mark.parametrize("cell", [_POP_CELL, _JAZZ_CELL], ids=["pop_rock", "jazz"])
@@ -259,6 +284,60 @@ def test_mix_only_change_is_not_note_affecting(tmp_path: Path) -> None:
     assert diff.first_stage == "document"
     assert diff.notes == ()
     assert not note_affecting(diff)
+
+
+def test_note_affecting_requires_the_document_stage_not_just_notes() -> None:
+    """`note_affecting` is a conjunction; this pins the `document` conjunct.
+
+    `test_mix_only_change_is_not_note_affecting` covers the other side — notes
+    empty on a diverged document — but it is satisfied by a mutant that drops the
+    stage test entirely (`return bool(diff.notes)`), because `notes == ()` is
+    falsey either way. Only a diff with notes attributed and **no** document
+    divergence discriminates.
+    """
+    notes = (NoteDelta("bass", "verse-1", added=27, removed=27, moved=0, changed=0),)
+    attribution_only = CellDiff(
+        cell_id="c",
+        first_stage="songform",
+        diverged_stages=("songform",),
+        notes=notes,
+    )
+    real_note_change = CellDiff(
+        cell_id="c",
+        first_stage="document",
+        diverged_stages=("document",),
+        notes=notes,
+    )
+
+    assert not note_affecting(attribution_only)
+    assert note_affecting(real_note_change)
+
+
+def test_section_rename_is_approvable_without_a_version_bump(tmp_path: Path) -> None:
+    """End-to-end proof of the same conjunct, through the real pipeline.
+
+    A `songform` section rename re-attributes untouched notes: `document.json` is
+    byte-identical, so no music changed and §8.2's version-bump price does not
+    apply. A guard keyed on `bool(diff.notes)` alone would refuse this — blocking
+    a legitimate bless behind a bump that records nothing.
+    """
+    _write_baseline(_POP_CELL, tmp_path)
+    old, new = _rename_first_section(_POP_CELL, tmp_path)
+    assert old != new
+
+    diff = bless(cells=[_POP_CELL], root=tmp_path).diffs[0]
+
+    assert diff.diverged_stages == ("songform",), (
+        "the document must stay identical for this case to mean anything"
+    )
+    assert sum(d.total for d in diff.notes) > 0, "notes must actually be attributed"
+    assert diff.stage_errors == ()
+    assert not note_affecting(diff)
+
+    approved = bless(approve=True, cells=[_POP_CELL], root=tmp_path)
+
+    assert approved.refusal is None
+    assert approved.written == (cell_id(_POP_CELL),)
 
 
 def test_metric_deltas_are_reported_on_a_note_change(tmp_path: Path) -> None:
@@ -292,7 +371,7 @@ def test_approve_refused_at_equal_generator_version(tmp_path: Path) -> None:
 
     report = format_result(result, approve=True)
     assert "REFUSED --approve" in report
-    assert "src/trackgen/pipeline/serialize.py:38" in report
+    assert "src/trackgen/pipeline/serialize.py" in report
     assert cell_id(_POP_CELL) in report
 
 
@@ -332,6 +411,97 @@ def test_approve_refused_when_the_baseline_version_is_unreadable(
         "generatorVersion"
         not in json.loads(document.read_text(encoding="utf-8"))["meta"]
     ), "a refused --approve must not rewrite the baseline"
+
+
+# --- a baseline stamped NEWER than this build (the other side of S18-8) ------
+#
+# S18-8's literal pin tests equality, so `baseline != fresh` passes — including
+# when the baseline is *ahead* of the code (a rollback, a branch merge, a
+# reverted bless commit). Left alone, the guard fails open on a note-affecting
+# change AND the rewrite stamps the older version over the newer one, destroying
+# the only evidence the corpus was ever ahead.
+
+
+@pytest.mark.parametrize(
+    ("baseline", "fresh", "expected"),
+    [
+        ("0.1.0", "0.1.0", False),
+        ("0.0.9", "0.1.0", False),
+        ("0.1.0", "0.0.9", True),
+        # Numeric, not lexicographic: "0.10.0" > "0.9.0" although "1" < "9".
+        ("0.10.0", "0.9.0", True),
+        ("0.9.0", "0.10.0", False),
+        # An unreadable side has its own refusal and is never a downgrade.
+        (None, "0.1.0", False),
+        ("0.1.0", None, False),
+        (None, None, False),
+    ],
+)
+def test_is_downgrade_compares_versions_numerically(
+    baseline: str | None, fresh: str | None, expected: bool
+) -> None:
+    assert is_downgrade(baseline, fresh) is expected
+
+
+def test_version_key_orders_double_digit_components_correctly() -> None:
+    """The string compare this key exists to replace gets these backwards."""
+    assert version_key("0.10.0") > version_key("0.9.0")
+    assert version_key("1.0.0") > version_key("0.99.99")
+    # Total on any string: a hand-edited baseline must never raise here.
+    assert version_key("nonsense") > version_key("0.1.0")
+
+
+def test_approve_refused_when_the_baseline_version_is_newer(tmp_path: Path) -> None:
+    """A newer baseline + a note change must refuse, not fail open (fail closed)."""
+    _write_baseline(_POP_CELL, tmp_path, mutate=_move_first_note, version="9.9.9")
+    document = corpus.cell_dir(_POP_CELL, root=tmp_path) / "document.json"
+    before = document.read_text(encoding="utf-8")
+
+    result = bless(approve=True, cells=[_POP_CELL], root=tmp_path)
+
+    assert result.refusal is not None, (
+        "a newer baseline satisfies `!=`, so the equality-only check waves it "
+        "through — the divergence must still be refused"
+    )
+    assert "NEWER" in result.refusal
+    assert "9.9.9" in result.refusal
+    assert cell_id(_POP_CELL) in result.refusal
+    assert result.written == () and result.refreshed == ()
+    assert document.read_text(encoding="utf-8") == before
+    assert (
+        json.loads(document.read_text(encoding="utf-8"))["meta"]["generatorVersion"]
+        == "9.9.9"
+    ), "the newer stamp must not be downgraded"
+
+    assert "REFUSED --approve" in format_result(result, approve=True)
+
+
+def test_a_clean_cell_with_a_newer_stamp_is_not_downgraded(tmp_path: Path) -> None:
+    """The version-stamp refresh must not quietly walk a stamp backwards either.
+
+    No note moved here, so no S18-8 candidate exists at all — the downgrade would
+    come from the refresh path, which rewrites `document.json` on any version
+    mismatch in either direction.
+    """
+    _write_baseline(_POP_CELL, tmp_path, version="9.9.9")
+    before = _snapshot(tmp_path)
+
+    result = bless(approve=True, cells=[_POP_CELL], root=tmp_path)
+
+    assert result.refusal is not None
+    assert "NEWER" in result.refusal
+    assert result.refreshed == ()
+    assert _snapshot(tmp_path) == before
+
+
+def test_an_older_baseline_still_blesses_normally(tmp_path: Path) -> None:
+    """Non-regression: the downgrade check must only fire in one direction."""
+    _write_baseline(_POP_CELL, tmp_path, mutate=_move_first_note, version="0.0.9")
+
+    result = bless(approve=True, cells=[_POP_CELL], root=tmp_path)
+
+    assert result.refusal is None
+    assert result.written == (cell_id(_POP_CELL),)
 
 
 def test_unreadable_baseline_is_reported_not_raised(tmp_path: Path) -> None:
@@ -421,7 +591,9 @@ def test_version_only_change_still_reports_clean(tmp_path: Path) -> None:
 
     assert result.ok
     assert result.divergent == ()
-    assert format_result(result) == "bless report — 2 cell(s), no divergence."
+    assert format_result(result).splitlines()[0] == (
+        "bless report — 2 cell(s), no divergence."
+    )
 
 
 def test_plain_run_with_a_stale_version_writes_nothing(tmp_path: Path) -> None:
@@ -526,6 +698,103 @@ def test_refusal_still_blocks_the_version_refresh(tmp_path: Path) -> None:
     assert result.refreshed == ()
 
 
+# --- scoped runs (`--pack`) ---------------------------------------------------
+#
+# The refresh above only iterates the *selected* runs, so after a bump
+# `bless --approve --pack pop_rock` restamps 12 cells and leaves the other 12
+# byte-non-reproducible — while `bless --pack pop_rock` keeps reporting "no
+# divergence" about the half it looked at. `--pack` exists for exactly the
+# pack-at-a-time workflow that hits this, so the report has to say so.
+
+
+def test_bless_records_how_much_of_the_corpus_it_covered(tmp_path: Path) -> None:
+    result = bless(cells=[_POP_CELL, _JAZZ_CELL], root=tmp_path)
+
+    assert result.selected_count == 2
+    assert result.corpus_count == len(_CELLS)
+    assert result.unselected_count == len(_CELLS) - 2
+    assert result.scoped
+
+
+def test_scoped_run_names_itself_with_exact_counts(tmp_path: Path) -> None:
+    """No silent caps (ROADMAP §3): the unselected count is the whole finding."""
+    _write_baseline(_POP_CELL, tmp_path)
+
+    report = format_result(bless(cells=[_POP_CELL], root=tmp_path))
+
+    assert f"SCOPED RUN — 1 of {len(_CELLS)} corpus cell(s) selected" in report
+    assert f"the other {len(_CELLS) - 1} were NOT re-rendered" in report
+    assert "unscoped `trackgen bless --approve`" in report
+
+
+def test_scoped_approve_warns_the_rest_of_the_corpus_is_left_stale(
+    tmp_path: Path,
+) -> None:
+    """The live C5 risk: a scoped restamp that silently leaves 23 cells behind."""
+    _write_baseline(_POP_CELL, tmp_path, version="0.0.9")
+
+    result = bless(approve=True, cells=[_POP_CELL], root=tmp_path)
+    report = format_result(result, approve=True)
+
+    assert result.refreshed == (cell_id(_POP_CELL),)
+    assert "version-stamp refresh: 1 cell(s)" in report
+    assert f"SCOPED RUN — 1 of {len(_CELLS)}" in report
+    assert "stale meta.generatorVersion" in report
+    assert "not byte-reproducible" in report
+
+
+def test_a_refused_scoped_run_still_names_its_scope(tmp_path: Path) -> None:
+    """A refusal must not swallow the scope caveat — both findings are real."""
+    _write_baseline(_POP_CELL, tmp_path, mutate=_move_first_note)
+
+    report = format_result(
+        bless(approve=True, cells=[_POP_CELL], root=tmp_path), approve=True
+    )
+
+    assert "REFUSED --approve" in report
+    assert "SCOPED RUN" in report
+
+
+def test_cli_pack_scoped_run_says_it_was_scoped() -> None:
+    """Through the real CLI surface, on the committed corpus."""
+    result = CliRunner().invoke(app, ["bless", "--pack", "pop_rock"])
+
+    assert result.exit_code == 0, result.stdout
+    assert "SCOPED RUN — 12 of 24 corpus cell(s) selected" in result.stdout
+    assert "the other 12 were NOT re-rendered" in result.stdout
+
+
+# --- the `_VERSION_SOURCE` reference (must not rot) ---------------------------
+
+
+def test_version_source_points_at_the_real_definition() -> None:
+    """The refusal's file reference is resolved, not merely asserted present.
+
+    It is echoed into a message a human is told to act on, so a stale reference
+    is a real defect. Carrying no line number is half the fix; the other half is
+    this test, which resolves the path against the live module and confirms the
+    symbol is actually defined there — so a rename or a move fails here instead
+    of misdirecting a reader.
+    """
+    import importlib
+    import inspect
+
+    # `import trackgen.pipeline.serialize as m` would bind the re-exported
+    # *function* of that name from the package; this binds the module.
+    serialize_module = importlib.import_module("trackgen.pipeline.serialize")
+
+    assert ":" not in _VERSION_SOURCE, "a line number would rot silently"
+
+    source_file = inspect.getsourcefile(serialize_module)
+    assert source_file is not None
+    assert Path(source_file).as_posix().endswith(_VERSION_SOURCE)
+
+    value = getattr(serialize_module, _VERSION_SYMBOL, None)
+    assert isinstance(value, str) and value, (
+        f"{_VERSION_SYMBOL} is not defined in {_VERSION_SOURCE}"
+    )
+
+
 def test_bumping_generator_version_procedure_is_documented() -> None:
     """The out-of-scope blast radius a bump causes must be written down.
 
@@ -538,7 +807,7 @@ def test_bumping_generator_version_procedure_is_documented() -> None:
     doc = bless_module.__doc__ or ""
     assert "Bumping `generatorVersion`" in doc
     for path in (
-        "src/trackgen/pipeline/serialize.py:38",
+        "src/trackgen/pipeline/serialize.py",
         "fixtures/pop_rock.milestone.trackdoc.json",
         "fixtures/jazz.milestone.trackdoc.json",
         "fixtures/milestone.trackdoc.json",
@@ -637,6 +906,10 @@ def test_bless_on_the_committed_corpus_is_clean() -> None:
     result = bless()
     assert result.ok
     assert result.first_captures == ()
+    # An unscoped run covers the whole corpus, so no scope notice is appended
+    # and the whole report really is the one clean line.
+    assert not result.scoped
+    assert result.selected_count == result.corpus_count == len(_CELLS)
     assert format_result(result) == "bless report — 24 cell(s), no divergence."
 
 

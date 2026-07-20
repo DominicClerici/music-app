@@ -22,10 +22,11 @@ rename that re-attributes untouched notes therefore does not trip the guard,
 matching the "the document did NOT change" wording `blessdiff` prints for that
 case.
 
-**The guard fails closed, in every direction.** A guard that degrades *open* —
-that waves a change through whenever it cannot evaluate itself — is worse than
-no guard, because CI stays green while the regression surface quietly shrinks.
-Four states are therefore refusals rather than passes:
+**The guard fails closed.** A guard that degrades *open* — that waves a change
+through whenever it cannot evaluate itself — is worse than no guard, because CI
+stays green while the regression surface quietly shrinks. Exactly these five
+states are refusals rather than passes, and the list is exhaustive: nothing
+outside it is treated as a fail-closed case.
 
 - an **incomplete baseline** (the cell directory exists but a stage file is
   gone) is a corrupted baseline, never a "first capture". Only a genuinely
@@ -33,8 +34,20 @@ Four states are therefore refusals rather than passes:
 - a **baseline whose `meta.generatorVersion` cannot be read** fails the S18-8
   comparison instead of skipping it;
 - the pinned S18-8 case: notes moved at an unchanged version;
+- a **baseline stamped NEWER than this build** — approving would rewrite it at
+  the older version, silently downgrading the stamp and erasing the only record
+  that the corpus was ever ahead of the code. S18-8's literal pin tests equality
+  only, so a newer baseline satisfies `!=` and would otherwise pass a
+  note-affecting divergence with no refusal at all. Refusing here is a
+  deliberate *superset* of the pinned check, not a reinterpretation of it: the
+  pinned equality case still produces the pinned message;
 - a **baseline that no longer validates back into its models** is reported (and
   refused) rather than raising an unhandled traceback out of the reporter.
+
+Note what is deliberately **not** on that list: `bless` cannot detect a
+divergence in a cell it was not asked to render. A run scoped by `--pack` checks
+and restamps only the selected cells, so `format_result` says so explicitly —
+see "Scoped runs" below.
 
 **The Layer-3 baseline adapter.** §8.2 wants metric deltas, but
 `quality.layer3.compute_metrics` takes a whole `GenerationTrace` (it needs
@@ -68,9 +81,18 @@ field and are left untouched. The diff itself is unchanged; this is a write-side
 fix, and `format_result` reports the two write reasons separately so a reader
 sees why 24 cells were touched when 6 changed musically.
 
+**Scoped runs (`--pack`).** The version-stamp refresh — like the diff itself —
+can only reach the cells the run selected. `bless --approve --pack pop_rock`
+after a bump therefore restamps that pack and leaves the rest of the corpus
+byte-non-reproducible, while a later `bless --pack pop_rock` keeps reporting "no
+divergence" about the half it looked at. That is the live risk of the very
+workflow `--pack` exists for (pack-at-a-time investigation), so a run over a
+strict subset of the corpus is *named as scoped* in the report, with exact
+counts, and tells the reader to finish with an unscoped `bless --approve`.
+
 **Bumping `generatorVersion` — the procedure.**
 
-`_GENERATOR_VERSION` lives in `src/trackgen/pipeline/serialize.py:38`. A bump is
+`_GENERATOR_VERSION` lives in `src/trackgen/pipeline/serialize.py`. A bump is
 a deliberate, dedicated commit (§8.2), and it moves artifacts **outside this
 module's reach**. `bless` rewrites the golden corpus and nothing else; it cannot
 fix the following and must not pretend to. In the same commit, a human updates:
@@ -126,8 +148,15 @@ _DOCUMENT_STAGE: Final = "document"
 _META_KEY: Final = "meta"
 _VERSION_KEY: Final = "generatorVersion"
 
-# Where a refused approval tells the author to go (S18-8).
-_VERSION_SOURCE: Final = "src/trackgen/pipeline/serialize.py:38"
+# Where a refused approval tells the author to go (S18-8). Deliberately carries
+# **no line number**: this string is echoed into a message a human is told to act
+# on, and a line number goes stale the moment `serialize.py` gains a line above
+# the definition — silently, since nothing recomputes it. The module path plus
+# the symbol name is the reference that cannot rot, and
+# `tests/test_bless.py::test_version_source_points_at_the_real_definition`
+# resolves both against the live module rather than asserting their presence.
+_VERSION_SOURCE: Final = "src/trackgen/pipeline/serialize.py"
+_VERSION_SYMBOL: Final = "_GENERATOR_VERSION"
 
 # Cap on the blessed-cell list in the report; the count is always exact. Sized
 # past §8.2's full five-pack matrix (60 cells) so a whole-corpus approve lists
@@ -269,6 +298,33 @@ def _version_of(stages: Mapping[str, Any] | None) -> str | None:
     return version if isinstance(version, str) else None
 
 
+def version_key(version: str) -> tuple[tuple[int, int, str], ...]:
+    """An order key for a `generatorVersion` string — numeric parts compare numerically.
+
+    `"0.10.0"` must sort above `"0.9.0"`, which a plain string compare gets
+    wrong. Dot-separated parts are compared as integers where they are digits and
+    as text otherwise; a non-numeric part always sorts above any numeric one, so
+    a pre-release-ish suffix never reads as "older". Total and deterministic on
+    every string, which is what the downgrade check below needs — it must never
+    raise on a hand-edited baseline.
+    """
+    return tuple(
+        (0, int(part), "") if part.isdigit() else (1, 0, part)
+        for part in version.split(".")
+    )
+
+
+def is_downgrade(baseline_version: str | None, fresh_version: str | None) -> bool:
+    """True iff rewriting a baseline at `fresh_version` would *lower* its stamp.
+
+    Only a strictly newer baseline counts. `None` on either side is not a
+    downgrade — it is the unreadable-version case, which has its own refusal.
+    """
+    if baseline_version is None or fresh_version is None:
+        return False
+    return version_key(baseline_version) > version_key(fresh_version)
+
+
 def read_baseline(
     cell: corpus.Cell, *, root: Path | None = None
 ) -> tuple[dict[str, Any] | None, tuple[str, ...]]:
@@ -352,6 +408,11 @@ class BlessResult:
     `meta.generatorVersion`. Keeping them apart is the point — a bump touches
     every cell, and a reader must be able to tell those apart from the handful
     that actually changed musically.
+
+    `selected_count`/`corpus_count` record how much of the corpus the run
+    actually looked at, so `format_result` can name a `--pack`-scoped run as
+    scoped. Both default to 0 (an unknown scope reports as unscoped) — only
+    `bless()` fills them, because only `bless()` knows the selection.
     """
 
     diffs: tuple[CellDiff, ...]
@@ -359,6 +420,18 @@ class BlessResult:
     refreshed: tuple[str, ...] = ()
     generator_version: str | None = None
     refusal: str | None = None
+    selected_count: int = 0
+    corpus_count: int = 0
+
+    @property
+    def scoped(self) -> bool:
+        """True when the run covered a strict, non-empty subset of the corpus."""
+        return 0 < self.selected_count < self.corpus_count
+
+    @property
+    def unselected_count(self) -> int:
+        """How many corpus cells this run never rendered, diffed or restamped."""
+        return max(self.corpus_count - self.selected_count, 0)
 
     @property
     def divergent(self) -> tuple[CellDiff, ...]:
@@ -383,7 +456,7 @@ def _refusal_message(
 ) -> str | None:
     """The `--approve` refusal, or `None` if the run may proceed.
 
-    Four fail-closed cases, ordered so the message a reader gets is the most
+    Five fail-closed cases, ordered so the message a reader gets is the most
     specific one that applies:
 
     1. an **incomplete baseline** — stage files missing from a directory that
@@ -392,7 +465,11 @@ def _refusal_message(
        `meta.generatorVersion`** — the S18-8 comparison cannot be evaluated, and
        an unevaluable guard must not pass;
     3. the pinned **S18-8** case — notes moved while the version stands still;
-    4. an **unreadable baseline** — the stored stages no longer validate back
+    4. a **baseline stamped newer than this build** — approving would rewrite it
+       at the older version. Checked over *every* run, not only the
+       note-affecting ones, because the version-stamp refresh rewrites
+       semantically clean cells too and would downgrade them just as silently;
+    5. an **unreadable baseline** — the stored stages no longer validate back
        into their models, so the mandated metric deltas were never computed.
 
     A cell whose baseline predates a bump is already recording the change and
@@ -452,8 +529,36 @@ def _refusal_message(
             f"change — otherwise the baselines move with nothing recording that "
             f"they did.\n"
             f"  first offender: {first.diff.cell_id} ({path})\n"
-            f"  bump `_GENERATOR_VERSION` in {_VERSION_SOURCE} and re-run, or fix "
+            f"  bump `{_VERSION_SYMBOL}` in {_VERSION_SOURCE} and re-run, or fix "
             f"the code instead of blessing it."
+        )
+
+    # S18-8's literal pin tests *equality*, so a baseline stamped NEWER than this
+    # build satisfies `!=` and would sail past `stalled` above — a note-affecting
+    # divergence approved with no refusal, then rewritten at the older version.
+    # That is the guard failing open in the one direction the pin does not name,
+    # and it destroys its own evidence: the newer stamp was the only record that
+    # the corpus was ever ahead of the code. Checked over every run because the
+    # version-stamp refresh downgrades semantically clean cells too.
+    downgrades = [
+        run for run in runs if is_downgrade(run.baseline_version, run.fresh_version)
+    ]
+    if downgrades:
+        first = downgrades[0]
+        path = corpus.cell_dir(first.cell, root=root) / f"{_DOCUMENT_STAGE}.json"
+        return (
+            f"REFUSED --approve: {len(downgrades)} cell(s) record a "
+            f"meta.generatorVersion NEWER than this build's.\n"
+            f"  Approving would rewrite them at the older value, silently "
+            f"DOWNGRADING the stamp and erasing the only evidence that the "
+            f"corpus was ever ahead of the code.\n"
+            f"  first offender: {first.diff.cell_id} ({path}) — baseline "
+            f"{first.baseline_version!r} is newer than the fresh render's "
+            f"{first.fresh_version!r}\n"
+            f"  this usually means a code rollback, a branch merge, or a "
+            f"reverted bless commit. Restore the newer generator (see "
+            f"`{_VERSION_SYMBOL}` in {_VERSION_SOURCE}), or delete the cell "
+            f"directory to re-capture it deliberately, then re-run."
         )
 
     corrupted = [run for run in runs if run.baseline_unreadable]
@@ -523,6 +628,7 @@ def bless(
     directory missing a stage file is reported as an incomplete baseline and
     refuses `--approve` (see `read_baseline`).
     """
+    corpus_count = len(corpus.corpus_cells())
     selected = list(corpus.corpus_cells()) if cells is None else list(cells)
 
     runs: list[_CellRun] = []
@@ -586,12 +692,21 @@ def bless(
     diffs = tuple(run.diff for run in runs)
     fresh_version = next((run.fresh_version for run in runs), None)
     if not approve:
-        return BlessResult(diffs=diffs, generator_version=fresh_version)
+        return BlessResult(
+            diffs=diffs,
+            generator_version=fresh_version,
+            selected_count=len(selected),
+            corpus_count=corpus_count,
+        )
 
     refusal = _refusal_message(runs, root=root)
     if refusal is not None:
         return BlessResult(
-            diffs=diffs, generator_version=fresh_version, refusal=refusal
+            diffs=diffs,
+            generator_version=fresh_version,
+            refusal=refusal,
+            selected_count=len(selected),
+            corpus_count=corpus_count,
         )
 
     written = [run for run in runs if not run.diff.clean]
@@ -611,6 +726,8 @@ def bless(
         written=tuple(run.diff.cell_id for run in written),
         refreshed=tuple(run.diff.cell_id for run in refreshed),
         generator_version=fresh_version,
+        selected_count=len(selected),
+        corpus_count=corpus_count,
     )
 
 
@@ -621,17 +738,42 @@ def _cell_list(cell_ids: Sequence[str]) -> str:
     return f"{shown}, … and {elided} more" if elided > 0 else shown
 
 
+def _scope_notice(result: BlessResult) -> list[str]:
+    """The `SCOPED RUN` block, or `[]` when the run covered the whole corpus.
+
+    A `--pack`-scoped run reports only about the cells it selected, and
+    `--approve` restamps only those — so after a `generatorVersion` bump the
+    unselected cells stay byte-non-reproducible while a repeat of the same scoped
+    run keeps saying "no divergence". Counts are exact and never capped: the
+    number of cells this run did *not* look at is the whole finding.
+    """
+    if not result.scoped:
+        return []
+    return [
+        "",
+        f"SCOPED RUN — {result.selected_count} of {result.corpus_count} corpus "
+        f"cell(s) selected; the other {result.unselected_count} were NOT "
+        f"re-rendered, diffed or restamped.",
+        "  Nothing above is a statement about them: they may hold an undetected "
+        "divergence, and after a generatorVersion bump they keep a stale "
+        "meta.generatorVersion, which leaves the corpus not byte-reproducible.",
+        "  Finish with an unscoped `trackgen bless --approve` before committing.",
+    ]
+
+
 def format_result(result: BlessResult, *, approve: bool = False) -> str:
     """The §8.2 report for a whole run, plus the approval outcome.
 
     The diff report is `blessdiff.format_report` verbatim — never a raw JSON
     diff — with the write/refusal verdict appended so the two are never read
-    apart.
+    apart, and a `SCOPED RUN` block last when the run covered only part of the
+    corpus.
     """
     lines = [format_diff_report(result.diffs)]
 
     if result.refusal is not None:
         lines.extend(["", result.refusal])
+        lines.extend(_scope_notice(result))
         return "\n".join(lines)
 
     if result.written or result.refreshed:
@@ -667,4 +809,5 @@ def format_result(result: BlessResult, *, approve: bool = False) -> str:
             ["", "no baseline was written (re-run with --approve to accept these)."]
         )
 
+    lines.extend(_scope_notice(result))
     return "\n".join(lines)

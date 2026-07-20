@@ -16,6 +16,7 @@ import pytest
 from trackgen.tooling.blessdiff import (
     ABSENT,
     CellDiff,
+    MetricDelta,
     NoteDelta,
     comparable_stage,
     diff_cell,
@@ -259,6 +260,23 @@ def test_section_span_boundary_tick_goes_to_the_later_section() -> None:
 
     (delta,) = note_deltas(base, fresh, _FORM)
     assert delta.section_id == "chorus-1"
+
+
+def test_section_spans_are_sorted_by_start_tick_whatever_the_file_order() -> None:
+    """The sort in `section_spans` is a contract, so an unsorted file must prove it.
+
+    Every real `songform.json` already lists its sections in musical order, so a
+    fixture built from one cannot distinguish "sorted" from "left alone" — this
+    is the only shape that can. Without it, deleting `spans.sort()` changes no
+    observable behaviour anywhere in the suite.
+    """
+    scrambled = _songform(("chorus-1", 4, 4), ("verse-1", 0, 4), ("outro-1", 8, 4))
+
+    assert section_spans(scrambled) == [
+        (0, 4 * _BAR, "verse-1"),
+        (4 * _BAR, 8 * _BAR, "chorus-1"),
+        (8 * _BAR, 12 * _BAR, "outro-1"),
+    ]
 
 
 def test_notes_outside_every_span_land_in_the_unsectioned_bucket() -> None:
@@ -532,6 +550,93 @@ def test_identical_metrics_report_nothing() -> None:
     assert metric_deltas(metrics, metrics) == ()
 
 
+# --- Layer-3 metric elision (§8.2 caps; ROADMAP §3: no silent caps) -----------
+#
+# This path is live on every real run: one corpus cell carries 11 tracks, i.e. up
+# to 68 metric rows against a cap of 20. Note elision is covered above; these
+# tests give the metric side the same treatment.
+
+
+def _metric_rows(count: int) -> tuple[MetricDelta, ...]:
+    """`count` deltas, each in its own scope so each renders as its own line."""
+    return tuple(
+        MetricDelta(scope=f"t{i:02d}", metric="note_density", baseline=1.0, fresh=2.0)
+        for i in range(count)
+    )
+
+
+def _rendered_metric_scopes(text: str) -> list[str]:
+    return [
+        line.strip().split(":")[0]
+        for line in text.splitlines()
+        if line.startswith("    t") and "note_density" in line
+    ]
+
+
+def test_metric_rows_are_capped_at_twenty() -> None:
+    """25 moved metrics must print 20 rows — not 25, and not `_MAX_METRIC_ROWS` = 2.
+
+    The header count stays exact (25); only the rows are capped. Shrinking the
+    cap changes how many scopes survive, so this is what pins the constant.
+    """
+    diff = CellDiff(cell_id="c", first_stage="document", metrics=_metric_rows(25))
+
+    text = format_report([diff])
+    scopes = _rendered_metric_scopes(text)
+
+    assert "layer-3 metrics — 25 moved:" in text
+    assert len(scopes) == 20
+    assert scopes == [f"t{i:02d}" for i in range(20)]
+    assert "t20" not in text
+
+
+def test_elided_metric_total_is_always_printed() -> None:
+    """§8.2/ROADMAP §3 — capped rows are summarized, never silently dropped.
+
+    Dropping the "… and N more" line (or computing N as 0) leaves a report that
+    claims 25 metrics moved and shows 20 with no acknowledgement of the gap.
+    """
+    diff = CellDiff(cell_id="c", first_stage="document", metrics=_metric_rows(25))
+
+    text = format_report([diff])
+
+    assert "… and 5 more metric delta(s)" in text
+
+
+def test_metric_rows_at_exactly_the_cap_are_not_elided() -> None:
+    """The boundary: 20 rows print in full with no elision line at all."""
+    diff = CellDiff(cell_id="c", first_stage="document", metrics=_metric_rows(20))
+
+    text = format_report([diff])
+
+    assert len(_rendered_metric_scopes(text)) == 20
+    assert "more metric delta(s)" not in text
+
+
+def test_metric_elision_is_a_head_slice_not_a_ranking() -> None:
+    """Documented asymmetry: notes elide by `total`, metrics elide by head slice.
+
+    A metric delta has no comparable "size" — `role: comping -> bass` and
+    `note_density: 4 -> 3.5` are not orderable against each other, and ranking by
+    a numeric change would push every `None`/`(absent)` transition (the ones
+    §8.2 most wants read) to the bottom. So the metric side keeps its stored
+    order, which is already meaningful: song-wide scopes first, then tracks
+    alphabetically, each in §8.1 metric order. This test pins that choice so it
+    stays a decision rather than an oversight.
+    """
+    deltas = (
+        *_metric_rows(20),
+        MetricDelta(scope="zzz", metric="mean_ioi", baseline=None, fresh=999.0),
+    )
+    diff = CellDiff(cell_id="c", first_stage="document", metrics=deltas)
+
+    text = format_report([diff])
+
+    # The trailing row is dropped even though it is the largest change present.
+    assert "zzz" not in text
+    assert "… and 1 more metric delta(s)" in text
+
+
 # --- the report ---------------------------------------------------------------
 
 
@@ -751,6 +856,31 @@ def test_diff_cell_reports_both_songforms_when_the_form_moved() -> None:
     assert diff.first_stage == "songform"
     assert {d.section_id for d in diff.notes} == {"verse-1", "intro-1"}
     assert sum(d.total for d in diff.notes) == 2
+
+
+def test_stage_errors_alone_make_a_cell_unclean() -> None:
+    """`CellDiff.clean`'s `stage_errors` term, isolated from every other term.
+
+    Deliberately constructed with **no** divergent stage, no notes and no
+    metrics: the partial-baseline test elsewhere also carries a divergent stage,
+    so `first_stage is not None` carries its assertion and the `stage_errors`
+    term could be deleted without failing anything. The term is load-bearing —
+    `bless()` gates every baseline write on `not diff.clean`, and
+    `_needs_version_refresh` gates the version-stamp rewrite on `diff.clean` — so
+    a cell whose only finding is a stage error must never read as clean.
+    """
+    diff = CellDiff(cell_id="c", stage_errors=("UNREADABLE BASELINE — boom",))
+
+    assert diff.first_stage is None
+    assert diff.diverged_stages == ()
+    assert diff.notes == () and diff.metrics == ()
+    assert not diff.missing_baseline
+    assert not diff.clean
+
+    text = format_report([diff])
+    assert "1 needing review" in text
+    assert "UNREADABLE BASELINE — boom" in text
+    assert "no divergence" not in text
 
 
 def test_diff_cell_flags_a_missing_songform_instead_of_dropping_notes() -> None:

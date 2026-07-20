@@ -234,8 +234,17 @@ def first_divergent_stage(
 def section_spans(songform: Mapping[str, Any]) -> list[tuple[int, int, str]]:
     """`[(start_tick, end_tick, section_id), …]` from a parsed `songform.json`.
 
-    Half-open `[start, end)` per `quality/_common.section_span`. Ordered by start
-    tick so the report reads in musical order rather than alphabetically.
+    Half-open `[start, end)` per `quality/_common.section_span`, ordered by start
+    tick — this function's own contract, independent of however `songform.json`
+    happened to list its sections.
+
+    That ordering is **not** what makes the report read in musical order: a
+    caller reading the row order off this list would get it by accident.
+    `note_deltas` builds its own `section_id -> start_tick` map and sorts the
+    deltas with it, so the report is musically ordered whatever order the spans
+    arrive in. Sorting here buys a stable, meaningful order for every *other*
+    caller of a public helper — including `_section_of`, whose first-match scan
+    is only well-defined against non-overlapping spans in a fixed order.
     """
     spans: list[tuple[int, int, str]] = []
     for section in songform.get("sections", []):
