@@ -304,7 +304,7 @@ def test_meta_seed_and_params(
     assert doc.meta.seed_overrides == {
         k: to_base36(v) for k, v in plan.seed.overrides.items()
     }
-    assert doc.meta.generator_version == "0.1.0"
+    assert doc.meta.generator_version == "0.1.1"
     assert doc.meta.tone_version == "^15.1.0"
     assert doc.meta.params == _POP
     assert doc.meta.title is None

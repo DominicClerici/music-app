@@ -20,6 +20,24 @@ patterns:
       - { pos: 960, voice: hat_closed, velocity: 0.50 }
       - { pos: 1440, voice: hat_closed, velocity: 0.45 }
 
+  # rung 1 (variant) — kick 1 + "and of 3", quarter hats. Same sparse
+  # foundation as pr_dr_1, the backbeat displaced kick giving a laid-back lean
+  - id: pr_dr_1b
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 1200, voice: kick, velocity: 0.85 }
+      - { pos: 480, voice: snare, velocity: 0.75 }
+      - { pos: 1440, voice: snare, velocity: 0.72 }
+      - { pos: 0, voice: hat_closed, velocity: 0.55 }
+      - { pos: 480, voice: hat_closed, velocity: 0.45 }
+      - { pos: 960, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.45 }
+
   # rung 2 — money beat, 8th-note hats with quarters accented (GOLDEN ANCHOR)
   - id: pr_dr_2a
     role: drums
@@ -101,6 +119,43 @@ patterns:
       - { pos: 3120, voice: kick, velocity: 0.80, minDensity: 0.65 }
       - { pos: 3600, voice: hat_open, velocity: 0.60, dur: 360 }
 
+  # rung 3 (variant, 2-bar) — money-beat family with a syncopated "and of 3"
+  # kick push both bars, 8th-note hats, a gated bar-2 ghost snare, and a tom
+  # accent + 4& open hat closing bar 2. Distinct kick lean vs pr_dr_3
+  - id: pr_dr_3b
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 1200, voice: kick, velocity: 0.86 }
+      - { pos: 480, voice: snare, velocity: 0.85 }
+      - { pos: 1440, voice: snare, velocity: 0.82 }
+      - { pos: 0, voice: hat_closed, velocity: 0.58 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.48 }
+      - { pos: 720, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.55 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.42 }
+      - { pos: 1920, voice: kick, velocity: 0.92 }
+      - { pos: 3120, voice: kick, velocity: 0.86 }
+      - { pos: 2400, voice: snare, velocity: 0.85 }
+      - { pos: 3360, voice: snare, velocity: 0.82 }
+      - { pos: 1920, voice: hat_closed, velocity: 0.58 }
+      - { pos: 2160, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2400, voice: hat_closed, velocity: 0.48 }
+      - { pos: 2640, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2880, voice: hat_closed, velocity: 0.55 }
+      - { pos: 3120, voice: hat_closed, velocity: 0.40 }
+      - { pos: 3360, voice: hat_closed, velocity: 0.48 }
+      - { pos: 2760, voice: snare, velocity: 0.26, minDensity: 0.70 }
+      - { pos: 2880, voice: tom_low, velocity: 0.62, minDensity: 0.65 }
+      - { pos: 3600, voice: hat_open, velocity: 0.60, dur: 360 }
+
   # rung 4 (2-bar) — ride 8ths both bars (on-beat 0.62 / off-beat 0.50);
   # kick 1, 2& (gated), 3; snare 2/4; bar-2 ghost + 4& open hat
   - id: pr_dr_4
@@ -139,6 +194,61 @@ patterns:
       - { pos: 3000, voice: snare, velocity: 0.28, minDensity: 0.70 }
       - { pos: 3600, voice: hat_open, velocity: 0.65, dur: 360 }
 
+  # rung 4 (variant, 2-bar) — driving straight-16 closed hats with a syncopated
+  # "1, &2, 3, &4" kick, backbeat snares, a gated bar-2 ghost, and a 4& open
+  # hat. Hat-led drive (vs pr_dr_4's ride-led), pushing the top end
+  - id: pr_dr_4b
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0, voice: hat_closed, velocity: 0.60 }
+      - { pos: 120, voice: hat_closed, velocity: 0.40 }
+      - { pos: 240, voice: hat_closed, velocity: 0.52 }
+      - { pos: 360, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.58 }
+      - { pos: 600, voice: hat_closed, velocity: 0.40 }
+      - { pos: 720, voice: hat_closed, velocity: 0.52 }
+      - { pos: 840, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.60 }
+      - { pos: 1080, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.52 }
+      - { pos: 1320, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.58 }
+      - { pos: 1560, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.52 }
+      - { pos: 1800, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1920, voice: hat_closed, velocity: 0.60 }
+      - { pos: 2040, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2160, voice: hat_closed, velocity: 0.52 }
+      - { pos: 2280, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2400, voice: hat_closed, velocity: 0.58 }
+      - { pos: 2520, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2640, voice: hat_closed, velocity: 0.52 }
+      - { pos: 2760, voice: hat_closed, velocity: 0.40 }
+      - { pos: 2880, voice: hat_closed, velocity: 0.60 }
+      - { pos: 3000, voice: hat_closed, velocity: 0.40 }
+      - { pos: 3120, voice: hat_closed, velocity: 0.52 }
+      - { pos: 3240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 3360, voice: hat_closed, velocity: 0.58 }
+      - { pos: 3480, voice: hat_closed, velocity: 0.40 }
+      - { pos: 3600, voice: hat_open, velocity: 0.62, dur: 240 }
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 720, voice: kick, velocity: 0.82, minDensity: 0.60 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 1680, voice: kick, velocity: 0.82, minDensity: 0.60 }
+      - { pos: 1920, voice: kick, velocity: 0.92 }
+      - { pos: 2640, voice: kick, velocity: 0.82, minDensity: 0.60 }
+      - { pos: 2880, voice: kick, velocity: 0.88 }
+      - { pos: 3600, voice: kick, velocity: 0.82, minDensity: 0.60 }
+      - { pos: 480, voice: snare, velocity: 0.92 }
+      - { pos: 1440, voice: snare, velocity: 0.90 }
+      - { pos: 2400, voice: snare, velocity: 0.92 }
+      - { pos: 3360, voice: snare, velocity: 0.90 }
+      - { pos: 3000, voice: snare, velocity: 0.28, minDensity: 0.70 }
+
   # intro (GOLDEN ANCHOR)
   - id: pr_dr_i
     role: drums
@@ -166,6 +276,42 @@ patterns:
       - { pos: 480, voice: snare, velocity: 0.80 }
       - { pos: 0, voice: hat_closed, velocity: 0.50 }
       - { pos: 480, voice: hat_closed, velocity: 0.45 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+
+  # intro (variant) — steady 8th-note closed hats over a single downbeat kick,
+  # with a soft snare pickup on 4& leading into the first section
+  - id: pr_dr_ib
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.85 }
+      - { pos: 0, voice: hat_closed, velocity: 0.48 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.45 }
+      - { pos: 720, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.46 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.45 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1680, voice: snare, velocity: 0.72 }
+
+  # ending (variant) — full backbeat measure with an open-hat wash on beat 1,
+  # settling the tag more emphatically than pr_dr_e
+  - id: pr_dr_eb
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 960, voice: kick, velocity: 0.85 }
+      - { pos: 480, voice: snare, velocity: 0.85 }
+      - { pos: 1440, voice: snare, velocity: 0.82 }
+      - { pos: 0, voice: hat_open, velocity: 0.55, dur: 480 }
       - { pos: 960, voice: hat_closed, velocity: 0.48 }
 
   # fill rung 2 (Phase 6 selects/places) — exactly 1 bar

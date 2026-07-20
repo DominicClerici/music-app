@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "meta": {
-    "generatorVersion": "0.1.0",
+    "generatorVersion": "0.1.1",
     "toneVersion": "^15.1.0",
     "seed": "1ps9wxb",
     "seedOverrides": {},

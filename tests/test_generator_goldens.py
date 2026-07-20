@@ -117,13 +117,13 @@ def test_jazz_head1_bar0_full() -> None:
     _plan, _pack, _sf, _hp, _ap, phrases = _drive_full(_JAZZ)
 
     ride = _window(phrases, "ride", 0, _BAR)
+    # C5 (session 19): head-1 rung-2 drums now select `jz_dr_2b`, whose ride is
+    # the four straight quarters (no 720/1680 offbeat ride notes of `jz_dr_2`).
     assert [(n.ticks, n.velocity, n.duration_ticks) for n in ride] == [
         (0, 0.675, 240),
         (480, 0.695, 240),
-        (720, 0.525, 240),
         (960, 0.675, 240),
         (1440, 0.695, 240),
-        (1680, 0.525, 240),
     ]
 
     hats = _window(phrases, "hats", 0, _BAR)
@@ -176,12 +176,14 @@ def test_pop_verse1_bar4_drums_and_bass() -> None:
     ]
 
     bass = _window(phrases, "bass", lo, lo + _BAR)
-    # root quarters E2(40), dur 480×0.904 = 434.
+    # C5 (session 19): verse-1 rung-2 bass now selects `pr_bs_2b`, a root/fifth
+    # alternation — E2(40) on beats 1 & 3, B1(35, the fifth below) on beats 2 & 4;
+    # dur 480×0.904 = 434.
     assert [(n.ticks - lo, n.midi, n.velocity, n.duration_ticks) for n in bass] == [
         (0, 40, 0.78, 434),
-        (480, 40, 0.72, 434),
+        (480, 35, 0.72, 434),
         (960, 40, 0.76, 434),
-        (1440, 40, 0.72, 434),
+        (1440, 35, 0.72, 434),
     ]
 
 

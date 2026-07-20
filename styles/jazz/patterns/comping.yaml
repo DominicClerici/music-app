@@ -77,6 +77,32 @@ patterns:
       - { pos: 720, dur: 600, degree: chord, velocity: 0.60 }
       - { pos: 1440, dur: 400, degree: chord, velocity: 0.62 }
 
+  # rung 1 (variant) — two half-note pads (a breathing comp vs the whole-note
+  # football)
+  - id: jz_cp_1b
+    role: comping
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 900, degree: chord, velocity: 0.50 }
+      - { pos: 960, dur: 900, degree: chord, velocity: 0.48 }
+
+  # rung 4 (variant) — driving on-beat comp with a 4& push (vs the dotted-quarter
+  # cross-rhythm)
+  - id: jz_cp_4b
+    role: comping
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 360, degree: chord, velocity: 0.66 }
+      - { pos: 480, dur: 300, degree: chord, velocity: 0.58 }
+      - { pos: 960, dur: 360, degree: chord, velocity: 0.62 }
+      - { pos: 1680, dur: 260, degree: chord, velocity: 0.62, push: true }
+
   # intro — football
   - id: jz_cp_i
     role: comping
@@ -87,6 +113,17 @@ patterns:
     events:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.48 }
 
+  # intro (variant) — comp breathing into the head: chord on 1, half on 3
+  - id: jz_cp_ib
+    role: comping
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 700, degree: chord, velocity: 0.48 }
+      - { pos: 960, dur: 900, degree: chord, velocity: 0.46 }
+
   # ending — football
   - id: jz_cp_e
     role: comping
@@ -96,3 +133,14 @@ patterns:
     weight: 1
     events:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.55 }
+
+  # ending (variant) — syncopated final comp: stab on 1, held chord from 2&
+  - id: jz_cp_eb
+    role: comping
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 660, degree: chord, velocity: 0.55 }
+      - { pos: 720, dur: 1200, degree: chord, velocity: 0.52 }

@@ -63,3 +63,73 @@ patterns:
     weight: 1
     events:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
+
+  # --- variant candidates (quartal footballs, distinct rhythmic shape from the
+  # whole-note siblings): even rungs re-attack as two half notes, odd rungs as a
+  # dotted-half + quarter; escalating velocity by rung ---
+
+  # rung 1 (variant) — two half notes
+  - id: jz_pd_1b
+    role: pads
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.44 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.42 }
+
+  # rung 2 (variant) — dotted-half + quarter
+  - id: jz_pd_2b
+    role: pads
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.46 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.44 }
+
+  # rung 3 (variant) — two half notes
+  - id: jz_pd_3b
+    role: pads
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.50 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.48 }
+
+  # rung 4 (variant) — dotted-half + quarter
+  - id: jz_pd_4b
+    role: pads
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.52 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.50 }
+
+  # intro (variant) — two half notes
+  - id: jz_pd_ib
+    role: pads
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.44 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.42 }
+
+  # ending (variant) — dotted-half + quarter
+  - id: jz_pd_eb
+    role: pads
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.45 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.43 }

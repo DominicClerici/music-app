@@ -109,50 +109,56 @@ def _select_default(params: dict[str, object]) -> SelectionResult:
 
 
 def test_pop_selection_draw_narrative() -> None:
-    """PHASE_5 §9.1 — pop_rock/happy at seed 1ps9wxb. Drums: intro `pr_dr_i`
-    (single), rung-2 draw {pr_dr_2a, pr_dr_2b} -> `pr_dr_2a`, rung-3 `pr_dr_3`,
-    rung-4 `pr_dr_4` (single). Bass/comping/pads all single candidates. One draw
-    total (the rung-2 drums draw)."""
+    """PHASE_5 §9.1 — pop_rock/happy at seed 1ps9wxb (C5 re-bless, session 19:
+    every bank slot now holds 2 candidates, so every active slot draws once).
+    Drums: intro draw {pr_dr_i, pr_dr_ib} -> `pr_dr_ib`, rung-2 draw
+    {pr_dr_2a w3, pr_dr_2b w1} -> `pr_dr_2a`, rung-3 draw {pr_dr_3, pr_dr_3b} ->
+    `pr_dr_3b`, rung-4 draw {pr_dr_4, pr_dr_4b} -> `pr_dr_4` (4 draws). Bass:
+    intro -> `pr_bs_i`, rung-2 -> `pr_bs_2b`, rung-3 -> `pr_bs_3`, rung-4 ->
+    `pr_bs_4` (4 draws). Comping rung-2/3/4 -> `pr_cp_2`/`pr_cp_3b`/`pr_cp_4`
+    (3 draws). Pads rung-3/4 -> `pr_pd_3`/`pr_pd_4b` (2 draws). Thirteen draws
+    total (4 + 4 + 3 + 2)."""
     result, shims = _select({"styleFamily": "pop_rock", "seed": "1ps9wxb"})
     by_section = result.by_section
     by_key = result.by_key
 
     # Drums: the §9.1 selections, keyed at (role, kind, rung).
-    assert by_section[("intro-1", "drums")].id == "pr_dr_i"
+    assert by_section[("intro-1", "drums")].id == "pr_dr_ib"  # intro draw winner
     assert by_key[("drums", "main", 2)].id == "pr_dr_2a"  # weighted_choice winner
-    assert by_key[("drums", "main", 3)].id == "pr_dr_3"
-    assert by_key[("drums", "main", 4)].id == "pr_dr_4"
-    # Same-rung sections share the groove (cache-once): verse-1 ≡ verse-2.
+    assert by_key[("drums", "main", 3)].id == "pr_dr_3b"  # rung-3 draw winner
+    assert by_key[("drums", "main", 4)].id == "pr_dr_4"  # rung-4 draw winner
+    # Same-rung sections share the groove (cache-once): verse-1 ≡ verse-2 ≡ bridge.
     assert by_section[("verse-1", "drums")].id == "pr_dr_2a"
     assert by_section[("verse-2", "drums")].id == "pr_dr_2a"
-    assert by_section[("chorus-1", "drums")].id == "pr_dr_3"
+    assert by_section[("bridge-1", "drums")].id == "pr_dr_2a"
+    assert by_section[("chorus-1", "drums")].id == "pr_dr_3b"
     assert by_section[("chorus-2", "drums")].id == "pr_dr_4"
     assert by_section[("chorus-3", "drums")].id == "pr_dr_4"
 
-    # Bass/comping/pads: single candidates — they resolve, with no draw.
+    # Bass/comping/pads: each slot now a 2-candidate draw.
     assert by_section[("intro-1", "bass")].id == "pr_bs_i"
-    assert by_section[("verse-1", "bass")].id == "pr_bs_2"
+    assert by_section[("verse-1", "bass")].id == "pr_bs_2b"
     assert by_section[("chorus-1", "bass")].id == "pr_bs_3"
     assert by_section[("chorus-2", "bass")].id == "pr_bs_4"
     assert by_section[("verse-1", "comping")].id == "pr_cp_2"
-    assert by_section[("chorus-1", "comping")].id == "pr_cp_3"
+    assert by_section[("chorus-1", "comping")].id == "pr_cp_3b"
     assert by_section[("chorus-2", "comping")].id == "pr_cp_4"
     assert by_section[("chorus-1", "pads")].id == "pr_pd_3"
-    assert by_section[("chorus-2", "pads")].id == "pr_pd_4"
+    assert by_section[("chorus-2", "pads")].id == "pr_pd_4b"
 
-    # Exactly one selection draw across all four role select streams.
-    assert sum(shim.draws for shim in shims.values()) == 1
-    assert shims["drums"].draws == 1
-    assert shims["bass"].draws == 0
-    assert shims["comping"].draws == 0
-    assert shims["pads"].draws == 0
+    # Thirteen selection draws: drums 4 + bass 4 + comping 3 + pads 2.
+    assert sum(shim.draws for shim in shims.values()) == 13
+    assert shims["drums"].draws == 4
+    assert shims["bass"].draws == 4
+    assert shims["comping"].draws == 3
+    assert shims["pads"].draws == 2
 
     # Production default path (rng_factory=None) picks the same §9.1 winners:
     # golden-locks the module's own `select` derivation, not just the shim's.
     default = _select_default({"styleFamily": "pop_rock", "seed": "1ps9wxb"})
-    assert default.by_section[("intro-1", "drums")].id == "pr_dr_i"
+    assert default.by_section[("intro-1", "drums")].id == "pr_dr_ib"
     assert default.by_key[("drums", "main", 2)].id == "pr_dr_2a"
-    assert default.by_key[("drums", "main", 3)].id == "pr_dr_3"
+    assert default.by_key[("drums", "main", 3)].id == "pr_dr_3b"
     assert default.by_key[("drums", "main", 4)].id == "pr_dr_4"
 
 
@@ -162,12 +168,14 @@ def test_pop_selection_draw_narrative() -> None:
 
 
 def test_jazz_selection_draw_narrative() -> None:
-    """PHASE_5 §9.1 — jazz/melancholic at seed 1ps9wxb. Drums: rung-2 `jz_dr_2`
-    (single), rung-3 draw {jz_dr_3a w3, jz_dr_3b w2} -> `jz_dr_3a`, ending
-    `jz_dr_e` (single). Comping: rung-2 draw {jz_cp_2a w3, jz_cp_2b w2} ->
-    `jz_cp_2a`, rung-3 draw {jz_cp_3a w3, jz_cp_3b w2} -> `jz_cp_3a`, ending
-    `jz_cp_e` (single). Bass is walking (no selection); pads never active. Three
-    draws total (drums 1 + comping 2)."""
+    """PHASE_5 §9.1 — jazz/melancholic at seed 1ps9wxb (C5 re-bless, session 19:
+    every bank slot now holds 2 candidates). Drums: rung-2 draw {jz_dr_2,
+    jz_dr_2b} -> `jz_dr_2b`, rung-3 draw {jz_dr_3a w3, jz_dr_3b w2} -> `jz_dr_3a`,
+    ending draw {jz_dr_e, jz_dr_eb} -> `jz_dr_eb` (3 draws). Comping: rung-2 draw
+    {jz_cp_2a w3, jz_cp_2b w2} -> `jz_cp_2a`, rung-3 draw {jz_cp_3a w3, jz_cp_3b
+    w2} -> `jz_cp_3a`, ending draw {jz_cp_e, jz_cp_eb} -> `jz_cp_e` (3 draws).
+    Bass is walking (no selection); pads never active. Six draws total (drums 3 +
+    comping 3)."""
     result, shims = _select(
         {
             "styleFamily": "jazz",
@@ -180,19 +188,19 @@ def test_jazz_selection_draw_narrative() -> None:
     by_key = result.by_key
 
     # Drums.
-    assert by_key[("drums", "main", 2)].id == "jz_dr_2"
+    assert by_key[("drums", "main", 2)].id == "jz_dr_2b"  # rung-2 draw winner
     assert by_key[("drums", "main", 3)].id == "jz_dr_3a"  # weighted_choice winner
-    assert by_section[("outro-1", "drums")].id == "jz_dr_e"  # kind: ending
-    assert by_section[("head-1", "drums")].id == "jz_dr_2"
+    assert by_section[("outro-1", "drums")].id == "jz_dr_eb"  # kind: ending draw
+    assert by_section[("head-1", "drums")].id == "jz_dr_2b"
     assert by_section[("solo-1", "drums")].id == "jz_dr_3a"
     assert by_section[("solo-2", "drums")].id == "jz_dr_3a"
     assert by_section[("solo-3", "drums")].id == "jz_dr_3a"
-    assert by_section[("head-2", "drums")].id == "jz_dr_2"
+    assert by_section[("head-2", "drums")].id == "jz_dr_2b"
 
     # Comping.
     assert by_key[("comping", "main", 2)].id == "jz_cp_2a"  # Charleston winner
     assert by_key[("comping", "main", 3)].id == "jz_cp_3a"  # winner
-    assert by_section[("outro-1", "comping")].id == "jz_cp_e"  # kind: ending
+    assert by_section[("outro-1", "comping")].id == "jz_cp_e"  # kind: ending draw
     assert by_section[("head-1", "comping")].id == "jz_cp_2a"
     assert by_section[("solo-1", "comping")].id == "jz_cp_3a"
 
@@ -206,10 +214,11 @@ def test_jazz_selection_draw_narrative() -> None:
     assert not any(role == "pads" for (role, _k, _r) in by_key)
     assert "pads" not in shims
 
-    # Exactly three selection draws: drums 1 (rung 3) + comping 2 (rung 2, rung 3).
-    assert sum(shim.draws for shim in shims.values()) == 3
-    assert shims["drums"].draws == 1
-    assert shims["comping"].draws == 2
+    # Exactly six selection draws: drums 3 (rung 2, rung 3, ending) + comping 3
+    # (rung 2, rung 3, ending).
+    assert sum(shim.draws for shim in shims.values()) == 6
+    assert shims["drums"].draws == 3
+    assert shims["comping"].draws == 3
 
     # Production default path (rng_factory=None) picks the same §9.1 winners, and
     # walking-mode bass / dormant pads still yield no entries. Golden-locks the
@@ -222,10 +231,11 @@ def test_jazz_selection_draw_narrative() -> None:
             "seed": "1ps9wxb",
         }
     )
+    assert default.by_key[("drums", "main", 2)].id == "jz_dr_2b"
     assert default.by_key[("drums", "main", 3)].id == "jz_dr_3a"
     assert default.by_key[("comping", "main", 2)].id == "jz_cp_2a"
     assert default.by_key[("comping", "main", 3)].id == "jz_cp_3a"
-    assert default.by_section[("outro-1", "drums")].id == "jz_dr_e"
+    assert default.by_section[("outro-1", "drums")].id == "jz_dr_eb"
     assert default.by_section[("outro-1", "comping")].id == "jz_cp_e"
     assert not any(role == "bass" for (_sid, role) in default.by_section)
     assert not any(role == "bass" for (role, _k, _r) in default.by_key)

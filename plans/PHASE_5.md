@@ -515,6 +515,8 @@ voicing: { classes: {1: [quartal], 2: [quartal], 3: [quartal], 4: [quartal]} }
 
 Entries carrying `# …` comments are abridged here for readability — completing them per the §6.1/§6.2 rung conventions is an implementation-session authoring task (DoD §13.1). Every value the §9 goldens depend on (ids, kinds, rungs, weights, and the full events of `pr_dr_2a`, `pr_dr_i`, `pr_bs_2`, `pr_cp_2`, `jz_dr_2`, `jz_cp_2a`, plus all bank candidate counts) is stated in full above.
 
+**C5 second candidates (added session 19).** C5 authored 38 additional `…b` patterns so every bank slot carries ≥ 2 candidates (the §9.1 draw narrative and totals are recomputed accordingly). These new entries are not transcribed here — they live in `styles/` as data, and the milestone/golden fixtures are their regression surface. Per bank: pop drums `pr_dr_1b/3b/4b/ib/eb`; pop bass `pr_bs_1b/2b/3b/4b/ib/eb`; pop comping `pr_cp_1b/2b/3b/4b/ib/eb`; pop pads `pr_pd_1b/2b/3b/4b/ib/eb`; jazz drums `jz_dr_1b/2b/4b/ib/eb`; jazz comping `jz_cp_1b/4b/ib/eb`; jazz pads `jz_pd_1b/2b/3b/4b/ib/eb`. (The four weighted-pair partners already pinned in §7/§9.1 — `pr_dr_2b`, `jz_dr_3b`, `jz_cp_2b`, `jz_cp_3b` — predate C5 and are not counted among the 38.)
+
 ---
 
 ## 8. Pipeline wiring & Serializer
@@ -568,9 +570,11 @@ Both chain from PHASE_2 §6.5 / PHASE_3 §7.4 / PHASE_4 §10 (seed `1ps9wxb`, ma
 
 ### 9.1 Selection draw narrative
 
-Pop (streams `drums/select` etc.): drums — intro `pr_dr_i` (single, no draw); rung 2 draw among {pr_dr_2a, pr_dr_2b} → **pr_dr_2a**; rung 3 `pr_dr_3`, rung 4 `pr_dr_4` (single). Bass/comping/pads: all single candidates, zero draws. **Pop selection draws: 1.**
+> **Amended session 19 (C5 re-bless).** C5 thickened *every* bank slot to ≥ 2 candidates (each authored pattern gained a `…b` second candidate), so every active slot now consumes one `weighted_choice` draw rather than resolving as a singleton. The narrative and draw totals below are recomputed to the new engine truth at the same worked seed; the two pre-existing weighted pairs (pop drums r2, jazz drums r3 / comping r2+r3) keep their w3-dominant primaries.
 
-Jazz: drums — rung 2 `jz_dr_2` (single); rung 3 draw {jz_dr_3a w3, jz_dr_3b w2} → **jz_dr_3a**; ending `jz_dr_e` (single). Comping — rung 2 draw {jz_cp_2a w3, jz_cp_2b w2} → **jz_cp_2a** (Charleston); rung 3 draw {jz_cp_3a w3, jz_cp_3b w2} → **jz_cp_3a**; ending `jz_cp_e` (single). **Jazz selection draws: 3.**
+Pop (streams `drums/select` etc.): drums — intro draw {pr_dr_i, pr_dr_ib} → **pr_dr_ib**; rung 2 draw {pr_dr_2a w3, pr_dr_2b w1} → **pr_dr_2a**; rung 3 draw {pr_dr_3, pr_dr_3b} → **pr_dr_3b**; rung 4 draw {pr_dr_4, pr_dr_4b} → **pr_dr_4** (4 draws). Bass — intro → **pr_bs_i**; rung 2 → **pr_bs_2b**; rung 3 → **pr_bs_3**; rung 4 → **pr_bs_4** (4 draws). Comping — rung 2/3/4 → **pr_cp_2** / **pr_cp_3b** / **pr_cp_4** (3 draws). Pads — rung 3/4 → **pr_pd_3** / **pr_pd_4b** (2 draws). **Pop selection draws: 13** (4 + 4 + 3 + 2).
+
+Jazz: drums — rung 2 draw {jz_dr_2, jz_dr_2b} → **jz_dr_2b**; rung 3 draw {jz_dr_3a w3, jz_dr_3b w2} → **jz_dr_3a**; ending draw {jz_dr_e, jz_dr_eb} → **jz_dr_eb** (3 draws). Comping — rung 2 draw {jz_cp_2a w3, jz_cp_2b w2} → **jz_cp_2a** (Charleston); rung 3 draw {jz_cp_3a w3, jz_cp_3b w2} → **jz_cp_3a**; ending draw {jz_cp_e, jz_cp_eb} → **jz_cp_e** (3 draws). Bass is walking (no selection); pads never active. **Jazz selection draws: 6** (drums 3 + comping 3).
 
 ### 9.2 Jazz walker (bass stream, per-bar sub-streams)
 
@@ -604,7 +608,7 @@ Jazz comping (lane 46–69, anchor 63): heads at rung 2 voice shells — Dm9 →
 
 ### 9.4 Instantiation excerpts
 
-Pop verse-1, bar 4 (ticks 7680–9600), governing chord E: kick 0.98 @ 0 / 0.94 @ 960; snare 0.91 @ 480 / 0.88 @ 1440; hats 8ths 0.64/0.46/0.54/0.46/0.61/0.46/0.54/0.48; bass root quarters E2 (40) 0.78/0.72/0.76/0.72 dur 434; comping G♯3+B3+E4 hits @ 0 (dur 814, 0.68) and @ 960 (dur 814, 0.64). Jazz head-1, bar 0 (Dm9): ride 0.675/0.695/0.525/0.675/0.695/0.525 at the straight-grid positions; hats 0.475 @ 480/1440; bass D2 root (0.695) / A2 fifth (0.655) halves; comping Charleston F3+C4 @ 0 (dur 720 — clamped to the 720 gap, 0.595) and @ 720 (dur 443, 0.525). The walker's per-section note counts are golden (§9.2); full-document golden note lists land with the implementation (fixtures, not prose).
+Pop verse-1, bar 4 (ticks 7680–9600), governing chord E: kick 0.98 @ 0 / 0.94 @ 960; snare 0.91 @ 480 / 0.88 @ 1440; hats 8ths 0.64/0.46/0.54/0.46/0.61/0.46/0.54/0.48; bass root/fifth quarters E2 (40) · B1 (35, fifth below) alternating (0.78/0.72/0.76/0.72 dur 434 — *amended session 19, C5 re-bless: rung-2 bass now selects `pr_bs_2b`, a root/fifth alternation; was root quarters E2 under `pr_bs_2`*); comping G♯3+B3+E4 hits @ 0 (dur 814, 0.68) and @ 960 (dur 814, 0.64). Jazz head-1, bar 0 (Dm9): ride 0.675/0.695/0.675/0.695 at the four straight-grid quarters (*amended session 19, C5 re-bless: rung-2 drums now select `jz_dr_2b`, whose ride is four straight quarters; was six notes 0.675/0.695/0.525/0.675/0.695/0.525 with the 720/1680 offbeats under `jz_dr_2`*); hats 0.475 @ 480/1440; bass D2 root (0.695) / A2 fifth (0.655) halves; comping Charleston F3+C4 @ 0 (dur 720 — clamped to the 720 gap, 0.595) and @ 720 (dur 443, 0.525). The walker's per-section note counts are golden (§9.2); full-document golden note lists land with the implementation (fixtures, not prose).
 
 ### 9.5 Milestone
 
@@ -682,7 +686,7 @@ Phase 5 is **built** when an implementation session demonstrates:
 1. **Loaders**: all four `patterns/*.yaml` schemas parsing into frozen pydantic models; PT1–PT11 implemented with one rejection fixture per rule class; both reference packs load clean (fully enumerated versions of §7, including the abridged events).
 2. **Foundations**: unit tests for §3.1 thresholds (boundary values), §3.3 degree resolution (every degree × representative qualities × dressing tiers, fallbacks, `push` boundary cases incl. no-boundary and song-end, octave folding at lane edges with tie-down), §3.4 velocity/articulation formulas (identity points, clamps, exemptions), §3.5 gating.
 3. **Arrangement stage**: golden tests asserting both §4.5 tables field-for-field; zero-draw assertion (counting-RNG shim on the `arrangement` stream); property tests — every pack × supported mood × lengths × 25 seeds: full section×role coverage, `active` counts ≤ layersMax, lanes within ceilings, intro thinner than successor.
-4. **Selection**: golden tests for both §9.1 draw narratives (selections and exact draw counts: pop 1, jazz 3); completeness property (every reachable (role, kind, rung) resolves for every pack × mood × tempo).
+4. **Selection**: golden tests for both §9.1 draw narratives (selections and exact draw counts: pop 13, jazz 6 — recomputed session 19, C5 re-bless; were pop 1, jazz 3 before every slot was thickened to ≥ 2 candidates); completeness property (every reachable (role, kind, rung) resolves for every pack × mood × tempo).
 5. **Walker**: golden tests for §9.2 (all excerpt notes exactly; per-section draw counts 9/38/37/36/7/1; total 128; note counts 24/51/54/54/24/7); per-bar sub-stream independence test (regenerating one bar's RNG reproduces its draws in isolation); property tests — every note in lane, beat-1 rule compliance, approach targets correct, final-bar rule on final sections.
 6. **Voicing passes**: golden tests for §9.3 voicings (jazz shells/rootless, pop triads, pads fifths — exact MIDI); integer-cost property; all tops ≤ 71; cardinality-padding unit test.
 7. **Generators end-to-end**: both worked examples produce Phrases passing: notes sorted, within section spans, velocities in (0,1], non-drum pitches ≤ 71, `push`/`ghost` tags present where §9 says.

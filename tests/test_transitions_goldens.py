@@ -348,24 +348,33 @@ def test_pop_fill_placements_and_crashes() -> None:
 def test_jazz_fill_placements_and_crashes() -> None:
     """§7.2: section fills into bars 11/23/35/47/59; interior phrase fills
     included at 3/31 (combined 3/11/23/31/35/47/59). Entry crashes (velocity
-    `0.40 + energy·0.30`) at bars 12/24/36/48/60 = 0.587/0.611/0.635/0.539/0.503,
-    each **with an added kick** (ride patterns have no beat-1 kick — the soft
-    'bomb')."""
+    `0.40 + energy·0.30`) at bars 12/24/36/48/60 = 0.587/0.611/0.635/0.539/0.503.
+
+    C5 (session 19): the crash-kick 'bomb' fires only where the entered groove
+    has no beat-1 kick. Bars 12/24/36 (solos, `jz_dr_3a`) and 60 (outro,
+    `jz_dr_eb`) are kick-less on beat 1 → a soft kick IS added, crash-tagged, at
+    the crash velocity. Bar 48 enters head-2, whose rung-2 groove is now
+    `jz_dr_2b` (has a beat-1 kick) → the §3.7 double-hit guard adds NONE; the lone
+    kick is the groove's own (tag `kick`, velocity 0.275)."""
     final = stage6_final(drive(JAZZ))
     assert _fill_bars(final) == [3, 11, 23, 31, 35, 47, 59]
 
-    expected = {12: 0.587, 24: 0.611, 36: 0.635, 48: 0.539, 60: 0.503}
-    for bar, vel in expected.items():
+    crash_vels = {12: 0.587, 24: 0.611, 36: 0.635, 48: 0.539, 60: 0.503}
+    added_kick_bars = {12, 24, 36, 60}  # ride-only grooves → bomb added
+    for bar, vel in crash_vels.items():
         crash = track_window(final, "crash", bar * BAR, bar * BAR + 1)
         assert len(crash) == 1, bar
         assert crash[0].velocity == pytest.approx(vel), bar
         assert crash[0].tags == ["crash"]
-        # No groove beat-1 kick → a soft kick is added at the entered downbeat,
-        # crash-tagged, at the crash velocity.
+
         kicks = track_window(final, "kick", bar * BAR, bar * BAR + 1)
         assert len(kicks) == 1, bar
-        assert kicks[0].tags == ["crash"], bar
-        assert kicks[0].velocity == pytest.approx(vel), bar
+        if bar in added_kick_bars:
+            assert kicks[0].tags == ["crash"], bar
+            assert kicks[0].velocity == pytest.approx(vel), bar
+        else:  # bar 48: head-2 `jz_dr_2b` beat-1 kick already present, none added
+            assert kicks[0].tags == ["kick"], bar
+            assert kicks[0].velocity == pytest.approx(0.275), bar
 
 
 # =============================================================================
@@ -374,10 +383,12 @@ def test_jazz_fill_placements_and_crashes() -> None:
 
 
 def test_pop_fill_bar_3_note_for_note() -> None:
-    """§7.1: fill bar 3 (intro `pr_dr_i` + `pr_dr_f1` window [960, 1920)). Hats
-    at 960/1440 deleted; fill snares at 960/1200/1440/1680 velocities
-    0.66/0.74/0.82/0.91 (the §3.4 +0.06 shift on authored 0.60/0.68/0.76/0.85 at
-    pop-happy dynamicsBase) tag `fill`; kick@0 and hats@0/480 keep playing."""
+    """§7.1: fill bar 3 (intro `pr_dr_ib` + `pr_dr_f1` window [960, 1920)). Fill
+    snares at 960/1200/1440/1680 velocities 0.66/0.74/0.82/0.91 (the §3.4 +0.06
+    shift on authored 0.60/0.68/0.76/0.85 at pop-happy dynamicsBase) tag `fill`;
+    kick@0 and the intro hats@0/240/480/720 keep playing (C5 session 19: the
+    intro slot now selects `pr_dr_ib`, whose hats run at the 240-grid — those
+    inside the rendered fill window [960, 1920) are deleted)."""
     final = stage6_final(drive(POP))
     b3 = 3 * BAR
 
@@ -390,8 +401,9 @@ def test_pop_fill_bar_3_note_for_note() -> None:
     ]
 
     hats = track_window(final, "hats", b3, b3 + BAR)
-    # groove hats inside the rendered window [960, 1920) deleted; 0/480 survive.
-    assert [n.ticks - b3 for n in hats] == [0, 480]
+    # groove hats inside the rendered window [960, 1920) deleted; 0/240/480/720
+    # survive.
+    assert [n.ticks - b3 for n in hats] == [0, 240, 480, 720]
     assert all("fill" not in n.tags for n in hats)
 
     kick = track_window(final, "kick", b3, b3 + BAR)

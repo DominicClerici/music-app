@@ -65,14 +65,14 @@ def _jazz_zero_jitter() -> Any:
 
 
 def test_jazz_head1_bar0_ride() -> None:
-    """§7.2: ride bar 0 → 0/480/**827**/960/1440/**1787** — downbeats unmoved, the
-    two offbeats (720, 1680) swung, 0 offset. The ride is the *sole* carrier of a
-    grid-1680 note in bar 0 (bass is two-feel halves, comping is Charleston
-    0/720), so this list already pins the and-of-4 swing landing (1680→1787); a
-    separate and-of-4 test would only re-assert it."""
+    """§7.2: ride bar 0 → 0/480/960/1440 — all four straight quarters, downbeats
+    unmoved, 0 offset (no swing displacement). C5 (session 19): head-1 rung-2
+    drums now select `jz_dr_2b`, whose ride carries no 720/1680 offbeat notes, so
+    this excerpt no longer sounds the and-of-4 swing landing that `jz_dr_2` did
+    (that swing math is still exercised on any grid-1680 note elsewhere)."""
     zj = _jazz_zero_jitter()
     ride = track_window(zj, "ride", 0, BAR)
-    assert [n.ticks for n in ride] == [0, 480, 827, 960, 1440, 1787]
+    assert [n.ticks for n in ride] == [0, 480, 960, 1440]
 
 
 def test_jazz_head1_bar0_hats() -> None:
@@ -211,7 +211,7 @@ def _structural_draws(s6: Any, inp: Stage6Inputs) -> int:
 
 
 @pytest.mark.parametrize(
-    "params,expected", [(POP, 10198), (JAZZ, 5088)], ids=["pop", "jazz"]
+    "params,expected", [(POP, 10470), (JAZZ, 5096)], ids=["pop", "jazz"]
 )
 def test_humanize_draw_counts(
     params: dict[str, object], expected: int, monkeypatch: pytest.MonkeyPatch

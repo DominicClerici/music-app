@@ -17,22 +17,23 @@ Three proofs over the real orchestrator `generate_track`:
    and 7 (humanize), which draw from their own seed streams — the stale `stubs 0`
    summand is replaced by the two live `transitions` / `humanize` summands:
 
-     pop  = 10277 = form 8 + harmony 8 + selection 1 + walker 0 + arrange 0
-                 + interpreter (auto-tempo) 1 + transitions 61 + humanize 10198
-     jazz =  5304 = form 1 + harmony 30 + selection 3 + walker 128 + arrange 0
-                 + interpreter (auto-tempo) 1 + transitions 53 + humanize 5088
+     pop  = 10561 = form 8 + harmony 8 + selection 13 + walker 0 + arrange 0
+                 + interpreter (auto-tempo) 1 + transitions 61 + humanize 10470
+     jazz =  5315 = form 1 + harmony 30 + selection 6 + walker 128 + arrange 0
+                 + interpreter (auto-tempo) 1 + transitions 53 + humanize 5096
 
    Each summand is independently pinned by an existing chunk-1/2/3 golden, which
    this composed total cross-checks (non-vacuous):
      - form 8 / 1     : tests/test_form.py::test_draw_count_example_1/2 (PHASE_3 §11.5)
      - harmony 8 / 30 : tests/test_harmony_goldens.py::test_draw_count_example_1/2 (§10)
-     - selection 1 / 3: tests/test_selection_goldens.py (§9.1)
+     - selection 13 / 6: tests/test_selection_goldens.py (§9.1; C5 thickened every
+                         bank slot to ≥ 2 candidates → every active slot draws)
      - walker 0 / 128 : tests/test_generator_goldens.py + test_walker_goldens.py (§9.2)
      - arrange 0      : tests/test_arrange.py (zero-draw assertion)
      - transitions 61 / 53 : tests/test_transitions_goldens.py +
                              test_transitions_determinism.py (§3.8 device 14/10 +
                              drums-mutation 38/32 + comping-mutation 9/11)
-     - humanize 10198 / 5088 : tests/test_humanizer_goldens.py (§5 counting-RNG shim)
+     - humanize 10470 / 5096 : tests/test_humanizer_goldens.py (§5 counting-RNG shim)
    The interpreter auto-tempo draw is 1 for both examples (neither params dict
    pins a tempo, so `interpret` draws one tempo from the mood band).
 3. Random-free pipeline modules — `pipeline/{orchestrator,serialize}.py` import no
@@ -63,8 +64,8 @@ _JAZZ: dict[str, object] = {
 
 # Whole-pipeline total draw counts (measured; see module docstring decomposition).
 _TOTAL_DRAWS: dict[str, tuple[dict[str, object], int]] = {
-    "pop": (_POP, 10277),
-    "jazz": (_JAZZ, 5304),
+    "pop": (_POP, 10561),
+    "jazz": (_JAZZ, 5315),
 }
 
 _SRC = Path(__file__).resolve().parents[1] / "src" / "trackgen" / "pipeline"

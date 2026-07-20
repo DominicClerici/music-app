@@ -244,16 +244,45 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
 
 **Status: planning — session plan written, AWAITING USER APPROVAL (decision items S19-1…S19-5).**
 
-| # | Task | Model | Status |
-| --- | --- | --- | --- |
-| T0 | Blast-radius map: what breaks when a slot gains a 2nd candidate (scratch experiment) | opus | not started |
-| T3 | Jazz tempo-band diagnosis (ritard-tail hypothesis; calibrate report grain) | opus | not started |
-| T1 | pop_rock bank thickening — 23 second candidates | opus | not started |
-| T2 | jazz bank thickening — 15 second candidates + L2-2 comping register reconcile | opus | not started |
-| T4a | Re-bless cycle 1: generatorVersion 0.1.0→0.1.1, unscoped `bless --approve`, milestone regen + collateral | orchestrator | not started |
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T0 | Blast-radius map: what breaks when a slot gains a 2nd candidate (scratch experiment) | opus | done (report only) | — |
+| T3 | Jazz tempo-band diagnosis → CONFIRMED ritard-tail artifact; calibrate fixed, review APPROVE-WITH-NITS | opus | done | 82679f8 |
+| T1 | pop_rock bank thickening — 23 second candidates (`pr_*b` ids) + `tests/test_pop_rock_variety.py` (26 tests). Review **APPROVE** (scratch-mutation-verified additive lock; 1 nit → T5: `pr_pd_1b` mild ladder compression) | opus | done | (bless commit) |
+| T2 | jazz bank thickening — 15 second candidates (`jz_*b`) + `tests/test_jazz_variety.py` (35 tests). Review **APPROVE-WITH-NITS**; **S19-5 escalation CONFIRMED by reviewer** (`retarget.registerLow` dead data for chord-degree voicings — lane-pruned only, floor 46–50; no pack edit can clear L2-2; user ruling pending). Nits: land atomically with T4a; append `jz_dr_4b` 0.62 to C-08's enumeration. Weight-1 50/50 ruled optimal-under-additive-only by both reviewers | opus | done | (bless commit) |
+| T4a | Re-bless cycle 1: generatorVersion 0.1.0→0.1.1; unscoped `bless --approve` (22 cells rewritten, all first-divergent `phrases_stage5`; 2 restamped); 3 milestone fixtures regen + 2 version literals; 15 pinned-value tests recomputed from the engine (draw totals pop 10277→10561 / jazz 5304→5315; winner flips incl. jazz head `jz_dr_2→jz_dr_2b`, pop verse bass `pr_bs_2→pr_bs_2b`; jazz bar-48 crash-kick suppression structural, §3.7-legitimate); PHASE_5 §9.1/§9.4/§7.4/§12 amended per user-ratified recompute+annotate; C-21 logged + C-08 appended | orchestrator | done | (bless commit) |
 | T5 | USER listening block: full-grid audition + T1 level pass + §8.4 error-spotting (+T4b re-bless iff edits) | user+orchestrator | not started |
 | T6 | Calibration capture (`calibration.yaml` ×2) + pack version stamps | orchestrator | not started |
-| T7 | Whole-chunk 3-lens review + close-out | opus ×3 | not started |
+| T7 | Whole-chunk 3-lens review + close-out | opus ×3 | not started | |
+
+**Post-T1/T2 state (orchestrator-verified 2026-07-20):** both packs lint **0 errors / 0 warnings**
+(was 23+15); ruff check/format/mypy clean; pytest **44 failed / 6003 passed / 1 skipped** with every
+failure in the expected collateral classes (27 `test_bless` corpus · 4 M1 `test_reference_banks` ·
+2 M2 `test_selection_goldens` · 2 M3 `test_pipeline_determinism` · 2 M4 `test_whole_document_goldens` ·
+2 M5 `test_generator_goldens` · 2 `test_transitions_goldens` · 3 `test_humanizer_goldens`) — zero
+validation failures. T1 empirical note: pop_rock pads are NOT uniformly dormant — aggressive-class
+moods route pads at rungs 3/4, so only 8 slots across both packs are truly golden-blind. Weight
+convention: all new siblings weight 1 → 50/50 pools (additive-only precludes 3:2 incumbent-dominant;
+flagged to T7). T4a checkpoint items for the USER: arbitration sign-off on stale PHASE_5 §9.1
+narrative/count samples + §7.1/§7.4 inventories + §9.4 head-1 bar-0 sample; S19-5 registerLow ruling.
+
+**T0 blast-radius findings (binding on T1/T2/T4a):** a singleton pool consumes ZERO draws
+(`selection.py::_draw`, draw-iff-≥2 — verified in the current tree); adding a 2nd candidate flips
+the slot to one `weighted_choice` draw and shifts every LATER same-role draw's RNG input
+(cross-rung winner-flip is live risk — re-verify winners empirically, never assume "incumbent
+holds"). Collateral mechanisms: **M1** static candidate-count pins in `tests/test_reference_banks.py`
+(4 tests — trip for EVERY slot incl. golden-blind); **M2** `tests/test_selection_goldens.py` draw
+narratives; **M3** `_TOTAL_DRAWS` pins in `tests/test_pipeline_determinism.py` (pop 10277 / jazz
+5304 — recompute, measured pins not arbitration); **M4** whole-doc goldens + 3 milestone fixtures
+(regen via `tests/_regen_milestone_fixtures.py`); **M5** per-bar anchor goldens (confirmed:
+`test_generator_goldens.py::test_jazz_head1_bar0_full`; audit siblings for comping/bass slots);
+plus (post-C4 surface, from C4's own handoff): the 24-cell corpus re-bless (unscoped `--approve`)
++ the 3 generatorVersion collateral tests. Golden-blind slots trip ONLY M1. Arbitration-rule-2
+sign-off needed for stale printed samples: PHASE_5 §9.1 (draw narrative + count table), §7.1/§7.4
+(bank inventories gain siblings), §9.4 (jazz head-1 bar-0 sample) — user sign-off at T4a before
+doc edits. **T0 caveat: its worktree snapshot predated C4** (4858-test baseline; no corpus/bless
+probes) — M1–M5 verified against pre-C4 tests, all unchanged since; corpus divergence gets read
+directly from the T4a semantic-diff report instead.
 
 #### Phase 8 — Chunk 4 — session 18 (`plans/sessions/SESSION_18.md`)
 

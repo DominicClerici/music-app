@@ -244,38 +244,65 @@ def _counts_by_rung(
     return {k: sorted(v) for k, v in out.items()}
 
 
-def test_candidate_counts_pop_drums_rung2() -> None:
+# C5 (session 19) thickened every bank slot to ≥ 2 candidates: each authored
+# main rung now carries its original pattern plus a `…b` second candidate, so no
+# main rung is a singleton any longer. The two weighted pairs (pop drums r2, jazz
+# drums r3 / comping r2+r3) keep their w3-dominant primaries; every other new
+# pair is weight 1/1.
+
+
+def test_candidate_counts_pop_drums() -> None:
     pop = _pack("pop_rock")
     by_rung = _counts_by_rung(pop.patterns["drums"], "main")
-    assert sorted(by_rung[2]) == [("pr_dr_2a", 3), ("pr_dr_2b", 1)]
-    # every other pop main rung is a single candidate
-    for rung in (1, 3, 4):
-        assert len(by_rung[rung]) == 1, f"pop drums rung {rung} not single"
+    assert by_rung[1] == [("pr_dr_1", 1), ("pr_dr_1b", 1)]
+    assert by_rung[2] == [("pr_dr_2a", 3), ("pr_dr_2b", 1)]  # weighted pair
+    assert by_rung[3] == [("pr_dr_3", 1), ("pr_dr_3b", 1)]
+    assert by_rung[4] == [("pr_dr_4", 1), ("pr_dr_4b", 1)]
 
 
-def test_candidate_counts_pop_all_single_except_drums_r2() -> None:
+def test_candidate_counts_pop_bass_comping_pads_all_pairs() -> None:
     pop = _pack("pop_rock")
-    for role in ("bass", "comping", "pads"):
+    expected = {
+        "bass": {
+            1: [("pr_bs_1", 1), ("pr_bs_1b", 1)],
+            2: [("pr_bs_2", 1), ("pr_bs_2b", 1)],
+            3: [("pr_bs_3", 1), ("pr_bs_3b", 1)],
+            4: [("pr_bs_4", 1), ("pr_bs_4b", 1)],
+        },
+        "comping": {
+            1: [("pr_cp_1", 1), ("pr_cp_1b", 1)],
+            2: [("pr_cp_2", 1), ("pr_cp_2b", 1)],
+            3: [("pr_cp_3", 1), ("pr_cp_3b", 1)],
+            4: [("pr_cp_4", 1), ("pr_cp_4b", 1)],
+        },
+        "pads": {
+            1: [("pr_pd_1", 1), ("pr_pd_1b", 1)],
+            2: [("pr_pd_2", 1), ("pr_pd_2b", 1)],
+            3: [("pr_pd_3", 1), ("pr_pd_3b", 1)],
+            4: [("pr_pd_4", 1), ("pr_pd_4b", 1)],
+        },
+    }
+    for role, table in expected.items():
         by_rung = _counts_by_rung(pop.patterns[role], "main")
-        for rung in (1, 2, 3, 4):
-            assert len(by_rung[rung]) == 1, f"pop {role} rung {rung} not single"
+        assert by_rung == table, role
 
 
-def test_candidate_counts_jazz_drums_rung3() -> None:
+def test_candidate_counts_jazz_drums() -> None:
     jazz = _pack("jazz")
     by_rung = _counts_by_rung(jazz.patterns["drums"], "main")
-    assert sorted(by_rung[3]) == [("jz_dr_3a", 3), ("jz_dr_3b", 2)]
-    for rung in (1, 2, 4):
-        assert len(by_rung[rung]) == 1, f"jazz drums rung {rung} not single"
+    assert by_rung[1] == [("jz_dr_1", 1), ("jz_dr_1b", 1)]
+    assert by_rung[2] == [("jz_dr_2", 1), ("jz_dr_2b", 1)]
+    assert by_rung[3] == [("jz_dr_3a", 3), ("jz_dr_3b", 2)]  # weighted pair
+    assert by_rung[4] == [("jz_dr_4", 1), ("jz_dr_4b", 1)]
 
 
-def test_candidate_counts_jazz_comping_rung2_rung3() -> None:
+def test_candidate_counts_jazz_comping() -> None:
     jazz = _pack("jazz")
     by_rung = _counts_by_rung(jazz.patterns["comping"], "main")
-    assert sorted(by_rung[2]) == [("jz_cp_2a", 3), ("jz_cp_2b", 2)]
-    assert sorted(by_rung[3]) == [("jz_cp_3a", 3), ("jz_cp_3b", 2)]
-    for rung in (1, 4):
-        assert len(by_rung[rung]) == 1, f"jazz comping rung {rung} not single"
+    assert by_rung[1] == [("jz_cp_1", 1), ("jz_cp_1b", 1)]
+    assert by_rung[2] == [("jz_cp_2a", 3), ("jz_cp_2b", 2)]  # weighted pair
+    assert by_rung[3] == [("jz_cp_3a", 3), ("jz_cp_3b", 2)]  # weighted pair
+    assert by_rung[4] == [("jz_cp_4", 1), ("jz_cp_4b", 1)]
 
 
 # --- voicing.classes, layeringOrder, walking block --------------------------
