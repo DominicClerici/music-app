@@ -133,9 +133,9 @@ patterns:
       - { pos: 3360, dur: 240, degree: root, octave: 0, velocity: 0.74 }
       - { pos: 3600, dur: 240, degree: root, octave: 0, velocity: 0.72, push: true }
 
-  # rung 4 (variant, 2-bar) — driving 8ths with octave pops on both 4&s, a fifth
-  # on bar-2 1&, a gated 16th pickup into bar 2, and a pushed root. Same rung-4
-  # device palette as pr_bs_4, rearranged
+  # rung 4 (variant, 2-bar) — driving 8ths with octave pops on bar-1 4& and
+  # bar-2 3&, a fifth on bar-2 1&, a gated 16th pickup into bar 2, and a pushed
+  # root. Same rung-4 device palette as pr_bs_4, rearranged
   - id: pr_bs_4b
     role: bass
     kind: main

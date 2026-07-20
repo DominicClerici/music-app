@@ -19,20 +19,26 @@ Deterministic / TID251-clean: fixed base36 seeds and integer `Rng` indices only
 
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
 from typing import cast
 
 import pytest
+import yaml
 
 from trackgen.packs import resolve_pack
 from trackgen.packs.lint import _warn_variety_coverage
+from trackgen.packs.loader import load_pack
 from trackgen.packs.models import PatternEnvelope, PatternKind, StylePack
 from trackgen.parts.selection import _draw, _eligible_set
 from trackgen.pipeline.trace import generate_trace
 from trackgen.quality.suite import validate_pipeline
 from trackgen.schema.document import Role
-from trackgen.seeds import Rng
+from trackgen.seeds import Rng, derive, stream_seed
 
 _PACK = "jazz"
+_PACK_DIR = Path(__file__).resolve().parents[1] / "styles" / "jazz"
 
 # (role, kind, rung) -> the 2nd candidate T2 added. rung is a dummy 1 for
 # intro/ending (energy-insensitive, §3.2).
@@ -160,18 +166,50 @@ def test_locked_render_selects_new_id(new_id: str, cell: tuple[str, str]) -> Non
     assert validate_pipeline(trace.document, trace) == []
 
 
-@pytest.mark.parametrize("new_id", sorted(_BLIND))
-def test_blind_id_is_drawable(new_id: str) -> None:
-    """A golden-blind new id (no render reaches its slot) is drawable from its
-    eligible set: weighted_choice returns it at some bounded Rng index."""
-    slot = next(s for s, i in _NEW_BY_SLOT.items() if i == new_id)
-    role, kind, rung = slot
+# Each row: (role, kind, rung, master_seed_int, new_id). The arrangement never
+# routes these slots (rung-1 mains, layer-capped pads, intro/ending pads — C-20),
+# so the production draw primitive is their only mechanical coverage. The rng is
+# the exact §3.6 select sub-stream:
+# Rng(derive(stream_seed(master, {}, role), "select")). Seeds discovered by sweep,
+# locked here.
+_BLIND_DRAWS: tuple[tuple[str, str, int, int, str], ...] = (
+    ("drums", "main", 1, 3, "jz_dr_1b"),
+    ("comping", "main", 1, 1, "jz_cp_1b"),
+    ("pads", "main", 1, 2, "jz_pd_1b"),
+    ("pads", "main", 2, 2, "jz_pd_2b"),
+    ("pads", "intro", 1, 2, "jz_pd_ib"),
+    ("pads", "ending", 1, 2, "jz_pd_eb"),
+)
+
+
+def test_blind_draws_cover_every_blind_id() -> None:
+    """Every golden-blind id has exactly one locked select-stream draw row."""
+    assert {row[4] for row in _BLIND_DRAWS} == set(_BLIND)
+
+
+@pytest.mark.parametrize(
+    ("role", "kind", "rung", "master", "new_id"),
+    _BLIND_DRAWS,
+    ids=[row[4] for row in _BLIND_DRAWS],
+)
+def test_blind_slot_draw_selects_candidate(
+    role: str, kind: str, rung: int, master: int, new_id: str
+) -> None:
+    """A golden-blind slot's production selection draw picks the new candidate
+    under a locked select-stream master seed — the exact `_draw`/`_eligible_set`
+    path selection uses, at the lint worst cell (happy / 106)."""
+    pack = load_pack(str(_PACK_DIR))
     eligible = _eligible_set(
-        _pack(), cast(Role, role), cast(PatternKind, kind), rung, _WORST_TEMPO
+        pack, cast(Role, role), cast(PatternKind, kind), rung, _WORST_TEMPO
     )
-    assert len(eligible) >= 2
-    drawn_ids = {_draw(eligible, Rng(idx)).id for idx in range(64)}
-    assert new_id in drawn_ids, (new_id, slot, drawn_ids)
+    assert len(eligible) >= 2, f"{role}/{kind}/rung{rung} is not a real draw"
+
+    rng = Rng(derive(stream_seed(master, {}, role), "select"))
+    chosen = _draw(eligible, rng)
+    assert chosen.id == new_id, (
+        f"{role}/{kind}/rung{rung} @ master {master} chose {chosen.id}, "
+        f"expected {new_id} (candidates {[p.id for p in eligible]})"
+    )
 
 
 @pytest.mark.parametrize("role", ["drums", "comping", "pads"])
@@ -185,3 +223,71 @@ def test_existing_ids_preserved_and_new_added(role: str) -> None:
     added = {i for s, i in _NEW_BY_SLOT.items() if s[0] == role}
     assert _EXISTING[role] <= current, ("lost an existing id", role)
     assert current == _EXISTING[role] | added, (role, sorted(current))
+
+
+# --- additive-only: no pre-existing jazz entry altered in place --------------
+
+# Frozen sha256[:16] of each pre-existing jazz pattern's authored YAML entry
+# (json.dumps(entry, sort_keys=True)), computed from the untouched HEAD entries.
+# Mirrors tests/test_pop_rock_variety.py::test_no_preexisting_pattern_removed_or_altered
+# — a set-only id guard cannot catch an in-place edit; this content hash does.
+_FROZEN_PREEXISTING_HASHES: dict[str, str] = {
+    "jz_dr_1": "bfa30e781a5f1aeb",
+    "jz_dr_2": "e73629a9e83e5662",
+    "jz_dr_3a": "addc47267c41eae8",
+    "jz_dr_3b": "a558d6d206ffc4a2",
+    "jz_dr_4": "df4bd2843924f655",
+    "jz_dr_i": "94d433ed566766d2",
+    "jz_dr_e": "509c67d71912b0a5",
+    "jz_dr_f1": "5b69d20e766ce7d4",
+    "jz_cp_1": "2bd035721864488b",
+    "jz_cp_2a": "80e64bdf3cdde4e3",
+    "jz_cp_2b": "bde78b5406ae07d6",
+    "jz_cp_3a": "8c1ce4f1a1ca5c66",
+    "jz_cp_3b": "387e673069c89664",
+    "jz_cp_4": "6032b7eb98e69ba2",
+    "jz_cp_i": "8c76b41fb54989df",
+    "jz_cp_e": "b2263b3fb4741933",
+    "jz_pd_1": "ae41ef04062b60e8",
+    "jz_pd_2": "5183611fd07c392d",
+    "jz_pd_3": "896f89c6dcdd00dc",
+    "jz_pd_4": "b5bcf74a16d47cd4",
+    "jz_pd_i": "ebdeb44dfc200c2f",
+    "jz_pd_e": "c8eeaa170e0f2385",
+}
+
+# Jazz bass is `mode: walking` (no `patterns:` block), so only these three banks
+# carry pattern entries.
+_BANK_FILES = ("drums", "comping", "pads")
+
+
+def _authored_entry_hashes() -> dict[str, str]:
+    """sha256[:16] of each pattern's authored YAML entry, keyed by id — the same
+    canonical form the frozen baseline was computed with."""
+    out: dict[str, str] = {}
+    for name in _BANK_FILES:
+        data = yaml.safe_load((_PACK_DIR / "patterns" / f"{name}.yaml").read_text())
+        for entry in data["patterns"]:
+            digest = hashlib.sha256(
+                json.dumps(entry, sort_keys=True).encode()
+            ).hexdigest()[:16]
+            out[entry["id"]] = digest
+    return out
+
+
+def test_frozen_preexisting_covers_every_existing_id() -> None:
+    """The 22 frozen hashes are exactly the pre-existing golden-anchor id set."""
+    all_existing = {pid for ids in _EXISTING.values() for pid in ids}
+    assert set(_FROZEN_PREEXISTING_HASHES) == all_existing
+
+
+def test_no_preexisting_pattern_removed_or_altered() -> None:
+    """Every pre-existing jazz id still present and byte-identical to HEAD
+    (additive only — the golden anchors were untouched this session)."""
+    current = _authored_entry_hashes()
+    for pid, expected in _FROZEN_PREEXISTING_HASHES.items():
+        assert pid in current, f"pre-existing pattern {pid} was removed"
+        assert current[pid] == expected, (
+            f"pre-existing pattern {pid} was altered "
+            f"(hash {current[pid]} != frozen {expected})"
+        )

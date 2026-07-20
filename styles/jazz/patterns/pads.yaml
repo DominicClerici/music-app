@@ -65,10 +65,11 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
 
   # --- variant candidates (quartal footballs, distinct rhythmic shape from the
-  # whole-note siblings): even rungs re-attack as two half notes, odd rungs as a
-  # dotted-half + quarter; escalating velocity by rung ---
+  # whole-note siblings): busyness rises with rung — rungs 1-3 re-voice as a
+  # dotted-half + quarter (a gentle late re-attack), rung 4 as two half notes
+  # (the busiest); escalating velocity by rung ---
 
-  # rung 1 (variant) — two half notes
+  # rung 1 (variant) — dotted-half + quarter (gentle)
   - id: jz_pd_1b
     role: pads
     kind: main
@@ -76,8 +77,8 @@ patterns:
     lengthTicks: 1920
     weight: 1
     events:
-      - { pos: 0, dur: 960, degree: chord, velocity: 0.44 }
-      - { pos: 960, dur: 960, degree: chord, velocity: 0.42 }
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.44 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.42 }
 
   # rung 2 (variant) — dotted-half + quarter
   - id: jz_pd_2b
@@ -90,7 +91,7 @@ patterns:
       - { pos: 0, dur: 1440, degree: chord, velocity: 0.46 }
       - { pos: 1440, dur: 480, degree: chord, velocity: 0.44 }
 
-  # rung 3 (variant) — two half notes
+  # rung 3 (variant) — dotted-half + quarter (gentle, no busier than rung 4)
   - id: jz_pd_3b
     role: pads
     kind: main
@@ -98,10 +99,10 @@ patterns:
     lengthTicks: 1920
     weight: 1
     events:
-      - { pos: 0, dur: 960, degree: chord, velocity: 0.50 }
-      - { pos: 960, dur: 960, degree: chord, velocity: 0.48 }
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.50 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.48 }
 
-  # rung 4 (variant) — dotted-half + quarter
+  # rung 4 (variant) — two half notes (the busiest b-variant)
   - id: jz_pd_4b
     role: pads
     kind: main
@@ -109,8 +110,8 @@ patterns:
     lengthTicks: 1920
     weight: 1
     events:
-      - { pos: 0, dur: 1440, degree: chord, velocity: 0.52 }
-      - { pos: 1440, dur: 480, degree: chord, velocity: 0.50 }
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.52 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.50 }
 
   # intro (variant) — two half notes
   - id: jz_pd_ib

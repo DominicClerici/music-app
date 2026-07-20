@@ -28,8 +28,8 @@ patterns:
     events:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.45 }
 
-  # rung 1 (variant) — two half-note swells, a gentle pulse under the stillest
-  # texture
+  # rung 1 (variant) — bar sustain with a soft beat-4 re-voice, the stillest
+  # texture (whole-ish, gentler than the mid-bar re-attacks above rung 1)
   - id: pr_pd_1b
     role: pads
     kind: main
@@ -37,8 +37,8 @@ patterns:
     lengthTicks: 1920
     weight: 1
     events:
-      - { pos: 0, dur: 960, degree: chord, velocity: 0.45 }
-      - { pos: 960, dur: 960, degree: chord, velocity: 0.43 }
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.45 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.43 }
 
   # rung 2 (variant) — bar sustain with a soft beat-4 re-voice
   - id: pr_pd_2b
@@ -70,7 +70,8 @@ patterns:
       - { pos: 0, dur: 960, degree: chord, velocity: 0.55 }
       - { pos: 960, dur: 960, degree: chord, velocity: 0.50 }
 
-  # rung 3 (variant) — half + two quarters, a pulsing pad matching the busier rung
+  # rung 3 (variant) — two half-note swells, a pulsing pad that stays no busier
+  # than the rung-4 incumbent
   - id: pr_pd_3b
     role: pads
     kind: main
@@ -79,8 +80,7 @@ patterns:
     weight: 1
     events:
       - { pos: 0, dur: 960, degree: chord, velocity: 0.50 }
-      - { pos: 960, dur: 480, degree: chord, velocity: 0.48 }
-      - { pos: 1440, dur: 480, degree: chord, velocity: 0.48 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.48 }
 
   # rung 4 (variant) — quarter-note pulse, the most driving pad texture
   - id: pr_pd_4b

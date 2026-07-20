@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "meta": {
-    "generatorVersion": "0.1.2",
+    "generatorVersion": "0.1.3",
     "toneVersion": "^15.1.0",
     "seed": "1ps9wxb",
     "seedOverrides": {},
@@ -20604,39 +20604,21 @@
         },
         {
           "ticks": 54720,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 57,
           "velocity": 0.615
         },
         {
           "ticks": 54720,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 64,
           "velocity": 0.615
         },
         {
           "ticks": 54720,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 69,
           "velocity": 0.615
-        },
-        {
-          "ticks": 55200,
-          "durationTicks": 480,
-          "midi": 57,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 55200,
-          "durationTicks": 480,
-          "midi": 64,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 55200,
-          "durationTicks": 480,
-          "midi": 69,
-          "velocity": 0.6
         },
         {
           "ticks": 55680,
@@ -20658,39 +20640,21 @@
         },
         {
           "ticks": 56640,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 55,
           "velocity": 0.615
         },
         {
           "ticks": 56640,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 62,
           "velocity": 0.615
         },
         {
           "ticks": 56640,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 67,
           "velocity": 0.615
-        },
-        {
-          "ticks": 57120,
-          "durationTicks": 480,
-          "midi": 55,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 57120,
-          "durationTicks": 480,
-          "midi": 62,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 57120,
-          "durationTicks": 480,
-          "midi": 67,
-          "velocity": 0.6
         },
         {
           "ticks": 57600,
@@ -20712,39 +20676,21 @@
         },
         {
           "ticks": 58560,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 53,
           "velocity": 0.615
         },
         {
           "ticks": 58560,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 60,
           "velocity": 0.615
         },
         {
           "ticks": 58560,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 65,
           "velocity": 0.615
-        },
-        {
-          "ticks": 59040,
-          "durationTicks": 480,
-          "midi": 53,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 59040,
-          "durationTicks": 480,
-          "midi": 60,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 59040,
-          "durationTicks": 480,
-          "midi": 65,
-          "velocity": 0.6
         },
         {
           "ticks": 59520,
@@ -20766,39 +20712,21 @@
         },
         {
           "ticks": 60480,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 55,
           "velocity": 0.615
         },
         {
           "ticks": 60480,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 62,
           "velocity": 0.615
         },
         {
           "ticks": 60480,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 67,
           "velocity": 0.615
-        },
-        {
-          "ticks": 60960,
-          "durationTicks": 480,
-          "midi": 55,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 60960,
-          "durationTicks": 480,
-          "midi": 62,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 60960,
-          "durationTicks": 480,
-          "midi": 67,
-          "velocity": 0.6
         },
         {
           "ticks": 61440,
@@ -20820,41 +20748,23 @@
         },
         {
           "ticks": 62400,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 57,
           "velocity": 0.615
         },
         {
           "ticks": 62400,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 64,
           "velocity": 0.615
         },
         {
           "ticks": 62400,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 69,
           "velocity": 0.615
         },
         {
-          "ticks": 62880,
-          "durationTicks": 480,
-          "midi": 57,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 62880,
-          "durationTicks": 480,
-          "midi": 64,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 62880,
-          "durationTicks": 480,
-          "midi": 69,
-          "velocity": 0.6
-        },
-        {
           "ticks": 63360,
           "durationTicks": 960,
           "midi": 55,
@@ -20874,39 +20784,21 @@
         },
         {
           "ticks": 64320,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 55,
           "velocity": 0.615
         },
         {
           "ticks": 64320,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 62,
           "velocity": 0.615
         },
         {
           "ticks": 64320,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 67,
           "velocity": 0.615
-        },
-        {
-          "ticks": 64800,
-          "durationTicks": 480,
-          "midi": 55,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 64800,
-          "durationTicks": 480,
-          "midi": 62,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 64800,
-          "durationTicks": 480,
-          "midi": 67,
-          "velocity": 0.6
         },
         {
           "ticks": 65280,
@@ -20928,41 +20820,23 @@
         },
         {
           "ticks": 66240,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 53,
           "velocity": 0.615
         },
         {
           "ticks": 66240,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 60,
           "velocity": 0.615
         },
         {
           "ticks": 66240,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 65,
           "velocity": 0.615
         },
         {
-          "ticks": 66720,
-          "durationTicks": 480,
-          "midi": 53,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 66720,
-          "durationTicks": 480,
-          "midi": 60,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 66720,
-          "durationTicks": 480,
-          "midi": 65,
-          "velocity": 0.6
-        },
-        {
           "ticks": 67200,
           "durationTicks": 960,
           "midi": 55,
@@ -20982,39 +20856,21 @@
         },
         {
           "ticks": 68160,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 55,
           "velocity": 0.615
         },
         {
           "ticks": 68160,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 62,
           "velocity": 0.615
         },
         {
           "ticks": 68160,
-          "durationTicks": 480,
+          "durationTicks": 960,
           "midi": 67,
           "velocity": 0.615
-        },
-        {
-          "ticks": 68640,
-          "durationTicks": 480,
-          "midi": 55,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 68640,
-          "durationTicks": 480,
-          "midi": 62,
-          "velocity": 0.6
-        },
-        {
-          "ticks": 68640,
-          "durationTicks": 480,
-          "midi": 67,
-          "velocity": 0.6
         },
         {
           "ticks": 69120,
