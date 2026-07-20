@@ -24,6 +24,7 @@ dev = [
     "pytest",
     "hypothesis",
     "types-pyyaml>=6.0.12.20260518",
+    "pytest-xdist>=3.8.0",
 ]
 
 [build-system]

@@ -7,6 +7,7 @@ validates everything into the frozen models in `trackgen.packs.models`.
 
 import math
 from collections import defaultdict
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -394,7 +395,20 @@ def _window_and_check_fills(
 
 
 def load_pack(path: str | Path) -> StylePack:
-    """Load and validate a style pack directory into a `StylePack`."""
+    """Load and validate a style pack directory into a `StylePack`.
+
+    Cached per resolved directory: packs are read-only for the life of a
+    process (`StylePack` and its nested models are all frozen), and
+    `resolve_pack` is called from the hot path of every `generate_track`
+    plus repeatedly across test matrices — re-parsing and re-validating
+    every YAML file in a pack on each call was measured to dominate test
+    suite runtime.
+    """
+    return _load_pack_cached(Path(path))
+
+
+@cache
+def _load_pack_cached(pack_dir: Path) -> StylePack:
     # Lazy import to break the import cycle: `sound.timbres` imports `PackModel`
     # from `packs.models`, and importing `packs.models` runs `packs.__init__`
     # (which imports this loader), so a module-level import here would re-enter a
@@ -402,8 +416,6 @@ def load_pack(path: str | Path) -> StylePack:
     # well after both modules finish loading) breaks it — the same idiom
     # `InterpreterConfig._check_rules` uses for `interpreter.moods`.
     from trackgen.sound.timbres import TimbresConfig, check_flavor_completeness
-
-    pack_dir = Path(path)
 
     manifest_path = pack_dir / "manifest.yaml"
     raw_manifest = _read_yaml(manifest_path)
