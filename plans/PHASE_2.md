@@ -363,7 +363,7 @@ Linear interpolation between columns; encoded into PHASE_1's `swing.ratio = r/(1
 
 ```jsonc
 {
-  "stylePack": { "id": "pop_rock", "version": "0.1.0" },
+  "stylePack": { "id": "pop_rock", "version": "0.2.0" },  // 0.1.0 at design time; stamped 0.2.0 by C5 bank thickening (session 19)
   "seed": { "master": 3735928559, "overrides": {} },
   "key": { "tonicPc": 4, "mode": "major" },        // happy V=+0.75 → major; tonics.major[0] = E
   "tempoBpm": 123,                                  // center 118.1 → range [106,130]; draw = 123
@@ -388,7 +388,7 @@ Linear interpolation between columns; encoded into PHASE_1's `swing.ratio = r/(1
 
 ```jsonc
 {
-  "stylePack": { "id": "jazz", "version": "0.1.0" },
+  "stylePack": { "id": "jazz", "version": "0.2.0" },      // 0.1.0 at design time; stamped 0.2.0 by C5 bank thickening (session 19)
   "seed": { "master": 3735928559, "overrides": {} },
   "key": { "tonicPc": 2, "mode": "minor" },        // V=−0.50 → minor; tonics.minor[0] = D
   "tempoBpm": 69,                                   // override center 68 → range [61,75]; draw = 69

@@ -9,10 +9,10 @@ The page fetches `../fixtures/milestone.trackdoc.json` by default, so it needs a
 file server (a `file://` open hits CORS on that fetch). From the repo root:
 
 ```sh
-uv run python -m http.server
+uv run python -m http.server 8012
 ```
 
-then open <http://localhost:8000/playground/> and click **Play** (audio starts only on a
+then open <http://localhost:8012/playground/> and click **Play** (audio starts only on a
 user gesture, per the browser autoplay policy).
 
 The **file picker** loads any fixture JSON directly and works **without** a server (no

@@ -38,7 +38,7 @@ _U64_MAX = (1 << 64) - 1
 def _assert_example_1(plan: GenerationPlan) -> None:
     """PHASE_2 §6.5 Example 1 — {styleFamily: pop_rock, seed: 1ps9wxb}."""
     assert plan.style_pack.id == "pop_rock"
-    assert plan.style_pack.version == "0.1.0"
+    assert plan.style_pack.version == "0.2.0"
     assert plan.seed.master == MASTER
     assert plan.seed.overrides == {}
     assert plan.key.tonic_pc == 4  # tonics.major[0] = E
@@ -75,7 +75,7 @@ def _assert_example_2(plan: GenerationPlan) -> None:
     """PHASE_2 §6.5 Example 2 —
     {styleFamily: jazz, mood: melancholic, maxLengthSec: 240, seed: 1ps9wxb}."""
     assert plan.style_pack.id == "jazz"
-    assert plan.style_pack.version == "0.1.0"
+    assert plan.style_pack.version == "0.2.0"
     assert plan.seed.master == MASTER
     assert plan.key.tonic_pc == 2  # tonics.minor[0] = D
     assert plan.key.mode == "minor"  # V=-0.50 -> minor

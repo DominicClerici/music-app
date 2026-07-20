@@ -192,13 +192,22 @@ def test_compute_bands_accepts_raw_traces() -> None:
 
 
 # ---------------------------------------------------------------------------
-# load_calibration — the C2 None branch (no file on disk yet)
+# load_calibration — the None branch (no file on disk) + the blessed artifacts
 # ---------------------------------------------------------------------------
 
 
+def test_load_calibration_returns_none_when_absent() -> None:
+    assert load_calibration("no_such_pack") is None
+
+
 @pytest.mark.parametrize("pack", ["pop_rock", "jazz"])
-def test_load_calibration_returns_none_when_absent(pack: str) -> None:
-    assert load_calibration(pack) is None
+def test_load_calibration_reads_blessed_artifact(pack: str) -> None:
+    """C5 (session 19) committed the first blessed `calibration.yaml` per
+    reference pack (PHASE_8 §8.1 bootstrap step 8)."""
+    cal = load_calibration(pack)
+    assert cal is not None
+    assert cal.pack == pack
+    assert len(cal.moods) > 0
 
 
 def test_calibration_to_yaml_dict_shape() -> None:

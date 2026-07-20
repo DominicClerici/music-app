@@ -35,7 +35,7 @@ _TICKS_PER_BAR = 1920
 # Track emit order: the drum sub-order, then the pitched roles.
 _EMIT_ORDER: tuple[str, ...] = (*_TRACK_ORDER, "bass", "comping", "pads")
 
-_GENERATOR_VERSION = "0.1.1"
+_GENERATOR_VERSION = "0.1.2"
 _TONE_VERSION = "^15.1.0"
 
 

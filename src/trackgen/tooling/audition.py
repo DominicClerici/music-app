@@ -120,7 +120,7 @@ def open_playground(rendered_json: str) -> None:
     url = (playground / "index.html").as_uri() + f"?doc={_PLAY_DOC_NAME}"
     typer.echo(
         "If the page can't fetch the doc (file:// is often blocked), serve it: "
-        "`uv run python -m http.server` from the playground dir, then open "
-        f"http://localhost:8000/index.html?doc={_PLAY_DOC_NAME}"
+        "`uv run python -m http.server 8012` from the playground dir, then open "
+        f"http://localhost:8012/index.html?doc={_PLAY_DOC_NAME}"
     )
     webbrowser.open(url)

@@ -111,11 +111,21 @@ def test_layer2_clean_on_real_trace(params: dict[str, object]) -> None:
     assert layer2_warnings(trace.document, trace) == []
 
 
+def test_load_l2_thresholds_returns_none_for_absent_artifact() -> None:
+    """A pack with no `calibration.yaml` reads None — the signal to fall back
+    to the engine defaults (0.95 / 0.98). (Until C5 blessed the first
+    artifacts, this held for the reference packs too.)"""
+    assert load_l2_thresholds("no_such_pack") is None
+
+
 @pytest.mark.parametrize("pack", ["pop_rock", "jazz"])
-def test_load_l2_thresholds_returns_none_in_c2(pack: str) -> None:
-    """No `calibration.yaml` exists in C2, so the read-hook returns None and the
-    engine defaults (0.95 / 0.98) are used."""
-    assert load_l2_thresholds(pack) is None
+def test_load_l2_thresholds_reads_blessed_artifact(pack: str) -> None:
+    """C5 (session 19) committed the first blessed `calibration.yaml` per
+    reference pack; the read-hook now returns pack-specific thresholds."""
+    thresholds = load_l2_thresholds(pack)
+    assert thresholds is not None
+    bass, comping = thresholds
+    assert 0.0 < bass <= 1.0 and 0.0 < comping <= 1.0
 
 
 # ---------------------------------------------------------------------------

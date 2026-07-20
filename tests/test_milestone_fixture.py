@@ -40,7 +40,7 @@ def test_fixture_parses_and_validates_zero_violations(doc: TrackDocument) -> Non
 
 def test_meta_echo(doc: TrackDocument) -> None:
     assert doc.schema_version == 1
-    assert doc.meta.generator_version == "0.1.1"
+    assert doc.meta.generator_version == "0.1.2"
     assert doc.meta.tone_version == "^15.1.0"
     assert doc.meta.seed == "1ps9wxb"
     assert doc.meta.seed_overrides == {}
