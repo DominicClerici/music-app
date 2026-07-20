@@ -23,7 +23,7 @@ All four must be green before committing (`CLAUDE.md`). Run with `uv run` so the
 
 ## `trackgen` CLI commands
 
-Installed as a script entry point (`pyproject.toml` `[project.scripts]`); run via `uv run trackgen <command>` or, inside an activated venv, `trackgen <command>`. Two commands exist today (Phase 8 will add `audition`, `lint`, and `calibrate` — not yet built).
+Installed as a script entry point (`pyproject.toml` `[project.scripts]`); run via `uv run trackgen <command>` or, inside an activated venv, `trackgen <command>`. Commands: `generate`, `export-schema`, and the Phase 8 authoring tools `audition`, `lint`, and `calibrate`.
 
 ### `trackgen generate`
 
@@ -60,3 +60,30 @@ Exports the `TrackDocument` JSON Schema — the client contract the browser play
 | Flag | Type | Default | Accepted values | What it does |
 | --- | --- | --- | --- | --- |
 | `--out` | path | `docs/schema/trackdocument.schema.json` | Any writable file path; parent directories are created automatically. | Writes the exported JSON Schema to this path. |
+
+### `trackgen audition` (Phase 8 §9.1)
+
+The edit→hear authoring loop: render a track and optionally filter/limit its output. Renders via the same pipeline as `generate`, then filters the phrase list upstream of serialization (so buses/sound-design recompute).
+
+| Flag | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `--pack` | string | *required* | Style pack id (maps to `styleFamily`). |
+| `--mood` | string | pack default | Mood id (as `generate --mood`). |
+| `--seed` | string | fresh | Base36 u64 master seed. |
+| `--tempo` | integer | auto | Tempo override (maps to `tempoBpm`). |
+| `--section` | string | *(whole track)* | Render only one section's tick span, by `FormSection.id` (e.g. `solo-2`). |
+| `--solo` | string | *(none)* | Keep only this role (`drums`/`bass`/`comping`/`pads`) or drum sub-track id (`kick`/`snare`/`hats`/`ride`/`crash`/`tom_low`/`tom_mid`/`tom_high`/`perc`). |
+| `--mute` | string | *(none)* | Drop this role or drum sub-track id. Applied after `--solo` when both are given. |
+| `--out` | path | *(stdout)* | Write the `TrackDocument` JSON here. |
+| `--play` | flag | off | Write to `playground/audition.trackdoc.json` and open the playground (`?doc=` loader). |
+| `--explain` | flag | off | Also print the per-slot selection log (§9.3) to **stderr** (stdout JSON stays clean). |
+
+### `trackgen lint` (Phase 8 §9.2)
+
+`trackgen lint styles/<pack>/` — two tiers. **Errors** (exit non-zero): every loader rule (F/P/PT/TR/TB/interpreter) run in collect-mode with file-level context + rule tag. **Warnings** (never fail): the five authoring-quality classes — variety coverage (≤1 surviving candidate for some mood/tempo cell), grid mixing (straight + triplet positions in one pattern), unreachable content (a rung no energy reaches; silence with a `# expected-unreachable` marker), dangling gates (an eligibility band no mood/tempo enters), weight degeneracy (one pool entry > 90 %).
+
+### `trackgen calibrate` (Phase 8 §9.3)
+
+`trackgen calibrate styles/<pack>/` — batch-renders the pack across its supported moods × seeds, computes the Layer-3 statistical bands + Layer-2 thresholds (mean ± 2.5 SD), and writes `styles/<pack>/calibration.yaml` (per-`(pack, mood)`). Prints a human report (per-track velocity/level, per-section note density, tempo-band observations). Per the §8.1 bootstrap order, a *blessed* reference-pack `calibration.yaml` is committed only after listening review (a later chunk).
+
+> `--explain` is also available on `trackgen generate` (prints the selection log to stderr).
