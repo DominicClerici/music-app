@@ -6,9 +6,22 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 4 (Session 18) — golden corpus + bless + smoke matrix. FRESH CHUNK — run
-> PROMPT step 0/1 (orient → scope → write `plans/sessions/SESSION_18.md` → USER APPROVAL GATE) before
-> dispatching.** C4 builds (PHASE_8 §8.2, DoD §14.5+§14.6): the **60-track golden matrix** (5 packs ×
+> **Next:** **Phase 8, Chunk 4 (Session 18) — golden corpus + bless + smoke matrix. PLAN APPROVED
+> (`plans/sessions/SESSION_18.md`, user-approved 2026-07-20). IN PROGRESS — Wave A dispatched
+> (T1 corpus module ‖ T4 smoke matrix, file-disjoint).** Two opus
+> scoping agents ran (corpus-capture mechanics · bless/smoke/CI + runtime budget). Four decisions
+> user-ratified at the gate: **S18-1** smoke matrix ships as a pytest module (no CI substrate exists
+> in the repo — DoD §14.6's literal "in CI" clause caveat-logged); **S18-2** IR stage files use
+> compact separators, `document.json` keeps indent=2 (~25→~12 MiB at 24 cells, all 9 boundaries
+> kept); **S18-3** mood triple = default + the two moods farthest apart in the combined (V,A) plane;
+> **S18-4** 300-seed sweep = 300 seeds × 2 packs at default params (600 renders, ~30 s). Four more
+> pinned as plan recommendations (S18-5 no `selection.json` · S18-6 move-matching rule · S18-7
+> section keyed by `FormSection.id` · S18-8 `generatorVersion` bump-check reads the baseline doc).
+> Waves: T1 corpus module ‖ T4 smoke matrix → T2 semantic diff → T3 CLI+capture+version-check → T5
+> rehearsal (orchestrator) → T6 3-lens review + close-out. Measured: ~40 ms/render, so the corpus is
+> ~3 s and the smoke matrix ~30 s — runtime is not a constraint. **Original handoff scope below.**
+>
+> **C4 scope (as handed off from C3):** C4 builds (PHASE_8 §8.2, DoD §14.5+§14.6): the **60-track golden matrix** (5 packs ×
 > 3 moods × 2 lengths × 2 seeds — but only pop_rock/jazz exist until C6–C8, so C4's corpus is the
 > **two reference packs** for now; the five-pack fill-out lands as packs are authored) captured at
 > **every IR boundary** (`fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json` — the C1
