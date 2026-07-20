@@ -6,13 +6,17 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 5 (Session 19) — reference-pack refinement (shakedown, §7). FRESH CHUNK —
-> run PROMPT step 0/1 (orient → scope → write `plans/sessions/SESSION_19.md` → USER APPROVAL GATE)
-> before dispatching.** C5 builds (PHASE_8 §7, DoD §14.2): enumerate every `# …`-abridged pop_rock/jazz
-> bank entry; lint clean *including* the §9.2 warning tier (pop 23 / jazz 15 variety-coverage warnings
-> today); `trackgen calibrate` + the T1 level pass; §8.4 error-spotting pass per supported mood;
-> capture goldens + the first blessed `calibration.yaml`. **C5 is the golden corpus's first production
-> re-bless** — pack-data changes will diverge most of the 24 cells.
+> **Next:** **Phase 8, Chunk 5 (Session 19) — reference-pack refinement (shakedown, §7). Step 0/1
+> DONE (2026-07-20): oriented, 2 opus scoping agents run, session plan written to
+> `plans/sessions/SESSION_19.md` — NOW AT THE USER APPROVAL GATE. No implementation dispatched.**
+> Scoping headline: **zero abridged bank entries remain** (Phases 5/7 discharged the §13.1
+> enumeration; verified — id sets match §7/§8 exactly), so C5's real authoring surface is the **38
+> variety-coverage lint warnings** (pop 23 / jazz 15; all name worst cell happy/106; a 2nd eligible
+> candidate per slot clears each; no annotation escape exists for this class). Jazz calibrate shows
+> tempo-band violations in 7/11 moods with floors ≈ 0.65 × mood tempo — likely ritard tails in the
+> report grain, T3 diagnoses before any data moves. Decision items S19-1…S19-5 in the plan file.
+> **C5 is the golden corpus's first production re-bless** — pack-data changes will diverge most of
+> the 24 cells; T0 maps the pinned-test blast radius empirically before authoring lands.
 >
 > **READ BEFORE STARTING C5 — four things C4 learned that change how C5 works:**
 >  1. **C-20: the corpus has a 37 % blind spot.** The 24 cells select only **31 of 49** reference
@@ -235,6 +239,21 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
   are wiring+validation, not new machinery. **C-03 orthogonal** (P8/P9 blind to extensions).
 - **feelTable threading:** add `feel_table` to `GenerationPlan` (additive null field) mirrors how
   `swing` flows; changes the plan-IR JSON that C4's corpus will capture natively (bless it fresh).
+
+#### Phase 8 — Chunk 5 — session 19 (`plans/sessions/SESSION_19.md`)
+
+**Status: planning — session plan written, AWAITING USER APPROVAL (decision items S19-1…S19-5).**
+
+| # | Task | Model | Status |
+| --- | --- | --- | --- |
+| T0 | Blast-radius map: what breaks when a slot gains a 2nd candidate (scratch experiment) | opus | not started |
+| T3 | Jazz tempo-band diagnosis (ritard-tail hypothesis; calibrate report grain) | opus | not started |
+| T1 | pop_rock bank thickening — 23 second candidates | opus | not started |
+| T2 | jazz bank thickening — 15 second candidates + L2-2 comping register reconcile | opus | not started |
+| T4a | Re-bless cycle 1: generatorVersion 0.1.0→0.1.1, unscoped `bless --approve`, milestone regen + collateral | orchestrator | not started |
+| T5 | USER listening block: full-grid audition + T1 level pass + §8.4 error-spotting (+T4b re-bless iff edits) | user+orchestrator | not started |
+| T6 | Calibration capture (`calibration.yaml` ×2) + pack version stamps | orchestrator | not started |
+| T7 | Whole-chunk 3-lens review + close-out | opus ×3 | not started |
 
 #### Phase 8 — Chunk 4 — session 18 (`plans/sessions/SESSION_18.md`)
 
