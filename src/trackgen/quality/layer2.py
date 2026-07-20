@@ -18,16 +18,22 @@ that split by calling `layer2_failures` (L2-1) into its gating result and
   gate a render as invalid; they carry the `"L2-2:"` prefix. See the crossing-grain
   note on `_check_l2_2_voice_crossing`.
 
-Thresholds are engine defaults in C2 (bass 0.95 / comping 0.98). `calibration.yaml`
-does not exist yet (it is written by C3's `trackgen calibrate`), so the
-`load_l2_thresholds` read-hook returns `None` and the defaults are used.
+Thresholds are engine defaults (bass 0.95 / comping 0.98) unless a pack's
+`calibration.yaml` overrides them. The override lives in the per-`(pack, mood)`
+artifact (§8.1: `moods.<mood>.l2Thresholds.{bass,comping}`) that `trackgen
+calibrate` writes; `load_l2_thresholds` delegates to
+`calibration.load_calibration` — the single reader of that shape — keyed by the
+document's mood, so a written `calibration.yaml`'s thresholds are actually read
+by L2-1. When no `calibration.yaml` exists (the C2 state, and any pack without a
+blessed calibration) the read returns `None` and the engine defaults are used.
 """
 
 from __future__ import annotations
 
-from trackgen.packs.loader import STYLES_ROOT
+from trackgen.packs import resolve_pack
 from trackgen.pipeline.trace import GenerationTrace
 from trackgen.quality._common import governing_chord
+from trackgen.quality.calibration import load_calibration
 from trackgen.schema.document import TrackDocument
 from trackgen.theory.chords import chord_tones, scale_pcs
 
@@ -50,27 +56,31 @@ _STRONG_BEATS: dict[str, frozenset[int]] = {
 }
 
 
-def load_l2_thresholds(pack: str) -> tuple[float, float] | None:
+def load_l2_thresholds(
+    pack: str, mood: str | None = None
+) -> tuple[float, float] | None:
     """Read `(bass, comping)` L2-1 thresholds from a pack's `calibration.yaml`.
 
-    Returns `None` when the file is absent — which is always the case in C2
-    (`trackgen calibrate` writes it in C3). A `None` return signals the caller to
-    fall back to the engine defaults `(0.95, 0.98)`. The read path is kept thin on
-    purpose; every C2 test exercises the defaults branch.
+    Delegates to `calibration.load_calibration`, the single reader of the
+    per-`(pack, mood)` artifact shape (`moods.<mood>.l2Thresholds.{bass,comping}`)
+    that `trackgen calibrate` writes — so the thresholds L2-1 measures against are
+    exactly the ones the calibrator emits. Returns `None` (⇒ caller falls back to
+    the engine defaults `(0.95, 0.98)`) when the file is absent, when the given
+    mood has no cell, or when the cell's thresholds are malformed. `mood` defaults
+    to the pack's interpreter default mood when not supplied.
     """
-    path = STYLES_ROOT / pack / "calibration.yaml"
-    if not path.is_file():
+    calibration = load_calibration(pack)
+    if calibration is None:
         return None
-    import yaml  # local import: only reached once C3 authors the file
-
-    data = yaml.safe_load(path.read_text())
-    if not isinstance(data, dict):
+    if mood is None:
+        resolved = resolve_pack(pack)
+        if resolved is not None and resolved.interpreter is not None:
+            mood = resolved.interpreter.default_mood
+    pmc = calibration.moods.get(mood) if mood is not None else None
+    if pmc is None:
         return None
-    l2 = data.get("l2")
-    if not isinstance(l2, dict):
-        return None
-    bass = l2.get("bass_strong_beat_ratio")
-    comping = l2.get("comping_strong_beat_ratio")
+    bass = pmc.l2_thresholds.get("bass")
+    comping = pmc.l2_thresholds.get("comping")
     if not isinstance(bass, int | float) or not isinstance(comping, int | float):
         return None
     return float(bass), float(comping)
@@ -88,7 +98,8 @@ def _check_l2_1_chord_tone_ratio(
     has a governing chord for every in-section note. A role with zero strong-beat
     notes is skipped entirely (no division)."""
     pack = trace.plan.style_pack.id
-    loaded = load_l2_thresholds(pack)
+    mood = doc.meta.params.get("mood")
+    loaded = load_l2_thresholds(pack, mood if isinstance(mood, str) else None)
     bass_threshold, comping_threshold = (
         loaded if loaded is not None else (_BASS_THRESHOLD, _COMPING_THRESHOLD)
     )

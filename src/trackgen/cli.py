@@ -6,10 +6,12 @@ from typing import Annotated
 
 import typer
 
+from trackgen.packs.loader import STYLES_ROOT
 from trackgen.pipeline import generate_trace, to_json
 from trackgen.pipeline.explain import ExplainCollector, render_explain
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
 from trackgen.tooling.audition import build_audition, open_playground
+from trackgen.tooling.calibrate import calibrate
 from trackgen.tooling.lint import run_lint
 
 app = typer.Typer(help="trackgen: deterministic backing-track generation pipeline.")
@@ -204,6 +206,31 @@ def lint_command(
     """
     code = run_lint(pack_dir)
     raise typer.Exit(code)
+
+
+@app.command("calibrate")
+def calibrate_command(
+    pack: Annotated[
+        str,
+        typer.Argument(help="Style pack dir or id, e.g. styles/pop_rock/ or pop_rock."),
+    ],
+    out: Annotated[
+        Path | None,
+        typer.Option(
+            "--out",
+            help="Write calibration.yaml here (default styles/<pack>/).",
+        ),
+    ] = None,
+) -> None:
+    """Batch-render a pack and write its `calibration.yaml` (§9.3).
+
+    Accepts a pack directory or a bare pack id; the §9.3 report is printed and the
+    write location is echoed.
+    """
+    pack_id = Path(pack).name
+    calibrate(pack_id, out_path=out, report=True)
+    target = out if out is not None else STYLES_ROOT / pack_id / "calibration.yaml"
+    typer.echo(f"Wrote calibration to {target}")
 
 
 if __name__ == "__main__":

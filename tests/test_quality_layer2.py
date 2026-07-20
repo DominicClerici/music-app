@@ -20,7 +20,7 @@ import pytest
 import yaml
 
 from trackgen.pipeline.trace import GenerationTrace, generate_trace
-from trackgen.quality import layer2
+from trackgen.quality import calibration
 from trackgen.quality._common import governing_chord
 from trackgen.quality.layer2 import (
     _check_l2_2_voice_crossing,
@@ -181,10 +181,14 @@ def test_l2_1_uses_calibration_yaml_threshold_override(
     L2-1 thresholds: `load_l2_thresholds` returns the file's values, and L2-1
     reports against the override (0.900) rather than the 0.95/0.98 defaults.
 
-    The path resolves via `layer2.STYLES_ROOT`, monkeypatched to `tmp_path` so no
-    file is written under the real `styles/` tree. The `l2` block uses the exact
-    keys `load_l2_thresholds` reads (`bass_strong_beat_ratio` /
-    `comping_strong_beat_ratio`)."""
+    Reconciliation coverage (C3/T4): `load_l2_thresholds` now delegates to
+    `calibration.load_calibration`, so the file uses the per-`(pack, mood)`
+    artifact shape (`moods.<mood>.l2Thresholds.{bass,comping}`) that `trackgen
+    calibrate` writes — proving the calibrator's thresholds are actually READ by
+    L2-1 end-to-end. `_POP` carries no `mood` param, so the mood resolves to the
+    pack's interpreter default (`happy` for pop_rock); the read path is on
+    `calibration.STYLES_ROOT`, monkeypatched to `tmp_path` so nothing is written
+    under the real `styles/` tree."""
     base = generate_trace(_POP)
     pack = base.plan.style_pack.id
 
@@ -193,14 +197,17 @@ def test_l2_1_uses_calibration_yaml_threshold_override(
     (pack_dir / "calibration.yaml").write_text(
         yaml.safe_dump(
             {
-                "l2": {
-                    "bass_strong_beat_ratio": 0.9,
-                    "comping_strong_beat_ratio": 0.9,
-                }
+                "pack": pack,
+                "moods": {
+                    "happy": {
+                        "l2Thresholds": {"bass": 0.9, "comping": 0.9},
+                        "bands": {},
+                    }
+                },
             }
         )
     )
-    monkeypatch.setattr(layer2, "STYLES_ROOT", tmp_path)
+    monkeypatch.setattr(calibration, "STYLES_ROOT", tmp_path)
 
     # The read-hook now returns the file's values instead of None.
     assert load_l2_thresholds(pack) == (0.9, 0.9)
