@@ -17,9 +17,9 @@ Requires [uv](https://docs.astral.sh/uv/). Python 3.12 is pinned via `.python-ve
 and fetched automatically.
 
 ```sh
-uv sync              # create the venv and install deps (from the committed uv.lock)
-uv run pytest        # run tests
-uv run ruff check    # lint
-uv run ruff format   # format
-uv run mypy src      # type-check
+uv sync               # create the venv and install deps (from the committed uv.lock)
+uv run pytest -n auto # run tests (parallel; style packs are cached, so this is fast)
+uv run ruff check     # lint
+uv run ruff format    # format
+uv run mypy src       # type-check
 ```

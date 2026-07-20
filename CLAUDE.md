@@ -20,11 +20,15 @@ don't restate it here.
 ## Gates (run all four; they must be green before committing)
 
 ```sh
-uv run pytest
+uv run pytest -n auto           # -n auto: pytest-xdist, parallel across cores
 uv run ruff check .
 uv run ruff format --check .   # --check matters: verifies formatting, doesn't rewrite
 uv run mypy
 ```
+
+Always use `-n auto` for the pytest gate — style packs load through a cached loader
+(`trackgen.packs.loader.load_pack`), so the suite is parallel-safe and runs in seconds
+instead of minutes.
 
 Use `uv` for everything — never bare `python`/`pip`. `uv sync` installs from the
 committed `uv.lock`. Never claim a gate passes without having run it and read the output.
