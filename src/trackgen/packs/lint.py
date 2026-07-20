@@ -49,7 +49,6 @@ from pydantic import BaseModel, ValidationError
 from trackgen.arrangement.intensity import intensity
 from trackgen.interpreter import derived_defaults
 from trackgen.interpreter.moods import load_moods
-from trackgen.packs import loader as _loader
 from trackgen.packs.loader import (
     PackLoadError,
     _apply_bank_retarget_default,
@@ -622,17 +621,3 @@ def collect_pack_warnings(pack: StylePack, pack_dir: Path) -> list[LintWarning]:
     warnings += _warn_dangling_gates(pack)
     warnings += _warn_weight_degeneracy(pack)
     return warnings
-
-
-def lint_pack(pack_dir: Path) -> tuple[list[LintError], list[StylePack | None]]:
-    """Convenience: collect errors, and (best-effort) load the pack so warnings
-    can run. Returns `(errors, [pack_or_None])` — the CLI computes warnings only
-    when the pack loads."""
-    pack_dir = Path(pack_dir)
-    errors = collect_pack_errors(pack_dir)
-    pack: StylePack | None
-    try:
-        pack = _loader.load_pack(pack_dir)
-    except PackLoadError:
-        pack = None
-    return errors, [pack]

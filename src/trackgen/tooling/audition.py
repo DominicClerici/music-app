@@ -19,7 +19,7 @@ from pathlib import Path
 
 import typer
 
-from trackgen.parts.generators import _TRACK_ORDER, _VOICE_TRACK
+from trackgen.parts.generators import _TRACK_ORDER
 from trackgen.pipeline import generate_trace, serialize
 from trackgen.pipeline.explain import ExplainCollector
 from trackgen.schema.document import TrackDocument
@@ -28,9 +28,7 @@ from trackgen.schema.ir import Phrase, SongForm
 _TICKS_PER_BAR = 1920
 
 _ROLES: frozenset[str] = frozenset({"drums", "bass", "comping", "pads"})
-_DRUM_TRACK_IDS: frozenset[str] = frozenset(_VOICE_TRACK.values()) | frozenset(
-    _TRACK_ORDER
-)
+_DRUM_TRACK_IDS: frozenset[str] = frozenset(_TRACK_ORDER)
 
 _PLAY_DOC_NAME = "audition.trackdoc.json"
 
@@ -93,38 +91,19 @@ def _filter_section(
 def _apply_target(phrases: list[Phrase], target: str, *, keep: bool) -> list[Phrase]:
     """Solo (`keep=True`) or mute (`keep=False`) a role or drum sub-track id.
 
-    Role targets act on whole phrases; a drum sub-track id acts on the drum
-    phrase notes whose C-11 voice provenance tag maps to that track id.
+    Drum phrases are already partitioned one-per-voice-track (`track_id`), so a
+    drum sub-track target filters whole phrases by `track_id`, exactly parallel
+    to the role branch — this also carries the untagged §6 transition notes
+    (fills/crashes/holds) that live in the right `track_id` phrase.
     """
     if target in _ROLES:
         return [p for p in phrases if (p.role == target) == keep]
 
     if target in _DRUM_TRACK_IDS:
-        voices = {str(v) for v, tid in _VOICE_TRACK.items() if tid == target}
-        return _filter_drum_voices(phrases, voices, keep=keep)
+        return [p for p in phrases if (p.track_id == target) == keep]
 
     valid = ", ".join(sorted(_ROLES) + sorted(_DRUM_TRACK_IDS))
     raise typer.BadParameter(f"unknown target {target!r}; valid: {valid}")
-
-
-def _filter_drum_voices(
-    phrases: list[Phrase], voices: set[str], *, keep: bool
-) -> list[Phrase]:
-    out: list[Phrase] = []
-    for phrase in phrases:
-        if phrase.role != "drums":
-            # Solo isolates the drum sub-track (drop other roles); mute leaves
-            # them untouched.
-            if not keep:
-                out.append(phrase)
-            continue
-        notes = [n for n in phrase.notes if _matches_voice(n.tags, voices) == keep]
-        out.append(phrase.model_copy(update={"notes": notes}))
-    return out
-
-
-def _matches_voice(tags: list[str], voices: set[str]) -> bool:
-    return any(tag in voices for tag in tags)
 
 
 def open_playground(rendered_json: str) -> None:

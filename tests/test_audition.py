@@ -14,10 +14,18 @@ from typer.testing import CliRunner
 
 from trackgen.cli import app
 from trackgen.pipeline import generate_track, to_json
+from trackgen.schema.document import TrackDocument
 from trackgen.tooling.audition import build_audition
 
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
 _JAZZ: dict[str, object] = {"styleFamily": "jazz", "seed": "1ps9wxb"}
+# pop_rock/happy/7 carries §6 fill notes in its tom_low and snare tracks — the
+# discriminating case for drum sub-track filtering by track_id (untagged fills).
+_POP_FILLS: dict[str, object] = {
+    "styleFamily": "pop_rock",
+    "mood": "happy",
+    "seed": "7",
+}
 
 runner = CliRunner()
 
@@ -87,6 +95,40 @@ def test_mute_hats_drops_only_hat_notes() -> None:
 def test_solo_hats_isolates_hat_subtrack() -> None:
     doc = build_audition(_POP, solo="hats")
     assert [t.id for t in doc.tracks] == ["hats"]
+
+
+def _notes_in(doc: TrackDocument, track_id: str) -> int:
+    return sum(len(t.notes) for t in doc.tracks if t.id == track_id)
+
+
+def test_mute_tom_low_removes_fill_tagged_toms() -> None:
+    """`--mute tom_low` removes the whole tom_low track — including its untagged
+    §6 fill notes, which the old tag-matching filter left behind."""
+    full = build_audition(_POP_FILLS)
+    assert _notes_in(full, "tom_low") > 0, "seed must have tom_low fill notes"
+
+    doc = build_audition(_POP_FILLS, mute="tom_low")
+    assert all(t.id != "tom_low" for t in doc.tracks)
+    assert _notes_in(doc, "tom_low") == 0
+
+
+def test_solo_tom_low_isolates_track_with_its_notes() -> None:
+    """`--solo tom_low` keeps exactly the tom_low track WITH its notes (fill notes
+    included) — not silence, which the old tag-matching filter produced."""
+    doc = build_audition(_POP_FILLS, solo="tom_low")
+    assert [t.id for t in doc.tracks] == ["tom_low"]
+    assert _notes_in(doc, "tom_low") > 0
+
+
+def test_mute_snare_removes_fill_tagged_snares() -> None:
+    """`--mute snare` removes every snare note, including the fill-tagged snares
+    the old filter cross-contaminated back in."""
+    full = build_audition(_POP_FILLS)
+    assert _notes_in(full, "snare") > 0
+
+    doc = build_audition(_POP_FILLS, mute="snare")
+    assert all(t.id != "snare" for t in doc.tracks)
+    assert _notes_in(doc, "snare") == 0
 
 
 def test_unknown_target_raises() -> None:

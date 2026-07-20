@@ -154,6 +154,19 @@ def _flip_bass_beat1_out_of_set(
     ), flipped
 
 
+def test_calibrate_report_renders_expected_sections(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`report=True` prints the §9.3 human report: the mood label, a per-track
+    `vel` line, and the tempo `vs manifest range` line."""
+    calibrate(_PACK, out_path=_out(tmp_path), moods=[_MOOD], seeds=("1",), report=True)
+    out = capsys.readouterr().out
+
+    assert f"mood {_MOOD!r}" in out
+    assert "vel " in out
+    assert "vs manifest range" in out
+
+
 def test_calibrate_unused_layer2_styles_root_removed() -> None:
     """Guard: layer2 no longer carries a `STYLES_ROOT` global (it delegates the
     read to `calibration.load_calibration`), so the reconciliation cannot silently

@@ -118,6 +118,7 @@ def _dress_slot(
     key: KeyLike,
     base_tier: int,
     rng: Rng,
+    *,
     explain: ExplainCollector | None = None,
 ) -> ChordSpec:
     """Resolve `token`, look up its §6.3 dressing options, and draw one (iff
@@ -202,6 +203,7 @@ def _dress_and_emit_bars(
     base_tier: int,
     rng: Rng,
     tags: list[str],
+    *,
     explain: ExplainCollector | None = None,
 ) -> list[ChordEvent]:
     """Dress a turnaround/finals bar list at its own draw point and tile it over
@@ -212,7 +214,7 @@ def _dress_and_emit_bars(
     for bar in bars:
         dur = _TICKS_PER_BAR // len(bar)
         for token in bar:
-            spec = _dress_slot(token, key, base_tier, rng, explain)
+            spec = _dress_slot(token, key, base_tier, rng, explain=explain)
             events.append(_event(spec, token, tick, dur, section_id, key, list(tags)))
             tick += dur
     return events
@@ -336,7 +338,10 @@ def harmony(
                     continue
                 dressed_bars.append(
                     [
-                        (_dress_slot(token, key, base_tier, rng, explain), token)
+                        (
+                            _dress_slot(token, key, base_tier, rng, explain=explain),
+                            token,
+                        )
                         for token in bar
                     ]
                 )
@@ -392,7 +397,7 @@ def harmony(
                 base_tier,
                 rng,
                 ["turnaround"],
-                explain,
+                explain=explain,
             )
             pool_selections[f"turnaround:{section.id}"] = ta_entry.id
         else:
@@ -432,7 +437,7 @@ def harmony(
         base_tier,
         rng,
         ["final"],
-        explain,
+        explain=explain,
     )
     pool_selections["finals"] = final_entry.id
 
