@@ -6,17 +6,21 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 5 (Session 19) — reference-pack refinement (shakedown, §7). Step 0/1
-> DONE (2026-07-20): oriented, 2 opus scoping agents run, session plan written to
-> `plans/sessions/SESSION_19.md` — NOW AT THE USER APPROVAL GATE. No implementation dispatched.**
-> Scoping headline: **zero abridged bank entries remain** (Phases 5/7 discharged the §13.1
-> enumeration; verified — id sets match §7/§8 exactly), so C5's real authoring surface is the **38
-> variety-coverage lint warnings** (pop 23 / jazz 15; all name worst cell happy/106; a 2nd eligible
-> candidate per slot clears each; no annotation escape exists for this class). Jazz calibrate shows
-> tempo-band violations in 7/11 moods with floors ≈ 0.65 × mood tempo — likely ritard tails in the
-> report grain, T3 diagnoses before any data moves. Decision items S19-1…S19-5 in the plan file.
-> **C5 is the golden corpus's first production re-bless** — pack-data changes will diverge most of
-> the 24 cells; T0 maps the pinned-test blast radius empirically before authoring lands.
+> **Next:** **Phase 8, Chunk 5 (Session 19) — MID-SESSION: T0/T3/T1/T2/T4a DONE, next is T5 (USER
+> LISTENING BLOCK: full-grid audition + T1 level pass + §8.4 error-spotting → `listening/log.jsonl`;
+> then T4b re-bless 0.1.1→0.1.2 iff listening edits land), then T6 (calibration capture + pack
+> version stamps), then T7 (3-lens whole-chunk review + close-out).** Plan `plans/sessions/
+> SESSION_19.md` approved with S19-1…5 ratified as recommended; T4a-gate rulings: PHASE_5 doc
+> amendments = recompute+annotate (applied), S19-5 = accept+caveat (**C-21** logged). Commits:
+> `5552b1a` plan · `82679f8` T3 (calibrate tempo-band reads steady tempo; ritard tails labeled — 7/11
+> jazz "violations" were all 0.65×base tails; pop_rock clean because all its forms author `close:
+> cold`) · `2125b75` T1+T2+T4a atomic bless commit (38 second candidates `*b`; both packs lint 0/0;
+> generatorVersion 0.1.1; 22/24 cells re-blessed all first-divergent `phrases_stage5`; 15 pinned
+> tests recomputed; PHASE_5 §9.1/§9.4/§7.4/§12 amended). Gates green after every task
+> (**6047 passed / 1 skipped**); `bless` no divergence; orchestrator-verified. T1/T2 reviews
+> APPROVE / APPROVE-WITH-NITS; nits for T5 listening: `pr_pd_1b` mild ladder compression; new-winner
+> cells (jazz head `jz_dr_2b` straight-quarter ride, pop verse bass `pr_bs_2b` root-fifth, jazz
+> bar-48 crash-kick suppression) deserve ears.
 >
 > **READ BEFORE STARTING C5 — four things C4 learned that change how C5 works:**
 >  1. **C-20: the corpus has a 37 % blind spot.** The 24 cells select only **31 of 49** reference
