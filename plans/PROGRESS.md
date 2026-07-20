@@ -6,184 +6,146 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 4 (Session 18) — golden corpus + bless + smoke matrix. PLAN APPROVED
-> (`plans/sessions/SESSION_18.md`, user-approved 2026-07-20). IN PROGRESS — Wave A dispatched
-> (T1 corpus module ‖ T4 smoke matrix, file-disjoint).** Two opus
-> scoping agents ran (corpus-capture mechanics · bless/smoke/CI + runtime budget). Four decisions
-> user-ratified at the gate: **S18-1** smoke matrix ships as a pytest module (no CI substrate exists
-> in the repo — DoD §14.6's literal "in CI" clause caveat-logged); **S18-2** IR stage files use
-> compact separators, `document.json` keeps indent=2 (~25→~12 MiB at 24 cells, all 9 boundaries
-> kept); **S18-3** mood triple = default + the two moods farthest apart in the combined (V,A) plane;
-> **S18-4** 300-seed sweep = 300 seeds × 2 packs at default params (600 renders, ~30 s). Four more
-> pinned as plan recommendations (S18-5 no `selection.json` · S18-6 move-matching rule · S18-7
-> section keyed by `FormSection.id` · S18-8 `generatorVersion` bump-check reads the baseline doc).
-> Waves: T1 corpus module ‖ T4 smoke matrix → T2 semantic diff → T3 CLI+capture+version-check → T5
-> rehearsal (orchestrator) → T6 3-lens review + close-out. Measured: ~40 ms/render, so the corpus is
-> ~3 s and the smoke matrix ~30 s — runtime is not a constraint. **Original handoff scope below.**
+> **Next:** **Phase 8, Chunk 5 (Session 19) — reference-pack refinement (shakedown, §7). FRESH CHUNK —
+> run PROMPT step 0/1 (orient → scope → write `plans/sessions/SESSION_19.md` → USER APPROVAL GATE)
+> before dispatching.** C5 builds (PHASE_8 §7, DoD §14.2): enumerate every `# …`-abridged pop_rock/jazz
+> bank entry; lint clean *including* the §9.2 warning tier (pop 23 / jazz 15 variety-coverage warnings
+> today); `trackgen calibrate` + the T1 level pass; §8.4 error-spotting pass per supported mood;
+> capture goldens + the first blessed `calibration.yaml`. **C5 is the golden corpus's first production
+> re-bless** — pack-data changes will diverge most of the 24 cells.
 >
-> **C4 scope (as handed off from C3):** C4 builds (PHASE_8 §8.2, DoD §14.5+§14.6): the **60-track golden matrix** (5 packs ×
-> 3 moods × 2 lengths × 2 seeds — but only pop_rock/jazz exist until C6–C8, so C4's corpus is the
-> **two reference packs** for now; the five-pack fill-out lands as packs are authored) captured at
-> **every IR boundary** (`fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json` — the C1
-> `generate_trace` exposes them); **`trackgen bless`** = re-render + a **semantic diff report**
-> (first-divergent-stage · note add/remove/move counts per track/section · Layer-3 metric deltas ·
-> never raw JSON) + `--approve` (rewrite baselines in a dedicated commit) + the **generatorVersion-bump
-> check**; the **smoke matrix** in CI (packs × moods × 3 lengths × 5 seeds, Layers 1–2); one **300-seed**
-> reference sweep. Layout: `src/trackgen/tooling/bless.py` + `fixtures/goldens/…`.
+> **READ BEFORE STARTING C5 — four things C4 learned that change how C5 works:**
+>  1. **C-20: the corpus has a 37 % blind spot.** The 24 cells select only **31 of 49** reference
+>     patterns. Every **rung-1** pattern, **both fills**, and nearly all **pads** are never drawn, so a
+>     pack-data edit to any of them produces **NO bless divergence** (found empirically — editing
+>     `pr_dr_1` reported "no divergence"). **Any rung-1/fill/pad entry C5 authors lands unverified by
+>     the goldens** — cover it with the C2 validator suite, the C3 audition loop, or listening. This
+>     does NOT heal at five packs: the cause is §8.2's pinned mood triple (biases to mid/high energy)
+>     plus pads dormant at `layersMax: 3`.
+>  2. **Re-bless the WHOLE corpus, not per-pack, before committing.** `bless --approve --pack X` after
+>     a `generatorVersion` bump restamps only the selected cells; the rest stay byte-non-reproducible
+>     while a scoped bless still reports clean. C4 added a `SCOPED RUN` warning block, but the
+>     discipline is: finish with an **unscoped** `bless --approve`.
+>  3. **A `generatorVersion` bump reaches outside `bless`.** It also breaks the three
+>     `fixtures/*.milestone.trackdoc.json` (2 test failures) and `test_serialize.py`'s hardcoded
+>     literal (1). Full procedure is in `bless.py`'s module docstring, guarded by a test.
+>  4. **Reading the report:** a whole-corpus divergence renders ~**746 lines / 31 KB** — readable but
+>     at the edge. A note that both moves *and* changes velocity reports only as `moved` (velocity is
+>     not in S18-6's identity), so **do not read `v0` as "velocities held"**.
 >
-> **What C4 leans on from C3 (S17, this chunk — all committed):**
->  - **`audition --out`** writes a `TrackDocument` fixture; the corpus capture wants every IR boundary,
->    so drive **`generate_trace`** directly (not just the doc) per §8.2.
->  - **`--explain` structured records** (`pipeline/explain.py::ExplainCollector`, retained on the
->    collector) are meant to **feed the bless diff report** (§9.3) — BUT the C3 review flagged that
->    **draw-free** audible boundary devices are NOT logged (a fill rendered deterministically when
->    `_stop_eligible` is False; breakdown-dropout/postchorus boundaries) — within §9.3's "device *draws*"
->    letter, but if the bless report wants per-boundary completeness, extend the device logging in C4.
->  - **`trackgen calibrate`** writes `styles/<pack>/calibration.yaml`; **§8.1 bootstrap order** — a
->    *blessed* reference `calibration.yaml` is captured only after a listening-blessed batch (that is
->    **C5**, §7 refinement), so C4 does NOT commit calibration artifacts either unless the corpus needs
->    them. `load_l2_thresholds`/`load_calibration` now read the per-`(pack,mood)` shape (C3 reconciled).
->  - **`trackgen lint`** (errors + 5 warnings) is available for the authoring checklist; reference packs
->    lint **error-clean** today (only variety-coverage warnings: pop 23 / jazz 15 — a C5 concern).
+> **C5 also inherits two concrete signals from C4's smoke matrix:**
+>  - **L2-2 voice crossing: 42 of 915 cells warn, 45 instances, 100 % jazz, zero pop_rock** (~4.6 %
+>    cell rate; e.g. `('jazz','dark',60,'1k3p')` → `bass midi 50 >= comping midi 49`). Concentrated
+>    authoring signal for jazz comping voicings, and consistent with **C-16**'s co-attack grain (these
+>    are real shared-onset crossings, not walking-bass sustain noise).
+>  - **C-19: pop_rock cannot fill the 480 s bucket** — max **356.57 s** (104-bar template ceiling) vs
+>    jazz's exact **480.00 s**. C5 decides whether pop_rock's `forms.yaml` repeat bounds should reach
+>    8-minute forms at all (arguably out of genre) or whether ~6 min is its accepted ceiling. The new
+>    per-pack floors in `test_smoke_matrix.py` (`pop_rock 340.0`) encode the real ceiling and **must
+>    not** be raised to 480 to "fix" the asymmetry.
+>
+> **C4 (S18) DONE** (commits `38ebf7b` plan · `1ae12f6` T1 corpus · `31e1575` T4 smoke matrix ·
+> `4ed99d2` T2 semantic diff · `4e13da8` T3 CLI+corpus · `9865079` T5 rehearsal fix · `40481c6` T6
+> review fixes · close-out this commit). Four gates green (**5983 tests**, from 4858 at chunk start).
+> **New caveats C-17, C-18, C-19, C-20.**
+>
+> **DoD ledger — recorded honestly, NOT rounded up:**
+>  - **§14.5 corpus at every IR boundary — PARTIAL: mechanism PROVEN, corpus 24/60, completes at C8.**
+>    All 10 IR boundaries per cell at the pinned path shape; only the pack dimension is short (C-17).
+>  - **§14.5 `bless` + semantic diff report — PROVEN** (first-divergent-stage · note add/remove/move ·
+>    L3 metric deltas · never raw JSON, test-enforced).
+>  - **§14.5 generatorVersion-bump check — PROVEN** (refusal reproduced empirically; nothing written).
+>  - **§14.5 deliberate-change rehearsal documented — PROVEN** (see the rehearsal record below).
+>  - **§14.6 smoke matrix "in CI" — NOT MET.** Content fully compliant (315 smoke + 600 sweep cells,
+>    Layers 1–2); venue 0 % — the repo has no CI substrate at all (C-18). **Must not be marked PROVEN.**
+>  - **§14.6 300-seed reference sweep clean — PROVEN** (600 cells, default params, S18-4).
+>
+> **The T5 rehearsal (DoD §14.5's "documented" clause).** Run by the orchestrator on a scratch branch,
+> reverted after. Changed `pr_dr_2a`'s snare velocity 0.85→0.88 → **6 cells diverged**, report
+> localized to `phrases_stage5` with downstream marked derivative and `v8` velocity-changed notes per
+> bucket → `--approve` **REFUSED** at unchanged `generatorVersion` with an actionable message, **zero
+> writes** → bumped `_GENERATOR_VERSION` 0.1.0→0.1.1 → `--approve` accepted → re-bless clean. Report
+> excerpt:
+> ```
+> pop_rock/happy/120-1ps9wxb
+>   FIRST DIVERGENT STAGE: phrases_stage5
+>   also differs (derivative, downstream of phrases_stage5): phrases_stage6, phrases_stage7, document
+>   notes — 24 implicated across 3 track/section bucket(s)  [+added -removed ~moved vvelocity]:
+>     snare / verse-1: +0 -0 ~0 v8
+> ```
+> **The rehearsal earned its DoD slot — it found two things no unit test had:** (a) the version-stamp
+> refresh gap (`--approve` rewrote only semantically-diverging cells, leaving the corpus on mixed
+> stamps — 18 at 0.1.0, 6 at 0.1.1 — while `bless` still reported "no divergence"; the tool asserting
+> the corpus was fine when it was provably not byte-reproducible) → fixed in `9865079`; and (b) the
+> C-20 coverage hole, discovered because the rehearsal's *first* attempt edited an unreached pattern.
+>
+> **What C5 leans on from C4 (all committed):**
+>  - **`tooling/corpus.py`** — `STAGES` (10 IR boundaries in trace order; **no `selection`**, S18-5),
+>    `corpus_cells()` (24 cells), `corpus_moods()` (S18-3 triple), `encode/decode_stage`,
+>    `write/read_cell` (all take keyword-only `root=` for tests). Extending to a new pack = extend
+>    `_CORPUS_PACKS` + `bless --approve`; existing cells do not move. **`corpus_moods` RAISES** if a
+>    pack's `default_mood` is also one of its (V,A) extremes — C6–C8 must check their mood sets, or
+>    `corpus_cells()` fails hard and takes `bless` down entirely.
+>  - **`tooling/blessdiff.py`** — pure functions over parsed dicts; `format_report()` returns a string.
+>    Beyond §8.2's three counters it emits a fourth **`changed`** (velocity-only) counter and cancels
+>    exact onsets before move-pairing; **both independently assessed by two reviewers as additive
+>    gap-fills, NOT deviations** (no caveat) — without `changed`, a velocity-only edit renders
+>    "notes — none", the exact shape §8.2's format exists to stop being rubber-stamped.
+>  - **`tooling/bless.py`** — `bless(*, approve, cells, root)`; five fail-closed refusal cases
+>    (incomplete baseline · unreadable version · S18-8 stalled version · unreadable baseline ·
+>    **downgrade**). `trace_from_stages()` rebuilds a real `GenerationTrace` from stored stages for L3
+>    metrics, synthesizing `selection` as a **poisoned `_RebuiltSelection`** that RAISES on any field
+>    read — because `quality/layer1.py:234` reads `.selection` and an empty one made **W4 pass
+>    vacuously**. Never pass a rebuilt trace to `run_layer1`.
+>  - **`tests/test_smoke_matrix.py`** — 939 tests, ~6 s. The payload for whoever eventually adds CI.
 >
 > **C3 (S17) DONE** (commits `fb4f5d9` T1 audition · `86e9e35` T2 linter · `d47d305` T3 --explain ·
-> `1d1fa59` T4 calibrate · `1954de9` whole-chunk review-fix · `0217217` REFERENCE.md [see note] ·
-> close-out this commit). **DoD §14.7 PROVEN** (all four tools). 3-lens whole-chunk review
-> (correctness/determinism · contract/DoD · test/code-quality): **one BLOCKER found + fixed** — audition
-> `--solo`/`--mute` on a drum sub-track filtered by note voice-tags, missing the untagged §6 fill/crash/
-> hold notes (mute tom_low was a no-op, solo tom_low was silence); fixed to filter by `phrase.track_id`
-> (drum gen already partitions per voice) + 3 discriminating tests. Three minor fixes (calibrate report
-> smoke test, dead `lint_pack` removed, keyword-only `explain`). **`--explain` byte-identity + calibrate
-> determinism independently verified.** **NO new CAVEATS** (both contract + T4 lenses agreed the L2
-> reader reconciliation aligns an out-of-spec reader to the §8.1-pinned shape — a bug fix *toward* the
-> spec, not a reinterpretation; production unchanged when no `calibration.yaml`). Four gates green
-> (**4858 tests**). **Process note:** `REFERENCE.md` (a CLI command-reference doc) was **auto-committed
-> by the T1 subagent** unprompted (`0217217 add ref`) — kept + refreshed at close-out to document the
-> new commands; flagged to the user (an implementer subagent should not self-commit).
+> `1d1fa59` T4 calibrate · `1954de9` whole-chunk review-fix · `0217217` REFERENCE.md · `57b4243`
+> close-out). **DoD §14.7 PROVEN** (all four tools). One blocker found+fixed (audition `--solo`/
+> `--mute` filtered drum sub-tracks by note voice-tags, missing untagged §6 fill/crash/hold notes;
+> fixed to filter by `phrase.track_id`). No new caveats. **`trackgen lint` reference packs are
+> error-clean** today; the only warnings are variety-coverage (pop 23 / jazz 15) — **a C5 concern.**
 >
-> **C3 deferred (low-priority, not blocking C4):** the §9.3 calibrate report surfaces *observed* values
-> but not the "vs channel-table intent / vs densityBudget" comparison §9.3's prose implies (report-only,
-> DoD met by the artifact). `--section` leaves `phrase.start_tick/end_tick` stale + can leave empty-note
-> phrases (spec-intended absolute-tick windowing; the section×bus-recompute interaction is untested).
-> Linter collect-mode surfaces one-error-per-`model_validator` (documented tool limit). Shared helpers
-> not extracted: `tempo_window` arithmetic (dup in `packs/lint.py` + `interpreter/stage.py`),
-> `_TICKS_PER_BAR = 1920` (repo-wide dup).
+> **C2 (S16) DONE** — the 3-layer validator suite in `src/trackgen/quality/`. **DoD §14.4 PROVEN.**
+> What C4/C5 lean on: **`quality/suite.py`** `validate_pipeline(doc, trace) -> list[str]` (gating
+> failures V1–V8 + W1–W8 + L2-1; **empty == valid**; the smoke-matrix gate) and
+> `pipeline_warnings(doc, trace)` (L2-2 warns, non-gating); **`quality/calibration.py`**
+> (`compute_bands`, the per-`(pack,mood)` `calibration.yaml` shape, `load_calibration`);
+> **`quality/layer3.py::compute_metrics(trace)`** (six MusPy metrics; takes the WHOLE trace — it needs
+> `governing_chord` — and nulls are meaningful, never 0). Caveat **C-16** (L2-2 co-attack grain,
+> user-ratified). Layer 3 is **batch-only**, never in the per-render path.
 >
-> **C3 leaned on (from C1/C2):** `generate_trace → GenerationTrace` (every IR boundary), `quality/suite.py`
-> (`validate_pipeline`/`pipeline_warnings`), `quality/calibration.py` (`compute_bands` + the write-dict
-> builders C3's `calibrate` drives), `quality/layer3.py::compute_metrics`, the W7 grid constants
-> (reused for lint grid-mixing), `parts/selection.py::_eligible_set` (lint variety), `arrangement/
-> intensity.py::intensity` (lint unreachable).
+> **C1 (S15) DONE** — `pipeline/trace.py::generate_trace(raw_params) -> GenerationTrace` exposes every
+> IR boundary (phrases post-5/6/7 SEPARATELY + plan/song_form/harmony/arrangement/selection/
+> tempo_events/sound_design/document); `generate_track` delegates byte-identically. DoD §14.1 PROVEN.
 >
-> **C2 (S16) COMPLETE** (commits `6283f58` plan · `2f2f5ca` T1 · `177afec` Wave B · this-commit
-> close-out): the 3-layer validator suite in `src/trackgen/quality/`. **DoD §14.4 PROVEN.** 2-lens
-> whole-chunk review: correctness/contract **CLEAN**, test/DoD **PROVEN** (→ 2 gaps closed by review-fix:
-> W2 dropout+fill branch fixtures, calibration read-back tests). **One new caveat C-16** (L2-2 co-attack
-> grain, user-ratified). What C3 leans on:
->  - **`quality/suite.py`**: `validate_pipeline(doc, trace) -> list[str]` = gating **failures** only
->    (V1–V8 + W1–W8 + L2-1); `pipeline_warnings(doc, trace)` = L2-2 **warns** (non-gating). Layer 3 is
->    batch-only, NOT in the per-render path. The **warn/fail split** (§8.1 "warn by default, fail where
->    marked") is the pinned convention — C3's smoke matrix gates on `validate_pipeline`, surfaces
->    `pipeline_warnings`.
->  - **`quality/calibration.py`**: `Calibration`/`PackMoodCalibration`/`Band` dataclasses + the
->    `calibration.yaml` shape (per-`(pack,mood)`: `l2Thresholds{bass,comping}` + `bands{metric:[lo,hi]}`,
->    per-role where applicable, `grooveConsistency` song-wide, camelCase), `compute_bands(batch)`
->    (mean ± 2.5·**pstdev**), `load_calibration(pack)` (None when absent), `calibration_to_yaml_dict`/
->    `_pmc_from_yaml_dict` round-trip. **C3's `trackgen calibrate` DRIVES `compute_bands` and WRITES this
->    file** (C2 built the compute core, wrote no file). `quality/layer2.py::load_l2_thresholds(pack)`
->    reads it (None→0.95/0.98 defaults today).
->  - **`quality/layer3.py::compute_metrics(trace)`**: the six MusPy metrics (note-density, mean-IOI,
->    pitch-range, empty-bar-rate, groove-consistency [song-wide, doc drum tracks by tick], scale-
->    consistency). `pack_and_mood(trace)` = `(trace.plan.style_pack.id, meta.params["mood"] or default)`.
->  - **Pipeline trace** `generate_trace(raw_params) -> GenerationTrace` (C1) is the substrate for
->    `--explain` (instrument draws) and the audition `--out` fixture.
+> **Whole-phase chunk plan (pinned seams):** C1 ✅ · C2 ✅ · C3 ✅ · **C4 ✅** · **C5 (S19) reference-pack
+> refinement [DoD 2] ← NEXT** · C6 chill_lofi · C7 blues · C8 fusion_jazz [DoD 3/8/10 per pack] · C9
+> five-pack property + milestone rubric + amendment audit + whole-phase review [DoD 9,11].
 >
-> **C2 module map (built):** `src/trackgen/quality/{_common,layer1,layer2,layer3,calibration,suite,
-> __init__}.py`; tests `tests/test_quality_layer{1,2,3}.py`. `schema/validate.py` (V1–V8) byte-unchanged.
-> C2 builds the 3-layer validator suite (PHASE_8 §8.1) on the C1 trace: **Layer 1** hard pipeline
-> invariants **W1–W8** (each with one violating fixture; SUBSUMES the doc validator V1–V8; reads
-> `(doc, trace)` — W1 lane compliance from `ArrangementPlan`, W2 device-policy from stage-6 boundaries,
-> W3 ending integrity, W4 density-gate recheck, W5 determinism/regenerate, W6 tag vocabulary, W7
-> pre-humanizer grid on `phrases_stage6`, W8 humanizer note-count `phrases_stage6` vs `_stage7`);
-> **Layer 2** musical checks L2-1 (chord-tone-on-strong-beat ratio, engine defaults bass ≥0.95 /
-> comping ≥0.98) + L2-2 (voice crossing, warn); **Layer 3** six MusPy-shaped metrics + band computation
-> (mean ±2.5 SD) — the compute core `calibrate` (C3) will drive, no CLI yet. **DoD §14.4** (V1–V8
-> unchanged + passing everywhere). Recommended module layout (from C1 scoping): `src/trackgen/quality/
-> {layer1,layer2,layer3,calibration}.py`, `validate_pipeline(doc, trace) -> list[str]` internally
-> calling the existing `schema/validate.py::validate_document`. Tests: `tests/test_quality_layer{1,2,3}.py`.
+> **C-03 (SubV/P8) stays orthogonal** — becomes live when C7 (blues) authors bII7 turnaround content.
 >
-> **C1 (S15) DONE** (commits `3e93514`/`dcdbd2b`/`d64b0f7`/`0386b25`/`68720e6`): pipeline trace
-> orchestrator + the three machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; **no
-> new caveats** (all additive). The C1 deliverable C2 leans on: `generate_trace(raw_params) →
-> GenerationTrace` in `src/trackgen/pipeline/trace.py` exposes **every IR boundary** (phrases post-5/6/7
-> SEPARATELY + plan/song_form/harmony/arrangement/selection/tempo_events/sound_design/document), and
-> `generate_track` delegates to it byte-identically.
+> **Phases 1–7 COMPLETE.** The pipeline runs all nine stages for real end to end. No stubs remain.
 >
-> **Scoping facts for C2 (from C1's 2 opus agents — verify before relying):** the doc validator lives
-> at `src/trackgen/schema/validate.py` (`validate_document(doc) -> list[str]`, pure, `_check_vN`
-> helpers, V1–V8 read the TrackDocument ONLY — W-layer must SUBSUME + extend it reading IRs). Register
-> lanes are in `ArrangementPlan` (`Register.low_midi/high_midi` per `(section_id, role)` — W1). Drum
-> `PhraseNote`s carry internal voice/ornament tags (C-11) usable by W2/W6. Only draw sites are
-> `weighted_choice` + one interpreter `randrange` (W5 regenerate keys on `doc.meta.params`+seed, already
-> round-tripped). **C-12 note** (latent, may surface as a real W-check gap or fixture): §3.7 entry-crash
-> velocity has no floor — a future pack with `crash.velocity` lo=0 entering a 0-energy section crashes;
-> reference packs are safe (lo 0.55/0.40). W-checks are a natural place to catch such edges.
+> **Env / gates:** `uv` manages Python 3.12; four gates (`uv run pytest -n auto` · `ruff check` ·
+> `ruff format --check` · `mypy`); suite **5983 tests / ~60 s** under `-n auto`. Determinism enforced
+> by TID251 (entropy only in `seeds.py`).
 >
-> **Whole-phase chunk plan (pinned seams — session count may flex):**
-> C1 (S15) ✅ foundations trace+amendments [DoD 1] · **C2 (S16) validators W1–W8/L2/L3 [DoD 4]** · C3
-> tooling audition+lint+`--explain`+calibrate [DoD 7] · C4 golden corpus+bless+smoke matrix [DoD 5,6] ·
-> C5 reference-pack refinement (shakedown) [DoD 2] · C6 chill_lofi · C7 blues · C8 fusion_jazz [DoD
-> 3/8/10 per pack] · C9 five-pack property + milestone rubric + amendment audit + whole-phase review
-> [DoD 9,11]. Layout: `src/trackgen/quality/{layer1,layer2,layer3,calibration}.py`, `pipeline/trace.py`
-> (done), `src/trackgen/tooling/{audition,lint,calibrate,bless}.py`, `src/trackgen/packs/lint.py`,
-> `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`.
+> **⚠️ Tooling hazard for future sessions:** a stale scratchpad `.venv` can shim into the real repo's
+> `site-packages`, so mutation-testing silently loads UNMUTATED source and every mutation falsely
+> appears to SURVIVE. It manufactures false *survivals*, never false *kills*. If a mutation "survives",
+> prove the mutation is actually loaded (assert the mutated value from inside the test process) before
+> believing a test is vacuous.
 >
-> **C-03 (SubV/P8) stays orthogonal** — P8/P9 read only the numeral, blind to extensions; C1 confirmed
-> `_relaunches_as_dominant` untouched. It becomes live when C7 (blues) authors bII7 turnaround/final
-> content, which loads clean via the existing SubV admission.
+> **CAVEATS (open, verify each before relying):** **C-20** (corpus 37 % pattern blind spot — read this
+> before C5), **C-19** (pop_rock 480 s ceiling), **C-18** (no CI substrate; §14.6 unmet), **C-17**
+> (corpus 24/60 packs), C-16 (L2-2 co-attack grain), C-15 (§5.2 envelope prose), C-14
+> (`TrackSound.midi`), C-12 (§3.7 entry-crash velocity floor — **a new pack setting `crash.velocity`
+> lo=0 could reach it**), C-11 (drum voice/ornament tags), C-10 (no coincident-same-voice-drum de-dup),
+> C-08 (jazz ride band prose), C-07 (§3.3 sub-60 drop), C-06 (marker-gating loader), C-03 (SubV in P8).
+> Resolved: C-01/02/04/05/09/13.
 >
-> **Phases 1–7 COMPLETE.** The pipeline runs **all nine stages for real** end to end: `generate_plan →
-> form → harmony → arrange → select_patterns → generate×4 → transitions → humanize → sound_design →
-> serialize`. No stubs remain.
->
-> **What Phase 7 hands Phase 8 (all committed, tested):**
->  - **Stage 8 (sound design) is real + wired:** `sound.stage.sound_design(plan, timbres, rng) →
->    SoundDesign` (`{track_sounds:{id:{instrument,effects,channel,sends,midi}}, buses, master}`);
->    orchestrator passes `pack.timbres` + the reserved `sound` stream (zero draws, D3). Serializer
->    consumes `SoundDesign` (channel/sends/buses/master; reverb bus omitted when no emitted track sends).
->  - **The real `timbres.yaml` schema + engine data** (`src/trackgen/sound/`): `TimbresConfig` + TB1–TB9,
->    `evaluate.py` (curves/round3/merge/base-XOR/apply_directives), `mod_defaults.yaml` (§5.1),
->    `allowlist.yaml` (D12, closed — **Phase-8 packs add classes/paths by amendment when first used**;
->    the Vibrato/AutoFilter rows for chill_lofi/fusion_jazz per PHASE_8 §3.7 are already noted in §5.2),
->    `_merge.py` (shared normalization used by both the validators and the stage).
->  - **Both reference `styles/{pop_rock,jazz}/timbres.yaml` fully authored** (every §8 flavor); TB1 runs
->    live vs `interpreter.yaml` in `resolve_pack`. New packs each need a `timbres.yaml` whose flavor ids
->    EQUAL their `interpreter.yaml` declarations (TB1).
->  - **Milestone goldens re-blessed** (`fixtures/{pop_rock,jazz}.milestone.trackdoc.json`) — now carry
->    the real sound surface; notes byte-identical to Phase 6 (pop 2790 / jazz 1275). `_regen_milestone_
->    fixtures.py` re-blesses; `test_whole_document_goldens.py` is the whole-doc regression guard.
->  - **DoD 8 (Phase 7 listening audition) CLOSED** — user auditioned both milestone docs and confirmed
->    the Q1 loudness/mix ear-check (2026-07-18); §13.8 fully proven. PHASE_8 §8.4 still names T1/T2 as
->    the ongoing calibration listening tasks for future packs.
->
-> **Env / gates:** `uv` manages Python 3.12; four gates (`uv run pytest` · `ruff check` · `ruff format
-> --check` · `mypy`); full suite **~11m20s / 4725 tests** — run pytest with an extended timeout.
-> Determinism enforced by TID251 (entropy only in `seeds.py`).
->
-> **CAVEATS (open, none block Phase 8 — verify each still holds before relying on it):** C-03 (SubV in
-> P8 — **now due**), C-06 (marker-gating loader), C-07 (§3.3 sub-60 drop, latent), C-08 (jazz ride band
-> prose), C-10 (Serializer no coincident-same-voice-drum de-dup, latent V3 — a natural Phase-8 guard
-> point when authoring new drum content), C-11 (drum voice/ornament provenance tags), C-12 (§3.7
-> entry-crash velocity floor — **a new pack setting `crash.velocity` lo=0 could reach it**), **C-14**
-> (`SoundDesign.TrackSound.midi` beyond §7's printed shape), **C-15** (§5.2 `envelope.*` prose imprecision
-> — a new envelope-bearing class must expand to the same ADSR+attackCurve set). Resolved: C-01/02/04/05/
-> 09/13. **Phase-6 §11.10 + Phase-7 §13.8 listening auditions CLOSED** (user-confirmed 2026-07-18).
->
-> **Phase-7 defer notes (low priority):** module-level cache for `load_allowlist`/`load_mod_defaults`
-> (re-read per validation + per `sound_design` call); per-clause TB2/TB8 rejection fixtures (one-per-rule
-> covered); fold `_check_sends` into `timbres._check` (role→bank triple re-listed). **Older `parts/`
-> defers still open:** consolidate `_fold_into_lane` + `_third_pc`/`_fifth_pc` (walker.py/retarget.py);
-> mutation.py magic literals; the §11.10 byte-diff mechanization.
+> **Phase-6 §11.10 + Phase-7 §13.8 listening auditions CLOSED** (user-confirmed 2026-07-18).
 
 *(The orchestrator rewrites this block at every close-out — and mid-session on any pause — stating: current phase/chunk, last completed task + commit, and the exact next action.)*
 
@@ -198,7 +160,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
 | 6 | Transitions, variation & humanization | done | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). §11.10 listening checklist CLOSED (user-confirmed 2026-07-18) |
 | 7 | Sound design | done | 13, 14 | **2-chunk split** (flip seam). C1 (13): new `sound/` package — engine data + evaluation + real `timbres.yaml` schema/TB1–TB9, unwired; DoD 2/3 + DoD 1(C1). C2 (14): the atomic flip — real `sound_design → SoundDesign` stage wired end to end, both `styles/*/timbres.yaml` authored, stubs deleted, goldens re-blessed (notes byte-identical), §9 field-for-field, 344-doc property matrix, zero-draw. Whole-phase 4-lens review **CLEAN/COMPLIANT/PROVEN/GOOD-WITH-NITS**; full §13 DoD 1–9 PROVEN; **4725 tests**. Caveats C-13 (§9.2 sample, resolved), C-14/C-15 (open, latent/prose). DoD 8 listening checklist CLOSED (user-confirmed 2026-07-18) |
-| 8 | Quality, evaluation & pack expansion | in progress | 15, 16, 17… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; no caveats. **C2 (S16) DONE** — 3-layer validator suite (`quality/` W1–W8 hard / L2-1 fail + L2-2 warn / L3 metrics+bands), warn/fail suite split; DoD §14.4 PROVEN; 2-lens review CLEAN/PROVEN; C-16 (L2-2 co-attack grain, user-ratified). **C3 (S17) DONE** — authoring tooling (audition CLI, pack linter+5 warnings, `--explain` selection log, `calibrate`→`calibration.yaml` + L2-reader reconciliation); DoD §14.7 PROVEN; 3-lens review found+fixed one blocker (audition drum sub-track filter); no new caveats. **Next: C4 (S18) golden corpus + bless + smoke matrix.** |
+| 8 | Quality, evaluation & pack expansion | in progress | 15, 16, 17… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; no caveats. **C2 (S16) DONE** — 3-layer validator suite (`quality/` W1–W8 hard / L2-1 fail + L2-2 warn / L3 metrics+bands), warn/fail suite split; DoD §14.4 PROVEN; 2-lens review CLEAN/PROVEN; C-16 (L2-2 co-attack grain, user-ratified). **C3 (S17) DONE** — authoring tooling (audition CLI, pack linter+5 warnings, `--explain` selection log, `calibrate`→`calibration.yaml` + L2-reader reconciliation); DoD §14.7 PROVEN; 3-lens review found+fixed one blocker (audition drum sub-track filter); no new caveats. **C4 (S18) DONE** — golden corpus (24/60 cells at every IR boundary) + `trackgen bless` semantic diff + generatorVersion refusal + smoke matrix (315 cells) + 300-seed sweep (600 cells); 3-lens review APPROVE-WITH-NITS/COMPLIANT-WITH-DEVIATIONS/GOOD-WITH-NITS, no blockers; **5983 tests**. DoD §14.5 mechanism PROVEN but corpus **24/60 → completes at C8**; **§14.6 "in CI" NOT MET** (no CI substrate exists). Four new caveats **C-17** (2/5 packs), **C-18** (no CI), **C-19** (pop_rock cannot reach the 480 s bucket), **C-20** (corpus never selects 18/49 patterns — a 37 % blind spot that does NOT heal at five packs). **Next: C5 (S19) reference-pack refinement.** |
 
 ## Session log
 
@@ -206,6 +168,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 18 | 2026-07-20 | Phase 8 chunk 4 (golden corpus + bless + smoke matrix) | 2 opus scoping agents → USER APPROVAL GATE (4 decisions ratified: S18-1 pytest-module-not-CI · S18-2 compact IR separators · S18-3 diagonal (V,A) mood triple · S18-4 300 seeds × 2 packs) → 4 opus implementer tasks (**T1 corpus ‖ T4 smoke matrix** → T2 diff → T3 CLI+capture) + per-task opus reviews + **T5 orchestrator-run rehearsal** + **T6 3-lens whole-chunk review**. New `src/trackgen/tooling/{corpus,blessdiff,bless}.py` + `trackgen bless [--approve] [--pack]` + **`fixtures/goldens/**` (240 files, 17 MB)**. Suite 4858 → **5983**. **Golden-value arbitration applied once**: the session plan printed the smoke matrix as `2×(11+10)×3×5 = 630`, double-counting the pack dimension; the T4 agent followed §8.2's dimension text over the printed total and built **315** — orchestrator confirmed independently and corrected the plan (ROADMAP §3, subagent-initiated). **Per-task reviews:** T1 APPROVE-WITH-NITS (the tie-break claim was **overstated** — determinism rests on `sorted(set(moods))`, over which the explicit rank is provably equivalent to `max()`; corrected + degenerate-triple guard added), T4 APPROVE-WITH-NITS (8 non-vacuity mutants all killed), T2 **CHANGES-REQUIRED** (elision unranked — a 69-note bucket elided while a 2-note one showed; a pure section rename reported "350 notes implicated" on a **byte-identical document**; L3 deltas silently omitted — all fixed), T3 APPROVE-WITH-NITS (**three degrade-open gaps**: a partial baseline masqueraded as a first capture and bypassed the version check entirely; the empty `SelectionResult` made **W4 pass vacuously**; a baseline missing `generatorVersion` was approvable — all now fail closed). **T5 rehearsal earned its DoD slot** — found (a) the version-stamp refresh gap (`--approve` left the corpus on mixed stamps while reporting "no divergence" — the tool asserting the corpus was fine when it was provably not byte-reproducible) and (b) **C-20**, discovered because the rehearsal's first attempt edited a pattern the corpus never reaches. **T6 3-lens** (correctness **APPROVE-WITH-NITS** — all 24 cells × 10 stages verified byte-reproducible under `PYTHONHASHSEED=random`; contract **COMPLIANT-WITH-DEVIATIONS** — V1–V8 and the milestone fixtures byte-untouched; test-quality **GOOD-WITH-NITS** — 36 mutations, 28 killed) → 2 fail-open edges + the **unprotected `note_affecting` conjunct** (orchestrator reproduced independently: mutate it and all 67 tests still pass) + untested metric elision + the 480 s bucket never asserting the engine responded to it. All fixed. **Four caveats C-17…C-20.** **DoD recorded honestly, not rounded up:** §14.5 mechanism PROVEN / corpus 24-of-60; §14.6 **"in CI" NOT MET**. Four gates green. | 38ebf7b plan · 1ae12f6 T1 corpus · 31e1575 T4 smoke · 4ed99d2 T2 diff · 4e13da8 T3 CLI+corpus · 9865079 T5 rehearsal fix · 40481c6 T6 review fixes |
 | 17 | 2026-07-20 | Phase 8 chunk 3 (authoring tooling) | 4 opus implementer tasks (T1 audition → T2 linter → T3 --explain → T4 calibrate, serial) + T5 3-lens whole-chunk review + review-fix + close-out. New `src/trackgen/tooling/{audition,lint,calibrate}.py` + `packs/lint.py` + `pipeline/explain.py`; CLI `audition`/`lint`/`calibrate` + `--explain` on `generate`/`audition`. **DoD §14.7 PROVEN.** Everything additive — `--explain` threads an opt-in `explain=None` collector through the §9.3 draw sites (byte-identical default path, zero fixture edits); calibrate's L2-reader reconciliation is off the `generate` path. **3-lens whole-chunk review** (correctness/determinism · contract/DoD · test/code-quality): **one BLOCKER** — audition `--solo`/`--mute` on a drum sub-track filtered by note voice-tags and missed the untagged §6 fill/crash/hold notes (empirical repro: mute tom_low no-op, solo tom_low silence, mute snare 181→29) → **fixed** to filter by `phrase.track_id` (drum gen partitions per voice) + 3 discriminating tests; three minor fixes (calibrate report smoke test, dead `lint_pack` removed, keyword-only `explain`). **NO new CAVEATS** (L2 reconciliation is a fix *toward* §8.1, both lenses agreed). Process note: `REFERENCE.md` auto-committed by the T1 subagent unprompted (`0217217`) — kept + refreshed, flagged to user. Four gates green (**4858 tests**). | fb4f5d9 audition · 86e9e35 linter · d47d305 explain · 1d1fa59 calibrate · 1954de9 review-fix |
 | 16 | 2026-07-18 | Phase 8 chunk 2 (validator suite W1–W8 / L2 / L3) | 4 opus implementer waves + reconciliation + review-fix + 2-lens whole-chunk review. New `src/trackgen/quality/` package (PHASE_8 §8.1), reads the C1 `GenerationTrace`; **`schema/validate.py` V1–V8 byte-unchanged.** Waves: **T1** foundation (`_common` helpers + Layer-1 W1/W3/W4/W6/W8 + `suite.validate_pipeline`) → **T2 ‖ T3 ‖ T4** (W2/W5/W7 · Layer-2 L2-1/L2-2 · Layer-3 metrics+`calibration.py` bands, disjoint files) → reconciliation (**warn/fail split**: `validate_pipeline`=failures V+W+L2-1, `pipeline_warnings`=L2-2; Layer-3 batch-only) → T5. Per-task reviews + fixes: **T1** APPROVE-WITH-NITS → W3 HOLD-note identification switched from document onset-proximity band to the `"hold"` tag on `phrases_stage7` (reviewer reproduced a false-fire on −5-tick negative humanizer displacement; regression test added). **Whole-chunk 2-lens (fresh opus, full C2 diff): correctness/contract CLEAN** (every W/L2/L3 check traced load-bearing — tick math, governing chord, lane lookup, C-11 strip; V1–V8 frozen; determinism/TID251; no import cycle; only stdlib `statistics`+pinned `pyyaml`), **test/DoD PROVEN-WITH-GAPS → PROVEN** (all violating fixtures discriminating incl. W6 C-11-strip, W7 stage6-vs-7, L2-1 beat-set asymmetry, `compute_bands` mean±2.5SD exact; 2 gaps closed by review-fix — W2 dropout+fill-outside-fill-bar branch fixtures now assert their specific messages, calibration `.yaml` read-back round-trip + L2 threshold-override tests). **L2-2 grain decision: user-ratified CO-ATTACK** over the literal sustain-overlap (jazz walking-bass sustain = 44 noise-warns, 0 co-attack crossings) → **C-16** (warn-only, non-gating; doc-wording clarification deferred). **DoD §14.4 PROVEN.** Four gates green (**4806 tests**). | 6283f58 plan · 2f2f5ca T1 · 177afec Wave B · (close-out this commit) |
 | 15 | 2026-07-18 | Phase 8 chunk 1 (foundations: pipeline trace + machinery amendments) | 3 opus + 1 sonnet implementer tasks (T1 trace alone → T2 feel ‖ T4 allowlist → T3 extensions) + T5 whole-chunk 2-lens review + close-out. Foundational engine work, **no packs / no tooling; everything additive** (pop_rock/jazz byte-identical — whole-doc + humanizer + harmony goldens pass with NO fixture edits). **T1** `pipeline/trace.py` `generate_trace → GenerationTrace` exposes every IR boundary (phrases post-5/6/7 SEPARATELY + plan/sf/harmony/arr/selection/tempo/sound/doc); `generate_track` delegates, doc byte-identical — the substrate for C2 validators (W7/W8) / C3 `--explain` / C4 golden corpus / bless. **T2** `laidback`/`tight` feel profiles (§3.4 verbatim) + `feelTable` validated & threaded `GenerationPlan → interpreter → humanize` (mirrors `swing`). **T3** authored chord extensions (§3.5): `resolve_token` extgroup parse (grammar→P5, §6.4→P11 at loader), dressing passthrough guard makes an authored ext **draw-free** (discriminating zero-draw pin). **T4** allowlist Vibrato/AutoFilter already pre-seeded (Phase 7) — matched §3.7, added coverage test. Per-task reviews all APPROVE; **whole-chunk 2-lens: correctness CLEAN / test-DoD PROVEN** (one gap — positive feelTable selection — closed by a discriminating `_run`-path test, monkeypatch-verified). **DoD §14.1 PROVEN. No new CAVEATS** (all additive, no deviation). C-03 untouched (P8/P9 blind to extensions). Four gates green (**4758 tests**). | 3e93514 trace · dcdbd2b feel+feelTable · d64b0f7 allowlist · 0386b25 extensions+P11 · 68720e6 review-fix |
@@ -244,7 +207,7 @@ Phases 1–7 contracts and validates the whole, then triples the pack count. Har
 | C1 | 15 | **Foundations:** pipeline trace orchestrator (`generate_trace`) + machinery amendments (§3.4 feel profiles+feelTable, §3.5 authored extensions+P11, §3.7 allowlist verify) | 1 |
 | C2 | 16 | **Validator suite:** Layer-1 W1–W8 (each violating fixture, subsumes V1–V8), Layer-2 L2-1/L2-2, Layer-3 L3 metrics + band computation | 4 |
 | C3 | 17 | **Authoring tooling:** audition CLI (`--section`/`--solo`/`--mute`/`--play`), pack linter (errors + 5 warning classes), `--explain` selection log, `trackgen calibrate → calibration.yaml` | 7 |
-| C4 | 18 | **Golden corpus + bless + smoke matrix:** 60-track matrix at every IR boundary, `bless` semantic-diff report + generatorVersion-bump check, smoke matrix in CI, 300-seed reference sweep | 5, 6 |
+| C4 | 18 ✅ | **Golden corpus + bless + smoke matrix:** matrix at every IR boundary (**24/60 cells — 2 packs; fills out C6–C8, C-17**), `bless` semantic-diff report + generatorVersion-bump check, smoke matrix **as a pytest module — NOT in CI, no substrate exists (C-18)**, 300-seed reference sweep | 5 (partial), 6 (partial) |
 | C5 | 19 | **Reference-pack refinement (shakedown, §7):** enumerate abridged pop_rock/jazz banks; lint clean; calibrate (T1 level pass); capture goldens + `calibration.yaml`; error-spotting pass | 2 |
 | C6 | 20 | **chill_lofi** (§4) — full pack per checklist §9.4; lint/calibrate/goldens/listening | 3/8/9/10 (lofi) |
 | C7 | 21 | **blues** (§5) — full pack per checklist | 3/8/9/10 (blues) |
@@ -272,6 +235,71 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
   are wiring+validation, not new machinery. **C-03 orthogonal** (P8/P9 blind to extensions).
 - **feelTable threading:** add `feel_table` to `GenerationPlan` (additive null field) mirrors how
   `swing` flows; changes the plan-IR JSON that C4's corpus will capture natively (bless it fresh).
+
+#### Phase 8 — Chunk 4 — session 18 (`plans/sessions/SESSION_18.md`)
+
+**Chunk 4 COMPLETE.** The golden corpus, the bless workflow, and the smoke matrix. Waves: **T1 ‖ T4**
+(file-disjoint) → T2 → T3 → T5 (orchestrator) → T6. Suite 4858 → **5983**; four gates green,
+orchestrator-verified after every task. **DoD §14.5 mechanism PROVEN (corpus 24/60); §14.6 content
+PROVEN, "in CI" NOT MET.**
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Corpus module (`tooling/corpus.py`): `STAGES` ×10, `corpus_moods` (S18-3), 24-cell matrix, encode/decode per S18-2 | opus | done | 1ae12f6 |
+| T4 | Smoke matrix (315 cells) + 300-seed sweep (600 cells), Layers 1–2 | opus | done | 31e1575 |
+| T2 | Semantic diff (`tooling/blessdiff.py`): first-divergent-stage, note add/remove/move, L3 deltas | opus | done | 4ed99d2 |
+| T3 | `trackgen bless` CLI + S18-8 refusal + the committed 24-cell corpus (240 files, 17 MB) | opus | done | 4e13da8 |
+| T5 | Deliberate-change rehearsal (DoD §14.5) + the version-stamp-refresh fix it found | orchestrator | done | 9865079 |
+| T6 | 3-lens whole-chunk review + fixes + close-out | orchestrator | done | 40481c6 |
+
+**Scope decisions ratified at the approval gate:** S18-1 pytest-module-not-CI · S18-2 compact IR
+separators (`document.json` keeps indent=2) · S18-3 mood triple = default + the (V,A)-farthest pair ·
+S18-4 sweep = 300 seeds × 2 packs at default params. Plus S18-5 (no `selection.json`), S18-6 (move
+rule), S18-7 (`FormSection.id` attribution), S18-8 (bump check reads the baseline document).
+
+**Two extensions beyond §8.2's printed text — assessed by two independent reviewers as ADDITIVE
+GAP-FILLS, not deviations (no caveat, no sign-off needed):** a fourth **`changed`** counter for
+velocity-only edits (without it such a change renders `notes — none`, the exact shape §8.2's report
+format exists to stop being rubber-stamped) and **exact-onset cancellation** before move-pairing
+(S18-6 leaves the order of its move rule and multiset difference unstated; cancelling first is the
+only coherent order). Recorded here because a reader comparing §8.2's three counters against four
+output columns needs the trail.
+
+**What the reviews caught that the implementers did not** (every one a case of something failing
+*permissive* or claiming more than it proved):
+- **T2:** elision was unranked (a 69-note bucket elided while a 2-note one showed); a pure section
+  rename reported "350 notes implicated" on a **byte-identical document** — the likely shape of C5's
+  re-bless; L3 deltas silently omitted when unavailable.
+- **T3:** three **degrade-open** gaps — a partial baseline masqueraded as a first capture and bypassed
+  the version check entirely (and a plain `bless` over deleted goldens exited 0, so the regression
+  surface could shrink while CI stayed green); the synthesized empty `SelectionResult` made
+  `quality/layer1.py`'s **W4 pass vacuously** (live 23 entries vs rebuilt 0); a baseline missing
+  `meta.generatorVersion` was approvable without a bump.
+- **T6:** a baseline stamped *newer* than the code was approved and then **silently downgraded**;
+  `--approve --pack X` left the unselected half byte-non-reproducible while reporting clean; the
+  **`note_affecting` document conjunct was wholly untested** (mutate it → all 67 tests still pass,
+  reproduced by the orchestrator in the real repo); metric elision untested; the 480 s bucket never
+  asserted the engine responded to it (a silent cap would have left all 916 cells green).
+
+**DoD §14.5 / §14.6 — recorded honestly, not rounded up:**
+- [~] **Corpus at every IR boundary — PARTIAL.** All 10 boundaries per cell at the pinned path shape;
+  **24 of 60 cells** (2 packs). Mechanism PROVEN; completes at C8. **C-17.**
+- [x] **`bless` + semantic diff report — PROVEN.** first-divergent-stage · note add/remove/move · L3
+  metric deltas · never raw JSON (test-enforced, `test_report_never_emits_raw_json_for_a_large_diff`).
+  Localizer proven discriminating (`test_first_divergent_stage_localizes_to_harmony_not_the_document`
+  asserts the documents are equal *first*, so a document-differ fails it).
+- [x] **generatorVersion-bump check — PROVEN.** Refusal reproduced empirically with zero writes; five
+  fail-closed cases; accept-after-bump also asserted.
+- [x] **Deliberate-change rehearsal documented — PROVEN.** Full record in the handoff block.
+- [~] **Smoke matrix — content PROVEN (315 cells, Layers 1–2), "in CI" NOT MET.** No CI substrate
+  exists in the repo. **C-18.**
+- [x] **300-seed reference sweep clean — PROVEN.** 600 cells, default params.
+
+**New caveats: C-17** (corpus 2/5 packs) · **C-18** (no CI; §14.6 unmet as written) · **C-19**
+(pop_rock cannot reach the 480 s bucket — 356.57 s vs jazz's exact 480.00 s) · **C-20** (the corpus
+never selects 18 of 49 patterns; **does not heal at five packs** — the cause is the pinned mood triple
+plus `layersMax`, not the pack count). C-19 and C-20 both follow the **C-02 precedent**: a pinned
+mechanism proven unreachable under other pinned rules.
 
 #### Phase 8 — Chunk 1 — session 15 (`plans/sessions/SESSION_15.md`)
 
