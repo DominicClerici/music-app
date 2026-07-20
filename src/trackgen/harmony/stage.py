@@ -21,6 +21,8 @@ draw. Order is append-only, so rerolling `harmony` alone re-colors the song.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from trackgen.harmony.dressing import dressing_options, tier
 from trackgen.packs.models import (
     Bar,
@@ -46,6 +48,9 @@ from trackgen.theory import (
     chord_symbol,
     resolve_token,
 )
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 # 4/4, PPQ 480 → 1920 ticks/bar (PHASE_1 PPQ + §5 tick facts). v1 ships 4/4 only.
 _TICKS_PER_BAR = 1920
@@ -108,7 +113,13 @@ def _select[T: (PoolEntry, TurnaroundEntry, FinalEntry)](
     return entries[0]
 
 
-def _dress_slot(token: str, key: KeyLike, base_tier: int, rng: Rng) -> ChordSpec:
+def _dress_slot(
+    token: str,
+    key: KeyLike,
+    base_tier: int,
+    rng: Rng,
+    explain: ExplainCollector | None = None,
+) -> ChordSpec:
     """Resolve `token`, look up its §6.3 dressing options, and draw one (iff
     >= 2 options; else the sole option, no draw). The returned spec already
     carries the re-derived `symbol` (dressing_options handles that)."""
@@ -117,8 +128,12 @@ def _dress_slot(token: str, key: KeyLike, base_tier: int, rng: Rng) -> ChordSpec
         spec, _token_is_bare(token), chord_function(token), base_tier, key
     )
     if len(opts) >= 2:
-        return weighted_choice([s for s, _ in opts], [w for _, w in opts], rng)
-    return opts[0][0]
+        chosen = weighted_choice([s for s, _ in opts], [w for _, w in opts], rng)
+    else:
+        chosen = opts[0][0]
+    if explain is not None:
+        explain.add_dressing(token, base_tier, chosen.symbol)
+    return chosen
 
 
 def _event(
@@ -187,6 +202,7 @@ def _dress_and_emit_bars(
     base_tier: int,
     rng: Rng,
     tags: list[str],
+    explain: ExplainCollector | None = None,
 ) -> list[ChordEvent]:
     """Dress a turnaround/finals bar list at its own draw point and tile it over
     `[start_tick, …)` (§5.4/§5.5). These lists never contain holds (loader P5),
@@ -196,7 +212,7 @@ def _dress_and_emit_bars(
     for bar in bars:
         dur = _TICKS_PER_BAR // len(bar)
         for token in bar:
-            spec = _dress_slot(token, key, base_tier, rng)
+            spec = _dress_slot(token, key, base_tier, rng, explain)
             events.append(_event(spec, token, tick, dur, section_id, key, list(tags)))
             tick += dur
     return events
@@ -264,6 +280,8 @@ def harmony(
     form: SongForm,
     progressions: ProgressionsConfig,
     rng: Rng,
+    *,
+    explain: ExplainCollector | None = None,
 ) -> HarmonicPlan:
     """PHASE_4 §5.1 — resolve a `SongForm` into a `HarmonicPlan`.
 
@@ -306,6 +324,8 @@ def harmony(
                 eligible = restricted
         entry = _select(eligible, rng)
         pool_selections[tag] = entry.id
+        if explain is not None:
+            explain.add_entry("pool", tag, entry.id, len(eligible))
 
         dressed: dict[str, list[_DressedBar]] = {}
         for label, bars in entry.phrases.items():
@@ -315,7 +335,10 @@ def harmony(
                     dressed_bars.append(None)
                     continue
                 dressed_bars.append(
-                    [(_dress_slot(token, key, base_tier, rng), token) for token in bar]
+                    [
+                        (_dress_slot(token, key, base_tier, rng, explain), token)
+                        for token in bar
+                    ]
                 )
             dressed[label] = dressed_bars
         dressed_by_tag[tag] = dressed
@@ -352,6 +375,13 @@ def harmony(
         ]
         if eligible_ta:
             ta_entry = _select(eligible_ta, rng)
+            if explain is not None:
+                explain.add_entry(
+                    "turnaround",
+                    f"turnaround:{section.id}",
+                    ta_entry.id,
+                    len(eligible_ta),
+                )
             replace_start = (end_bar - len(ta_entry.bars)) * _TICKS_PER_BAR
             kept = _truncate_to(events, replace_start)
             section_events[i] = kept + _dress_and_emit_bars(
@@ -362,6 +392,7 @@ def harmony(
                 base_tier,
                 rng,
                 ["turnaround"],
+                explain,
             )
             pool_selections[f"turnaround:{section.id}"] = ta_entry.id
         else:
@@ -387,6 +418,8 @@ def harmony(
         if _entry_eligible(entry, key, valence, dissonance)
     ]
     final_entry = _select(finals, rng)
+    if explain is not None:
+        explain.add_entry("final", "finals", final_entry.id, len(finals))
     end_bar = final_section.start_bar + final_section.length_bars
     replace_start = (end_bar - len(final_entry.bars)) * _TICKS_PER_BAR
     events = section_events[final_index]
@@ -399,6 +432,7 @@ def harmony(
         base_tier,
         rng,
         ["final"],
+        explain,
     )
     pool_selections["finals"] = final_entry.id
 

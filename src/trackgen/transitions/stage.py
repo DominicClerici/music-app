@@ -10,6 +10,8 @@ note-structural change; frozen `Phrase`s are rebuilt, never mutated
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from trackgen.packs.models import StylePack
 from trackgen.schema.ir import (
     ArrangementPlan,
@@ -23,6 +25,9 @@ from trackgen.transitions.devices import apply_devices
 from trackgen.transitions.ending import find_t_last, hold_ending
 from trackgen.transitions.mutation import mutate
 
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
+
 
 def transitions(
     phrases: list[Phrase],
@@ -31,6 +36,8 @@ def transitions(
     arr: ArrangementPlan,
     plan: GenerationPlan,
     pack: StylePack,
+    *,
+    explain: ExplainCollector | None = None,
 ) -> list[Phrase]:
     """Transform `phrases` through stage 6 (§3), returning a new `Phrase` list."""
     if pack.transitions is None:
@@ -40,7 +47,7 @@ def transitions(
     builders = to_builders(phrases)
 
     hold_ending(builders, form, chords, plan, pack, t_last)  # 6a
-    apply_devices(builders, form, arr, plan, pack, t_last // BAR)  # 6b
+    apply_devices(builders, form, arr, plan, pack, t_last // BAR, explain=explain)  # 6b
 
     result = to_phrases(builders)
-    return mutate(result, form, chords, arr, plan, pack)  # 6c
+    return mutate(result, form, chords, arr, plan, pack, explain=explain)  # 6c

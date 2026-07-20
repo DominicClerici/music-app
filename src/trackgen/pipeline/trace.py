@@ -24,6 +24,7 @@ from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.parts.generators import generate
 from trackgen.parts.selection import SelectionResult, select_patterns
+from trackgen.pipeline.explain import ExplainCollector
 from trackgen.pipeline.serialize import serialize
 from trackgen.schema.document import Role, Tempo, TrackDocument
 from trackgen.schema.ir import (
@@ -62,14 +63,18 @@ class GenerationTrace:
     document: TrackDocument
 
 
-def generate_trace(raw_params: dict[str, object]) -> GenerationTrace:
+def generate_trace(
+    raw_params: dict[str, object], *, explain: ExplainCollector | None = None
+) -> GenerationTrace:
     """Run the full pipeline for `raw_params`, retaining every IR boundary.
 
     The stage chain, call order, rng streams, and arguments are identical to
     `generate_track`; only the intermediate results are kept rather than
-    discarded.
+    discarded. When an `ExplainCollector` is passed, each §9.3 draw site appends
+    a record after it resolves; the collector never touches the RNG, so
+    `explain=None` (the default) is byte-identical to today.
     """
-    plan = generate_plan(raw_params)
+    plan = generate_plan(raw_params, explain=explain)
 
     style_family = raw_params["styleFamily"]
     assert isinstance(style_family, str)
@@ -85,15 +90,24 @@ def generate_trace(raw_params: dict[str, object]) -> GenerationTrace:
             f"progressions, and timbres (pack={pack!r})"
         )
 
-    sf = form(plan, pack.forms)
+    sf = form(plan, pack.forms, explain=explain)
     hp = harmony(
         plan,
         sf,
         pack.progressions,
         stream_rng(plan.seed.master, plan.seed.overrides, "harmony"),
+        explain=explain,
     )
     ap = arrange(plan, sf, pack, Rng(0))
-    sel = select_patterns(plan, sf, ap, pack, plan.seed.master, plan.seed.overrides)
+    sel = select_patterns(
+        plan,
+        sf,
+        ap,
+        pack,
+        plan.seed.master,
+        plan.seed.overrides,
+        explain=explain,
+    )
 
     phrases_stage5: list[Phrase] = []
     for role in _ROLES:
@@ -110,7 +124,9 @@ def generate_trace(raw_params: dict[str, object]) -> GenerationTrace:
             prior_phrases=phrases_stage5,
         )
 
-    phrases_stage6 = transitions(phrases_stage5, sf, hp, ap, plan, pack)
+    phrases_stage6 = transitions(
+        phrases_stage5, sf, hp, ap, plan, pack, explain=explain
+    )
     phrases_stage7, tempo_events = humanize(phrases_stage6, sf, plan)
     design = sound_design(
         plan, pack.timbres, stream_rng(plan.seed.master, plan.seed.overrides, "sound")

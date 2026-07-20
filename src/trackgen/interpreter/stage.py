@@ -11,8 +11,10 @@ validates the raw params, derives the master seed (`fresh_master()` is the only
 entropy entry and lives only here, at the API boundary), and calls `interpret`.
 """
 
+from __future__ import annotations
+
 import math
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import ValidationError
 
@@ -47,6 +49,9 @@ from trackgen.seeds import (
     master_from_string,
     stream_rng,
 )
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 # PHASE_2 §6.3 — the engine mode ladder (imported from moods so pack validation
 # and interpreter resolution index against one canonical order) with per-rung
@@ -155,6 +160,8 @@ def interpret(
     pack: StylePack,
     master_seed: int,
     overrides: dict[str, int],
+    *,
+    explain: ExplainCollector | None = None,
 ) -> GenerationPlan:
     """PHASE_2 §6 — resolve validated params into a complete `GenerationPlan`.
 
@@ -188,6 +195,8 @@ def interpret(
         else:
             rng = stream_rng(master_seed, overrides, "interpreter")
             tempo = lo + rng.randrange(hi - lo + 1)
+            if explain is not None:
+                explain.add_tempo(tempo, lo, hi)
 
     # Step 7: key (§6.3, deterministic).
     user_mode = params.key.mode if params.key is not None else None
@@ -258,7 +267,9 @@ def interpret(
     )
 
 
-def generate_plan(raw_params: dict[str, Any]) -> GenerationPlan:
+def generate_plan(
+    raw_params: dict[str, Any], *, explain: ExplainCollector | None = None
+) -> GenerationPlan:
     """PHASE_2 §6 orchestrator entry — resolve, validate, seed, and interpret.
 
     `fresh_master()` is the only entropy entry and lives only on this path,
@@ -302,4 +313,4 @@ def generate_plan(raw_params: dict[str, Any]) -> GenerationPlan:
         name: from_base36(value) for name, value in params.seed_overrides.items()
     }
 
-    return interpret(params, pack, master, overrides_int)
+    return interpret(params, pack, master, overrides_int, explain=explain)

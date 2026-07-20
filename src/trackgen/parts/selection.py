@@ -29,11 +29,15 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from trackgen.packs.models import Eligibility, PatternEnvelope, PatternKind, StylePack
 from trackgen.schema.document import Role
 from trackgen.schema.ir import ArrangementPlan, GenerationPlan, SongForm
 from trackgen.seeds import Rng, derive, stream_seed, weighted_choice
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 # The cache key: the (role, kind, rung) granularity §3.2 pins one draw to.
 SelectionKey = tuple[Role, PatternKind, int]
@@ -109,6 +113,7 @@ def select_patterns(
     overrides: dict[str, int],
     *,
     rng_factory: RngFactory | None = None,
+    explain: ExplainCollector | None = None,
 ) -> SelectionResult:
     """Resolve the chosen pattern for every active, pattern-mode `(section, role)`.
 
@@ -151,6 +156,8 @@ def select_patterns(
                 eligible = _eligible_set(pack, role, kind, rung, plan.tempo_bpm)
                 pattern = _draw(eligible, rng_for(role))
                 by_key[key] = pattern
+                if explain is not None:
+                    explain.add_pattern(role, kind, rung, pattern.id, len(eligible))
             by_section[(section.id, role)] = pattern
 
     return SelectionResult(by_section=by_section, by_key=by_key)

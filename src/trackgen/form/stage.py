@@ -14,8 +14,10 @@ before bar draw per slot). Ladder ops and repeat counts are arithmetic, never
 drawn. Candidate lists are always iterated in authored order.
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from trackgen.form.energy import section_energy
 from trackgen.packs.models import (
@@ -34,6 +36,9 @@ from trackgen.schema.ir import (
     SongForm,
 )
 from trackgen.seeds import stream_rng, weighted_choice
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 # A resolved section to emit: (type, length_bars, energy override, variant).
 _RawSection = tuple[str, int, float | None, str | None]
@@ -127,7 +132,12 @@ def _fit_and_degrade(
     return count, total
 
 
-def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
+def form(
+    plan: GenerationPlan,
+    forms: FormsConfig,
+    *,
+    explain: ExplainCollector | None = None,
+) -> SongForm:
     """PHASE_3 §7.1 — resolve a `GenerationPlan` into a `SongForm`."""
     if not forms:
         raise ValueError("form() requires a non-null FormsConfig (forms.yaml)")
@@ -192,6 +202,13 @@ def form(plan: GenerationPlan, forms: FormsConfig) -> SongForm:
         )
     else:
         template = eligible_templates[0]
+
+    if explain is not None:
+        explain.add_template(
+            template.id,
+            [t.id for t in eligible_templates],
+            [t.weight for t in eligible_templates],
+        )
 
     # --- flatten the spine for the resolution walk (D-S7) ---------------------
     # Each entry: (slot, uid, in_repeat). Repeat-block inner slots resolve ONCE

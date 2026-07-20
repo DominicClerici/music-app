@@ -12,6 +12,7 @@ crash rule are draw-free.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from trackgen.packs.models import DrumEvent, PatternEnvelope, StylePack
 from trackgen.parts.selection import _draw, _tempo_eligible
@@ -31,6 +32,9 @@ from trackgen.transitions._common import (
     instantiate_fill_event,
     section_span,
 )
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 _FILL_TAIL = 960  # phrase-boundary fills render only the last 2 beats (§3.3).
 
@@ -191,6 +195,8 @@ def apply_devices(
     plan: GenerationPlan,
     pack: StylePack,
     t_last_bar: int,
+    *,
+    explain: ExplainCollector | None = None,
 ) -> None:
     """Run 6b in place: enumerate boundaries, then per boundary draw + render in
     §3.8 order on a single `derive(transitions, "devices")` RNG."""
@@ -213,6 +219,13 @@ def apply_devices(
             included = weighted_choice(
                 ["include", "exclude"], spec.phrase_fill.odds, rng
             )
+            if explain is not None:
+                explain.add_device(
+                    "phrase_fill",
+                    f"phrase@bar{boundary.fill_bar}",
+                    included,
+                    fired=included == "include",
+                )
             if included == "include":
                 _render_fill(
                     builders, boundary, drum_rung[boundary.outgoing.id], plan, pack, rng
@@ -230,6 +243,13 @@ def apply_devices(
         if _stop_eligible(boundary, drum_rung, pack):
             assert spec.stop.odds is not None
             device = weighted_choice(["stop", "fill"], spec.stop.odds, rng)
+            if explain is not None:
+                explain.add_device(
+                    "stop_vs_fill",
+                    f"section {boundary.outgoing.id}->{boundary.entered.id}",
+                    device,
+                    fired=True,  # both stop and fill are audible devices
+                )
 
         if device == "stop":
             _apply_stop(builders, boundary.entered_tick)

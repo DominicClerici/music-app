@@ -6,7 +6,8 @@ from typing import Annotated
 
 import typer
 
-from trackgen.pipeline import generate_track, to_json
+from trackgen.pipeline import generate_trace, to_json
+from trackgen.pipeline.explain import ExplainCollector, render_explain
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
 from trackgen.tooling.audition import build_audition, open_playground
 from trackgen.tooling.lint import run_lint
@@ -71,6 +72,12 @@ def generate_command(
             "--out", help="Write the TrackDocument JSON here (default stdout)."
         ),
     ] = None,
+    explain: Annotated[
+        bool,
+        typer.Option(
+            "--explain", help="Print the per-slot selection log (§9.3) to stderr."
+        ),
+    ] = False,
 ) -> None:
     """Generate a `TrackDocument` and write it as contract JSON (camelCase)."""
     raw_params: dict[str, object] = {}
@@ -103,8 +110,11 @@ def generate_command(
             "--style-family is required (or provide it via --params)"
         )
 
-    doc = generate_track(raw_params)
+    collector = ExplainCollector() if explain else None
+    doc = generate_trace(raw_params, explain=collector).document
     rendered = to_json(doc)
+    if collector is not None:
+        typer.echo(render_explain(collector), err=True)
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(rendered + "\n", encoding="utf-8")
@@ -147,6 +157,12 @@ def audition_command(
         bool,
         typer.Option("--play", help="Write into the playground and open it."),
     ] = False,
+    explain: Annotated[
+        bool,
+        typer.Option(
+            "--explain", help="Print the per-slot selection log (§9.3) to stderr."
+        ),
+    ] = False,
 ) -> None:
     """Render a track for the edit->hear loop, optionally filtered (§9.1)."""
     raw_params: dict[str, object] = {"styleFamily": pack}
@@ -157,8 +173,13 @@ def audition_command(
     if tempo is not None:
         raw_params["tempoBpm"] = tempo
 
-    doc = build_audition(raw_params, section=section, solo=solo, mute=mute)
+    collector = ExplainCollector() if explain else None
+    doc = build_audition(
+        raw_params, section=section, solo=solo, mute=mute, explain=collector
+    )
     rendered = to_json(doc)
+    if collector is not None:
+        typer.echo(render_explain(collector), err=True)
 
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)

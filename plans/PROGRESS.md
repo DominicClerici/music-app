@@ -333,8 +333,8 @@ order (D13-pinned: audition → linter → `--explain` → calibrate); all `opus
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Audition CLI core (§9.1): `tooling/audition.py` + `@app.command("audition")`; `--section`/`--solo`/`--mute`/`--tempo`/`--out`/`--play`; filter upstream of `serialize`; minimal playground `?doc=` loader | opus | done | fb4f5d9 |
-| T2 | Pack linter (§9.2): `packs/lint.py` collect-mode errors + 5 warning classes (variety/grid/unreachable/dangling/degeneracy) + `tooling/lint.py` + `@app.command("lint")` | opus | done | _pending_ |
-| T3 | `--explain` selection log (§9.3): `pipeline/explain.py` collector + thread `explain=None` through the §9.3 draw sites; `--explain` flag on `audition`/`generate`; **byte-identity proof** | opus | not started | — |
+| T2 | Pack linter (§9.2): `packs/lint.py` collect-mode errors + 5 warning classes (variety/grid/unreachable/dangling/degeneracy) + `tooling/lint.py` + `@app.command("lint")` | opus | done | 86e9e35 |
+| T3 | `--explain` selection log (§9.3): `pipeline/explain.py` collector + thread `explain=None` through the §9.3 draw sites; `--explain` flag on `audition`/`generate`; **byte-identity proof** | opus | done | _pending_ |
 | T4 | `trackgen calibrate` (§9.3): `tooling/calibrate.py` batch → `compute_bands` → write `calibration.yaml`; reconcile the `load_l2_thresholds` shape mismatch (escalation valve); ref packs NOT committed | opus | not started | — |
 | T5 | Whole-chunk 3-lens review + DoD §14.7 + close-out (→ C4) | orchestrator | not started | — |
 

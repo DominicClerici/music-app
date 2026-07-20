@@ -21,6 +21,7 @@ import typer
 
 from trackgen.parts.generators import _TRACK_ORDER, _VOICE_TRACK
 from trackgen.pipeline import generate_trace, serialize
+from trackgen.pipeline.explain import ExplainCollector
 from trackgen.schema.document import TrackDocument
 from trackgen.schema.ir import Phrase, SongForm
 
@@ -40,13 +41,16 @@ def build_audition(
     section: str | None = None,
     solo: str | None = None,
     mute: str | None = None,
+    explain: ExplainCollector | None = None,
 ) -> TrackDocument:
     """Render `raw_params` and apply the audition filters (§9.1).
 
     `--solo` and `--mute` are applied solo-then-mute when both are given.
-    Filtering is upstream of `serialize` so `buses`/sound-design recompute.
+    Filtering is upstream of `serialize` so `buses`/sound-design recompute. An
+    `ExplainCollector`, when passed, is threaded into `generate_trace` to capture
+    the §9.3 selection log.
     """
-    trace = generate_trace(raw_params)
+    trace = generate_trace(raw_params, explain=explain)
     phrases: list[Phrase] = trace.phrases_stage7
 
     if section is not None:

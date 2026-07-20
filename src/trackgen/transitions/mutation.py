@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING
 
 from trackgen.packs.models import StylePack
 from trackgen.parts.generators import _DEFAULT_DUR
@@ -49,6 +50,9 @@ from trackgen.schema.ir import (
 from trackgen.seeds import Rng, derive, stream_seed, weighted_choice
 from trackgen.transitions._common import BAR, BEAT, Builder, to_builders, to_phrases
 from trackgen.transitions.ending import find_t_last
+
+if TYPE_CHECKING:
+    from trackgen.pipeline.explain import ExplainCollector
 
 _PICKUP = 240  # the pickup / anticipation displacement (§3.7).
 _EXCLUDED_TAGS = frozenset({"fill", "crash", "hold"})
@@ -329,6 +333,8 @@ def mutate(
     arr: ArrangementPlan,
     plan: GenerationPlan,
     pack: StylePack,
+    *,
+    explain: ExplainCollector | None = None,
 ) -> list[Phrase]:
     """6c: draw and apply one mutation per (role, unit) on its own sub-stream."""
     assert pack.transitions is not None
@@ -352,6 +358,10 @@ def mutate(
         for section, unit_start_bar, u_lo, u_hi in _units(form, active_ids, unit_bars):
             rng = Rng(derive(role_seed, f"bar:{unit_start_bar}"))
             op = weighted_choice(names, weights, rng) if len(names) >= 2 else names[0]
+            if explain is not None:
+                explain.add_mutation(
+                    role, section.id, unit_start_bar, op, names, weights
+                )
             if op == "none":
                 continue
             ops[op](builders, section, u_lo, u_hi, final_bar_tick)
