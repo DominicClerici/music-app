@@ -6,9 +6,20 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 6 (Session 20) — chill_lofi (PHASE_8 §4), the first NEW pack. FRESH
-> CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/SESSION_20.md` → USER APPROVAL
-> GATE) before dispatching.** C6 authors the full pack per the §9.4 checklist (manifest/interpreter
+> **Session 20 IN PROGRESS (2026-07-20): Phase 8, Chunk 6 — chill_lofi. Step 0/1 done:
+> baseline gates verified green (6052/1 skipped), 2 opus scoping agents complete, session plan
+> written to `plans/sessions/SESSION_20.md`. STATUS: AWAITING USER APPROVAL (decision items
+> S20-1…S20-4). Do not dispatch implementation until approved.**
+>
+> Scoping headlines (full detail in SESSION_20.md): corpus triple (nostalgic, happy,
+> melancholic) — no `corpus_moods` collision, first capture ⇒ no generatorVersion bump; pack
+> must land ATOMICALLY (manifest triggers discovery; `test_interpreter_pack.py:114` +
+> dynamic interpreter matrix fail on a partial pack); variety lint has no escape ⇒ 2
+> candidates per slot incl. unreachable rung 4; `# expected-unreachable` marker exists
+> (file-level); C-12 safe (crash lo 0.30, energy floor 0.25); five dormant-machinery
+> first-uses concentrated here (dropout+breakdown cap, fade, laidback, swing16+ratio
+> override, single loop tag); §4.1 `modes` ordering violates loader Rule 3 → S20-1
+> arbitration item; smoke matrix stays 2-pack (C9). C6 authors the full pack per the §9.4 checklist (manifest/interpreter
 > → forms → progressions → banks rung-by-rung with audition → transitions → timbres → full-grid →
 > calibrate → error-spotting → goldens+bands+version), DoD §14.3 + §14.8/§14.10 (lofi slices).
 >
@@ -159,6 +170,26 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
   are wiring+validation, not new machinery. **C-03 orthogonal** (P8/P9 blind to extensions).
 - **feelTable threading:** add `feel_table` to `GenerationPlan` (additive null field) mirrors how
   `swing` flows; changes the plan-IR JSON that C4's corpus will capture natively (bless it fresh).
+
+#### Phase 8 — Chunk 6 — session 20 (`plans/sessions/SESSION_20.md`)
+
+**Status: in progress — USER APPROVED 2026-07-20, all four decisions as recommended (S20-1
+modes-order amendment ratified · S20-2 formal listening + log.jsonl · S20-3 smoke matrix
+deferred to C9 · S20-4 version 0.1.0). §4.1 amendment applied at approval (lands with
+commit 1).**
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Config quintet (manifest/interpreter/forms/progressions/transitions) — 29/29 scratch checks; review **APPROVE** (zero findings; reviewer re-ran model_validate + cross-file P6/P7 + budget arithmetic); uncommitted until T5 (atomic constraint) | opus | done | (commit 1) |
+| T2 | Drums + bass banks — 28 entries (lf_dr_2 §4.4-verbatim w3; rim→perc per §3.6; monotone ladders; all ungated) — review **APPROVE-WITH-NITS**: 1 MINOR, rung-3 gated ornaments dead (max reachable budget 0.452 < gates 0.55–0.65 → rung 3 ≡ rung 2 audibly); FIXED: gates → 0.42/0.44 (authoring latitude, D16; lf_dr_2's pinned 0.45 untouched; verified live only for happy-at-ceiling, closed at defaults) | opus | done (fix verified) | (commit 1) |
+| T3 | Comping + pads banks — 24 entries (flat-density pads, velocity-carried monotone rise) — review **APPROVE-WITH-NITS**: N1 pad sibling 0.02-vel delta inaudible + N2 1/1 weights vs 3/2 convention — FIXED: pad ladder 0.25/0.30/0.31/0.36/0.37/0.42/0.43/0.48 (non-overlapping bands), 3/2 weights all four files (fix agent verified: model-validate, lf_dr_2 intact, monotone holds) | opus | done (fix verified) | (commit 1) |
+| T4 | timbres.yaml — all 8 flavors + bus/master (ep_mellow brightness override load-bearing vs FMSynth; space-mapped-send XOR per jazz precedent) — review **APPROVE** (merge trap traced in code, kit completeness vs banks confirmed, 1 advisory nit no-change) | opus | done | (commit 1) |
+| T5 | Integration + chill_lofi tests → atomic commit 1 | opus | in progress | — |
+| T6 | Full-grid audition + first-use verification (report) | opus | not started | — |
+| T7 | Calibrate → calibration.yaml (commit 2) | orchestrator+opus | not started | — |
+| T8 | USER listening gate (§14.10 checklist + formal §8.4 pass → listening/log.jsonl) | user | not started | — |
+| T9 | Corpus 24→36 + bless first capture (commit 3) | orchestrator | not started | — |
+| T10 | Whole-chunk 3-lens review + close-out | opus ×3 | not started | — |
 
 #### Phase 8 — Chunk 5 — session 19 (`plans/sessions/SESSION_19.md`)
 
