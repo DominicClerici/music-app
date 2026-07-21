@@ -6,9 +6,16 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 10 (Session 24) — THE FINAL CHUNK. FRESH CHUNK** — run PROMPT
-> step 0/1 (orient → scope → `plans/sessions/SESSION_24.md` → USER APPROVAL GATE) before
-> dispatching. Scope in SESSION_23.md §5, expanded by C9's findings below.
+> **Next:** **Phase 8, Chunk 10 (Session 24) — THE FINAL CHUNK. APPROVED & IN PROGRESS.**
+> Plan `plans/sessions/SESSION_24.md`; S24-0…S24-5 ratified 2026-07-21. **User ruled the
+> listening block "minimal now, rest later"** — build+demo the A/B harness and rubric tooling,
+> defer the 3.5–5 h human listening obligations. **Phase 8 will close this session as "built,
+> listening-pending," not fully "done."** Shape: T1–T3 ‖ (W2 fix, threshold pin, reachability
+> lint) → T4 GAP-1 dry-render → T5 A/B harness+audition flags → T6 rubric tooling → T7 4-lens
+> whole-phase review → T8 §14 DoD sweep → T9 A/B demo + deferred-listening runbook → T10
+> close-out. All build tasks generation-neutral (no gv bump; bless stays 60/60). S24-5: fusion
+> comping threshold is **0.98** (S23-2 option D widened the allowed set; no threshold edit) —
+> pin asserts (0.95, 0.98) ×5.
 >
 > **C9 (S23) DONE — the validator & coverage close-out. DoD §14.6 and §14.9 both MET.**
 > Commits: `811ec5e` plan · `33eb3fd` T8 CI · `a1fcdd0` + `7a59a9d` T3 calibration ·
