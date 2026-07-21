@@ -338,9 +338,11 @@ def _check_w2_device_policy(doc: TrackDocument, trace: GenerationTrace) -> list[
         Suppression classes (`postchorus`, `breakdown`) therefore carry no entry
         crash, and a crash mid-section (or at a suppressed boundary) fires.
       * a `"fill"`-tagged event only lands in a fill bar — the last bar of an
-        outgoing section (a section boundary) or the bar before an interior
-        phrase start. (`stop` deletes rather than tags, so a rendered stop window
-        contributes no fill tags to check against.)
+        outgoing section (a section boundary whose entered type is not a
+        suppression class) or the bar before an interior phrase start. A
+        suppressed boundary's last bar is not a legal fill bar, mirroring the
+        crash rule above. (`stop` deletes rather than tags, so a rendered stop
+        window contributes no fill tags to check against.)
       * a `breakdown` entry shows the §3.5 dropout truncation: no note sustains
         across the entered downbeat.
 
@@ -358,8 +360,8 @@ def _check_w2_device_policy(doc: TrackDocument, trace: GenerationTrace) -> list[
     breakdown_ticks: list[int] = []
     for outgoing, entered in zip(sections, sections[1:], strict=False):
         entered_tick = entered.start_bar * _TICKS_PER_BAR
-        legal_fill_bars.add(outgoing.start_bar + outgoing.length_bars - 1)
         if entered.type not in _SUPPRESSION_TYPES:
+            legal_fill_bars.add(outgoing.start_bar + outgoing.length_bars - 1)
             legal_crash_ticks.add(entered_tick)
         if entered.type == "breakdown":
             breakdown_ticks.append(entered_tick)

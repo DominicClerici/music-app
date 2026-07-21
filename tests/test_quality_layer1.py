@@ -519,6 +519,61 @@ def test_w2_fill_outside_fill_bar_fires_only_w2() -> None:
     assert validate_document(trace.document) == []
 
 
+def _tag_fill_at_suppressed_boundary(
+    trace: GenerationTrace,
+) -> tuple[GenerationTrace, str, int]:
+    """Retype an *entered* section to `"breakdown"` and tag one stage-6 note
+    `"fill"` in that suppressed boundary's fill bar — the outgoing section's last
+    bar (`entered.start_bar - 1`). §3.2 forbids a fill at a suppressed boundary,
+    so once the boundary is a suppression class that bar is no longer a legal fill
+    bar and W2's fill-placement branch fires. The chosen note keeps its onset (W7
+    stays clean) and carries no crash tag. Returns `(trace, track_id, note_ticks)`."""
+    sections = trace.song_form.sections
+    for i in range(1, len(sections)):  # index >= 1 => entered at a section boundary.
+        fill_bar = sections[i].start_bar - 1
+        for pi, phrase in enumerate(trace.phrases_stage6):
+            for ni, note in enumerate(phrase.notes):
+                if note.ticks // _TICKS_PER_BAR != fill_bar:
+                    continue
+                if "fill" in note.tags or "crash" in note.tags:
+                    continue
+                new_sections = list(sections)
+                new_sections[i] = sections[i].model_copy(update={"type": "breakdown"})
+                new_form = trace.song_form.model_copy(update={"sections": new_sections})
+                new_phrases = list(trace.phrases_stage6)
+                new_notes = list(phrase.notes)
+                new_notes[ni] = note.model_copy(update={"tags": [*note.tags, "fill"]})
+                new_phrases[pi] = phrase.model_copy(update={"notes": new_notes})
+                return (
+                    replace(trace, song_form=new_form, phrases_stage6=new_phrases),
+                    phrase.track_id,
+                    note.ticks,
+                )
+    raise AssertionError("no note in a suppressed boundary's fill bar to tag 'fill'")
+
+
+def test_w2_fill_at_suppressed_boundary_fires_only_w2() -> None:
+    """A `"fill"`-tagged event in a suppressed (`breakdown`) boundary's fill bar
+    is illegal under §3.2 — a suppressed boundary carries no fill — so W2's
+    fill-placement branch fires, and only W2. (The retyped entered downbeat also
+    carries the reference entry crash, now illegal too; both are W2, so the fired
+    set stays `{"W2"}`.)"""
+    base = generate_trace(_POP)
+    trace, track_id, note_ticks = _tag_fill_at_suppressed_boundary(base)
+    messages = validate_pipeline(trace.document, trace)
+    assert _w_rules_fired(messages) == {"W2"}
+    assert any(
+        m.startswith("W2:")
+        and "outside any fill bar" in m
+        and track_id in m
+        and f"ticks={note_ticks}" in m
+        for m in messages
+    )
+    assert not any(m.startswith("L2-1:") for m in messages)
+    # discriminating: the document is untouched, so V1-V8 stay clean.
+    assert validate_document(trace.document) == []
+
+
 # ---------------------------------------------------------------------------
 # W5 — determinism (regenerate from meta)
 # ---------------------------------------------------------------------------
