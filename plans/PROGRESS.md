@@ -6,11 +6,90 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 8 (Session 22) — fusion_jazz (PHASE_8 §6), the third and last
-> new pack. FRESH CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/
-> SESSION_22.md` → USER APPROVAL GATE) before dispatching.** C8 authors the full pack per
-> §9.4, DoD §14.3 + §14.8/§14.10 (fusion slices). **C8 completes the corpus (48→60) —
-> closing C-17 and letting §14.5 finally be marked PROVEN.**
+> **Next:** **Phase 8, Chunk 9 (Session 23) — THE PHASE 8 CLOSE-OUT, and the last chunk in
+> the plan. FRESH CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/
+> SESSION_23.md` → USER APPROVAL GATE) before dispatching.** Scope per the chunk table:
+> five-pack property tests (§14.9), the milestone rubric pass over all five packs × 3 moods
+> and the T1/T2 listening tasks (§14.8 remainder), the A/B harness demo, the **§13 amendment
+> audit**, a whole-phase 4-lens review, and the final DoD sweep. **With §14 complete, all
+> eight phases are built** (ROADMAP §3: `generate(params, seed) → TrackDocument` across five
+> style families).
+>
+> **C8 (S22) DONE — fusion_jazz, the fifth and final pack; DoD §14.3/§14.8/§14.10 fusion
+> slices ALL MET, and §14.5 MET (the 60-cell corpus is complete).** Commits: `171edf7` plan ·
+> `8b04bea` T1–T5 pack+tests+2 engine changes (atomic) · `26a64e3` T7 calibration · `26fae48`
+> T8 listening · `bdb33b9` T6 audition set · `49ab526` T9 corpus 60/60 · `ccd42cf` +
+> `fc84e7c` T10 review fixes · close-out this commit. Four gates green (**6513 tests**, from
+> 6327); lint 0/0; 3-lens review zero blockers, 2 fix cycles.
+>
+> **What C9 must know from C8:**
+>  1. **§14.5 is now MET and C-17 is RESOLVED — but a full matrix is not full coverage.**
+>     60/60 cells captured, byte-reproducible (`bless` → "60 cell(s), no divergence").
+>     **C-20 and C-28 remain open**: fusion's blind set is **14 of 51 pattern ids (27 %)** —
+>     the rung-1 mains across all four roles plus **6 pads ids** (pads route only at `main`
+>     rungs 3–4, killing the whole pads intro/ending tier). All 14 have selection-lock
+>     coverage only; **none is routed through retarget → voicing → serialize**. The
+>     dry-render remedy (C-22's G-1) is now **thrice-motivated** and still unbuilt.
+>  2. **Reachability lint is four-times motivated.** `packs/lint.py::_reachable_rungs` reads
+>     only the envelope and models none of: arousal ceilings (C-22), section-kind floors
+>     (C-23), mode-resolution × pool-gate intersections (C-25), or the arrangement layer cap
+>     (C-28). Four packs have now shipped accepted dormancies it cannot see.
+>  3. **Two engine changes landed after two pure-data chunks** — S22-10's `hat_lift` clamp
+>     (C-26) and S22-13's L2-1 widening (C-29). Both proven no-ops, and **T9's
+>     zero-divergence capture is the on-disk confirmation**. `_GENERATOR_VERSION` stays
+>     **0.1.3**. C-29 carries an assignment for C9: re-measure all four prior packs' L2-1
+>     margins under the widened set, confirming nothing genuinely wrong now passes silently.
+>  4. **C-30 needs a decision.** Fusion's quartal comping trips L2-1 on **~1–3 %** of renders
+>     (five seed sets: 0.50 / 1.04 / 1.82 / 2.60 / 3.12 % — a 6× spread; plan against the top
+>     of the range). Accepted by ear at T8. **`calibrate` never derives L2 thresholds from
+>     data** — it writes engine defaults — so fusion's `calibration.yaml` carries `comping:
+>     0.98` and the residual is live. C9 must either set a per-pack threshold from the
+>     blessed batch (legitimate per D10/§12 Q4, but a deliberate edit) or record it as
+>     permanently accepted.
+>  5. **4 of 8 fusion timbre flavors are production-dormant** (C-28): flavor selection is
+>     deterministic-default and never drawn (`interpreter/stage.py`), so `fusion_ride_kit`,
+>     `clav`, `electric_finger`, `glass_pad` need hand-passed `roleFlavors`/`ensemblePreset`,
+>     and **`AutoFilter` (§3.7's first user) never reaches an auto-parameter document**.
+>     Render-level coverage was added for all three uncovered flavors at `ccd42cf`. The
+>     tooling half: **the `audition` CLI has no `--ensemble`/`--role-flavors` flag**, so 2 of
+>     12 listening fixtures were unreproducible through it (T6 anomaly A3).
+>  6. **GAP-2 partially closed:** fusion now has a `calibration.yaml` existence/mood-coverage
+>     test (chill_lofi's precedent, which blues had dropped). **No pack anywhere pins the
+>     band *values*** — a drifted band still ships silently. C9's call.
+>  7. **Process lessons worth carrying.** (a) Per-task reviews earned their keep twice: T2 and
+>     T3 both returned CHANGES-REQUIRED, and the T3 reviewer found a blocking L2-1 failure its
+>     own implementer never thought to test for. (b) **Verify a reviewer's numbers before
+>     acting on them** — but verify your own too: the orchestrator "corrected" a reviewer's
+>     correct 100 % claim down to 18 % using a contaminated filter, and that wrong number
+>     reached the user twice and the permanent record three times before lens A caught it
+>     (`fc84e7c`). (c) **Write ruled decisions to the plan file immediately** — four were
+>     ruled by prompt and lived only in conversation until review caught it.
+>
+> **OPEN items carried to C9:** §14.6 **NOT MET** (C-18, no CI substrate — the payload is one
+> existing pytest module, all it needs is a workflow). §14.2's listening clause **PARTIAL**
+> (C5 debt — the formal reference-pack pass still never ran; the chill_lofi/blues/fusion
+> passes are the template). §14.8's T1/T2 tasks + the five-pack milestone rubric. §14.9
+> five-pack property tests. The §13 amendment audit. C-19's §8.2 annotation. L2-2 jazz
+> crossings (C-21 structural, warn-only; fusion measures 0.52 warns/render, mood-correlated,
+> zero at mysterious). C-03 remains unexercised by any pack through v1.
+>
+> **Env / gates:** `uv` / Python 3.12; four gates (`uv run pytest -n auto` · `ruff check` ·
+> `ruff format --check` · `mypy`); suite **6513 tests / ~34 s**. `_GENERATOR_VERSION` **0.1.3**
+> (unchanged since C5). Pack versions: pop_rock/jazz 0.2.0, chill_lofi/blues/fusion_jazz
+> 0.1.0. **Corpus 60/60 — COMPLETE** (50 MB on disk, vs C-17's ~42 MB projection).
+> Determinism TID251. Never `git push`. Note: commit `ca67d3d` ("push override DON'T UNDO
+> THIS CLAUDE") is the user's own commit of session status text — leave it alone.
+>
+> **CAVEATS (open):** **C-30 (NEW** — L2-1 residual, needs a C9 decision**)**, **C-28 (NEW** —
+> fusion dormancies: rung 1, mixolydian, 4/8 flavors**)**, C-25, C-23, C-22, C-21, C-20, C-18,
+> C-15, C-14, C-12, C-11, C-10, C-08, C-07, C-06, C-03. Resolved this session: **C-17**
+> (corpus 60/60 — the caveat's own closing condition), **C-26** (hat_lift clamp, no-op
+> proven), **C-27** (deceptive-substitution claim, content fixed + both docs amended),
+> **C-29** (L2-1 widening).
+>
+> ---
+>
+> *(Historical handoff blocks for C6 and C7 follow below; C8's supersedes them.)*
 >
 > **C7 (S21) DONE — blues; DoD §14.3/§14.8/§14.10 blues slices ALL MET.** Commits:
 > `6e58e7a` plan · `b8bd5f2` T1–T5 pack+tests (atomic) · `7e7d3c3` T7 calibration +
@@ -181,6 +260,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 22 | 2026-07-21 | Phase 8 chunk 8 (fusion_jazz, §6) — **the fifth and final pack; corpus completes** | 2 opus scoping agents → USER APPROVAL GATE (S22-1…S22-9 ratified as recommended) → T1 config (S22-3 verified at config level: **0 deceptive on 979 `vamp` sections**; **raised S22-10**) → T2 ‖ T3 ‖ T4 ‖ E1 (banks/timbres/engine clamp, disjoint scopes) → per-task reviews (**T4 APPROVE-WITH-NITS**, **E1 APPROVE-WITH-NITS** with determinism verdict TRUE — 185 byte-identical doc hashes; **T2 + T3 both CHANGES-REQUIRED**) → E2 (S22-13 L2-1 widening) + D1 (docs) → T5 atomic landing +138 tests → T6 full-grid → T7 calibrate → **T8 user listening PASS** → T9 corpus **48→60, C-17 CLOSES** → T10 3-lens review + 2 fix cycles. **Six §6 defects found and amended under arbitration, all signed off**: S22-1 manifest fields · S22-2 modes order (hard load failure) · **S22-3 the deceptive-substitution claim refuted by PHASE_4's own normative text — 874 substitutions/336 renders rendered a pedal vamp as `I7sus4 \| vi \| I7sus4 \| vi`, violating DoD §14.10** · S22-4 quartal empty-candidate `ValueError` at the pack's own pinned Bb-dorian key · S22-7 three defective §6.6 recipes + a missing 8th flavor · S22-11 tresillo prose-vs-printed (240-tick overlap) · S22-14 `approach`+`push`. **Two engine changes, both proven no-ops and both confirmed on-disk by T9's zero-divergence capture**: S22-10 `hat_lift` clamp (C-26), S22-13 L2-1 widened to §6.4-legal alterations (C-29). **Three orchestrator errors caught by review and corrected in the record**: the C-26/C-28 caveat-number collision; three ruled decisions (S22-11/12/13/14) never written to the plan file; and **the S22-14 measurements, wrong in all three places — a contaminated positional filter caught `fifth`/`root` notes sharing `pos 1680 dur 240`, so the "0 %→18 %" figures were false and the original reviewer's 100 % claim was right** (retracted explicitly, `fc84e7c`). Lens C found a **genuine survivor** — the S22-10 fusion-layer regression test passed with the clamp removed because its cells were breakdown-bearing, not defect-bearing. Suite 6327 → **6513**; four gates green throughout; lint 0/0; `_GENERATOR_VERSION` unchanged. DoD **§14.3/§14.8/§14.10 fusion slices MET; §14.5 MET — the 60-cell matrix is complete**. New caveats **C-26…C-30**; **C-17 RESOLVED**. | 171edf7 plan · b049613 status · **8b04bea T1–T5 atomic** · 26a64e3 T7 · 26fae48 T8 · bdb33b9 T6 · **49ab526 T9 corpus 60/60** · ccd42cf T10 fixes · fc84e7c T10 corrections · (close-out this commit) |
 | 21 | 2026-07-21 | Phase 8 chunk 7 (blues, §5) — second NEW pack | 2 opus scoping agents (headline: **S21-2** — main-kind renders only in solo sections, R2 arch floors solo energy at 0.624 → §5.4's rung-1/2 ladder dormant grid-wide; also refuted the C6 handoff's "C-03 live at C7" claim — all turnarounds end plain V7; §5.1 manifest field omission; no allowlist gaps) → USER APPROVAL GATE (S21-1…S21-5 ratified as recommended) → T1 config (20/20 checks; review APPROVE zero findings) → T2 ‖ T3 ‖ T4 banks+timbres (reviews CHANGES-REQUIRED→fixed / APPROVE-WITH-NITS / APPROVE; T2's MAJOR was a comment containing the literal `expected-unreachable` token silently silencing the drums lint file — reworded, `_silenced_files()==set()` re-verified) → T5 integration (lint 0/0; 111 tests; **found+fixed the chunk's one real defect: §5.4's triplet snare fill unrealizable under W7 (fill tiling mixes grids per Phrase, 190/192 cells) → straight-grid re-author → C-24**; whole-landing review APPROVE-WITH-NITS, 3 mutations killed) → T6 full-grid (528 renders ZERO failures; rung arch 100%; blind set 20; **A1 ESCALATED: hendrix pool mode×valence gates mutually exclusive under auto mood-resolution → user ruled S21-6 accept+caveat → C-25**) → T7 first blessed calibration.yaml (artifact check PASS ×6) → T8 **formal listening pass** (user-confirmed real listen, all 8 moods, zero entries) → T9 corpus 36→48 (12 first-capture cells 12 MB; 36 cells zero-divergence; NO version bump; blues = second fully-populated plan → zero-null branch extended) → T10 3-lens review **CLEAN / COMPLIANT / PROVEN-WITH-GAPS** (13/14 fresh mutation kills; zero blockers; gaps = accepted C-20-class + calibration-band no-coverage → C9). Suite 6183 → **6327**; four gates green throughout; zero engine changes (corpus tuple only). DoD §14.3/§14.8/§14.10 blues slices **MET**. | 6e58e7a plan · b8bd5f2 T1–T5 · 7e7d3c3 T7 · 5e56ce7 T8 · f2e6408 T9 · (close-out this commit) |
 | 20 | 2026-07-20/21 | Phase 8 chunk 6 (chill_lofi, §4) — first NEW pack | 2 opus scoping agents (corpus triple computed safe; atomic-landing constraint; variety-lint no-escape; five first-use risks mapped; §4.1 modes-order doc bug found by orchestrator) → USER APPROVAL GATE (S20-1…S20-4 ratified as recommended) → T1 config (29/29 checks; review APPROVE zero findings) → T2 ‖ T3 ‖ T4 banks+timbres (reviews APPROVE-WITH-NITS ×2 / APPROVE; batched fix: 3/2 weights pack-wide, pad ladder widened to perceptible 0.05 deltas with non-overlapping bands, dead rung-3 ornament gates 0.55–0.65 → 0.42/0.44 per reviewer's density-budget proof) → T5 integration (lint 0/0 on FIRST full load; 86 tests incl. five first-use pins + 48 selection locks; atomic commit; review APPROVE, mutation-verified) → T6 full-grid (64+ renders + 1200-render sweep clean; §10 arithmetic 12/12 exact; **A1 ESCALATED: rung 3 unreachable grid-wide → pads never sound; user ruled S20-5 accept+amend → C-22**) → T7 first blessed calibration.yaml (artifact check PASS ×6, byte-identical; §4.2/§10 amendments + C-22 same commit) → T8 **formal listening pass** (user-confirmed clean, all 8 moods; `listening/log.jsonl` CREATED) → T9 corpus 24→36 (12 first-capture cells 3.4 MB; 24 reference cells zero-divergence; NO version bump; chill_lofi = first fully-populated plan → null-retention test made conditional) → T10 3-lens review **CLEAN / COMPLIANT / PROVEN-WITH-GAPS** (15/15 mutation kills; zero blockers; blind set measured 34/50 → C-22 postscript). Suite 6052 → **6183**; four gates green throughout. DoD §14.3/§14.8/§14.10 lofi slices **MET**. | 9e86b5a plan · 51da4a0 T1–T5 · be3c246 T7 · 151fa45 T8 · d95a043 T9 · (close-out this commit) |
 | 19 | 2026-07-20 | Phase 8 chunk 5 (reference-pack refinement, §7) | 2 opus scoping agents (headline: ZERO abridged entries remain — the real surface was the 38 variety-coverage warnings) → USER APPROVAL GATE (S19-1…5 all ratified as recommended: enumeration=verify-only · pads authored real · C-19 ceiling accepted · T3 diagnose-first · L2-2 in T2 scope) → T0 blast-radius (worktree probe; singleton pools consume ZERO draws, M1–M5 collateral map; caveat: its snapshot predated C4) ‖ T3 (ritard-tail hypothesis CONFIRMED — all 7 jazz sub-60 "violations" were 0.65×base tails, pop_rock clean because all forms author `close: cold`; calibrate band check now reads steady tempo, tails labeled; review APPROVE-WITH-NITS) → T1 ‖ T2 bank thickening (38 second candidates `*b`, additive-only, weight-1 50/50; reviews APPROVE / APPROVE-WITH-NITS; **S19-5 ESCALATED+CONFIRMED: `retarget.registerLow` inert for chord-degree voicings → user ruled accept+caveat → C-21**) → T4a first production re-bless (0.1.1; 22/24 cells first-divergent `phrases_stage5`; 15 pinned tests recomputed from engine — draw totals pop 10277→10561 / jazz 5304→5315; PHASE_5 §9.1/§9.4/§7.4/§12 + PHASE_2 §6.5 recompute+annotate per user rulings) → T5 informal user listening (playground used, "sounds good"; formal §8.4/T1-verdict OPEN, not rounded up) → T6 calibration.yaml ×2 + pack stamps 0.2.0 (second bless cycle 0.1.2, 24 cells first-divergent `plan`, zero notes; artifact check PASS ×5) → T7 3-lens whole-chunk review (CLEAN / COMPLIANT-WITH-DEVIATIONS / PROVEN, zero blockers; pads NOT dormant at high arousal — both packs' b-pad ladders made monotone; jazz tests brought to pop parity; third bless cycle 0.1.3, 8 pads-only cells; fix re-review APPROVE). Suite 5983 → **6052**; four gates green throughout; lint 0/0 both packs. **DoD §14.2: 3 clauses MET, listening clause PARTIAL (honest).** New caveat C-21; C-19 RESOLVED (accepted ceiling); C-20 postscript (blind set narrowed). | 5552b1a plan · 82679f8 T3 · 2125b75 T1+T2+T4a · ef9f410 T6 · 9661d06 T7 · (close-out this commit) |
@@ -227,7 +307,7 @@ Phases 1–7 contracts and validates the whole, then triples the pack count. Har
 | C5 | 19 | **Reference-pack refinement (shakedown, §7):** enumerate abridged pop_rock/jazz banks; lint clean; calibrate (T1 level pass); capture goldens + `calibration.yaml`; error-spotting pass | 2 |
 | C6 | 20 ✅ | **chill_lofi** (§4) — full pack per checklist §9.4; lint 0/0; calibrated; 12 corpus cells (36/60); formal listening pass (log.jsonl created); C-22 dormancy accepted | 3/8/9/10 (lofi) **MET** |
 | C7 | 21 ✅ | **blues** (§5) — full pack per checklist (S21-2 rung re-map); lint 0/0; calibrated; 12 corpus cells (48/60); formal listening pass; C-23/C-24/C-25 | 3/8/9/10 (blues) **MET** |
-| C8 | 22 | **fusion_jazz** (§6) — full pack per checklist | 3/8/9/10 (fusion) |
+| C8 | 22 ✅ | **fusion_jazz** (§6) — full pack per checklist; lint 0/0; calibrated; **corpus 48→60, C-17 CLOSES**; formal listening pass; 2 engine changes (C-26, C-29), both no-op-proven; C-28/C-30 | 3/8/10 (fusion) **MET**, **5 MET** |
 | C9 | 23 | **Close-out:** five-pack property tests, milestone rubric pass, A/B harness demo, final DoD sweep, §13 amendment audit, whole-phase 4-lens review | 9, 11 |
 
 **New-module layout (from session-15 scoping):** `src/trackgen/quality/{layer1,layer2,layer3,
@@ -298,11 +378,11 @@ contingency-14 bless collateral.
 | E2 | **S22-13** — L2-1 widened to admit §6.4-legal alterations; strictly additive (2520-combination superset proof); generation-neutral; residual → S22-15 | opus | done | `8b04bea` |
 | D1 | Doc amendments (PHASE_8 §6.1/§6.3/§6.4/§3.3/§8.1, PHASE_6 §3.7, PHASE_4 D6) + CAVEATS C-26…C-29; caught the orchestrator's C-26/C-28 numbering collision and 3 unrecorded decisions | opus | done | `8b04bea` |
 | T5 | Integration + fusion test suite → **commit 1** (atomic) — +138 tests; 3 destructive mutations verified discriminating (reverting S22-4 → 9 failures incl. the real `ValueError`; reverting S22-3 → 19 drifting vamp sections) | opus | done | `8b04bea` |
-| T6 | Full-grid audition + first-use verification | opus | not started | |
-| T7 | Calibrate → commit 2 | opus | not started | |
-| T8 | **USER listening gate** | user | not started | |
-| T9 | Corpus 48 → **60** (C-17 closes) → commit 3 | orch | not started | |
-| T10 | 3-lens whole-chunk review + close-out | opus ×3 | not started | |
+| T6 | Full-grid audition — **384 renders, 0 crashes / 0 W2 / 0 vamp-deceptive / 0 pitches >71 / 12-12 corpus cells clean / all 13 pools live**; S22-10 clamp genuinely exercised (23 firings of 1117 lifts). **Raised A1** (L2-1 residual 1.82 %, not 0.5 %) and **A2** (4 of 8 timbre flavors production-dormant) | opus | done | `bdb33b9` |
+| T7 | Calibrate → `calibration.yaml`, 8/8 moods, byte-identical re-run. **Found `calibrate` never derives L2 thresholds from data** — writes engine defaults, so S22-15's "T7 will set the threshold" premise was false (→ C-30) | orch | done | `26a64e3` |
+| T8 | **USER listening gate — PASS**, zero entries, all 8 moods. Both open questions resolved by ear in favour of the authored content (S22-15 quartal accepted; `fusion_ride_kit` ride accepted). Corrected 1.82 % figure restated to user *before* the listen | user | done | `26fae48` |
+| T9 | Corpus 48 → **60 — C-17 CLOSES**. 12 first-capture cells; **48 existing cells zero-divergence**, which is the on-disk proof both engine changes were no-ops. No version bump | orch | done | `49ab526` |
+| T10 | 3-lens review **CLEAN-ish / COMPLIANT-WITH-DEVIATIONS / PROVEN-WITH-GAPS**; zero blockers, one fix cycle. Lens C found **a genuine survivor**; lens A found the **S22-14 record was wrong in all three places** (orchestrator's own error) | opus ×3 | done | `ccd42cf`, `fc84e7c` |
 
 #### Phase 8 — Chunk 7 — session 21 (`plans/sessions/SESSION_21.md`)
 
