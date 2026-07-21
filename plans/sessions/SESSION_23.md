@@ -11,14 +11,30 @@
 | T3 Part A byte-repro | **done** | `7a59a9d` | all 5 packs reproduce |
 | T4 `_packmatrix` | **done** | `2835e4b` | drop-in proven over 1890 plan cells |
 | T1 L2-1 grain | **done** | `5c28790` | APPROVE-WITH-NITS + 1 fix cycle; 2 memo mutants killed |
-| **T2 C-30 threshold** | **BLOCKED** | — | **S23-2 re-ratification pending — see §3a** |
-| T5 §14.9 widening | not started | — | depends on T4 (done) |
-| T6 crash suppression | not started | — | independent |
-| T7 smoke matrix ×5 | **blocked** | — | hard-ordered behind T2 |
-| T9 doc debt | not started | — | last (T2/T7 also write CAVEATS) |
+| T5+T6 §14.9 + suppression | **done** | `f0e…` | APPROVE-WITH-NITS + 1 fix cycle; 3/3 mutants killed |
+| **T2 quartal widening** | **done** | `899a0b9` | **S23-2 resolved as option D — see §3a-FINAL.** APPROVE-WITH-NITS, **0 mutation survivors**; C-30 RESOLVED, C-32 added |
+| T7 smoke matrix ×5 | in progress | — | unblocked by T2 |
+| T9 doc debt | not started | — | last (T7 also writes CAVEATS) |
 | T10 chunk review | not started | — | 3 lenses |
 
-Gates green at every commit; suite **6513 → 6558**.
+Gates green at every commit; suite **6513 → 10631**.
+
+**Doc-debt queue for T9** (raised by T2's review; deferred only because T7 is concurrently
+editing `CAVEATS.md`):
+- **C-30's "class (b) … ALL at length 120"** — falsified by an independent sweep (a class-(b)
+  failure at length 180). Soften to "densest at 120", as already corrected in §3a-FINAL above.
+- **PHASE_8 §8.1's C-32 note: "exactly one pitch class is ever unioned in"** → **"at most one"**.
+  `{root+5}` is frequently already in the narrow set (net zero); the test correctly asserts the
+  weaker `wide − narrow ⊆ {root+5}`, and C-32 already says "at most one". Only §8.1 overstates.
+- **PHASE_8 §8.1 omits the over-approximation.** C-32 states it prominently ("the fourth is
+  *admitted*, not *required*"); the binding §8.1 note lists only the three narrowing axes, so
+  §8.1 alone reads tighter than the mechanism is.
+
+**Pre-existing, recorded so it is not rediscovered as new** (T2 review, no action): a pushed hit
+sounds the *next* chord's voicing while `governing_chord(note.ticks)` returns the current one, so
+in principle a pushed hit's widening decision uses the wrong section. Pre-existing property of
+L2-1's allowed-set model, and pushes are anticipations landing *off* the `{0, 960}` residues
+L2-1 measures.
 
 **Phase:** 8 (Quality, evaluation & pack expansion). **Chunk:** 9 of a proposed 10.
 **Baseline at session start:** `e849aa8`, four gates green — **6513 passed, 1 skipped**;
@@ -168,7 +184,67 @@ Ratify individually. Each states the recommendation and the rejected alternative
 | **S23-10** | **C-19's §8.2 annotation** | Insert the drafted line at `PHASE_8.md:833`; flip C-19 to fully resolved. | — (trivial, owed since C5) |
 | **S23-11** | **`calibrate()` must PRESERVE a committed artifact's `l2Thresholds`** — ruled by the orchestrator 2026-07-21, raised by T3 | **Preserve.** See rationale below. Expands **T2's scope** to carry the `tooling/calibrate.py` change. | Regenerate thresholds from engine defaults (the status quo — structurally incompatible with both S23-2 and S23-7, and a silent-drift bug in its own right) |
 
-## 3a. S23-2 IS SUSPENDED — ratified on a number that did not survive depth
+## 3a-FINAL. S23-2 RESOLVED as option D (2026-07-21) — read this before the history below
+
+**Ruling: widen L2-1's allowed set to admit the natural 11 where the quartal voicing class is in
+play; DROP the minimum-denominator guard.** User sign-off given 2026-07-21.
+
+**Why option C (the guard) was abandoned after being ruled and implemented.** Depth measurement
+(80 seeds × 8 moods × 5 lengths, 2963 comping rows) showed **two disjoint failure classes**:
+
+| class | N | bad notes | ratio | count | guard removes? |
+|---|---|---|---|---|---|
+| (a) | < 50 | 1 | ~0.9375 | 7 | **yes** |
+| (b) | 91–316 | **2–7** | 0.9732–0.9792 | 20 (**densest at length 120**) | **no** |
+
+*Counts are per-sweep and differ between them — this orchestrator sweep (80 seeds × 5 lengths)
+found 7 + 20 = 27 failing rows; T2's independent sweep found 10 + 20 = 30. Both are internally
+consistent; the difference is the seed set. **Do not treat either count as the population.***
+
+*[corrected 2026-07-21 after T2's review: this table first read "**all** at length 120". A third
+independent 40-seed sweep found a class-(b)-shaped failure at length **180** (N=176, 4 out-of-set
+notes, ratio 0.9773 — inside class (b)'s own band). The absolute "all" was another over-firm
+claim of exactly the kind this section exists to warn about, falsified by the very next sweep to
+look. **The operative rule is unaffected**: 120 is where class (b) is densest and is the bucket
+earlier sweeps omitted, so no sweep of this pack may omit it.]*
+
+Class (b) is dominant, is pure quartal-11 content, and no denominator reasoning touches it. The
+guard fixed a minor artifact while costing ~25 % of L2-1's coverage at smoke lengths.
+
+**Why not a threshold.** Every deeper sample found cells the previous one missed — the tail is
+not bounded by sampling, so no threshold is stably determined. Chasing one is precisely the
+"tune toward a printed number" antipattern ROADMAP §3 forbids.
+
+**Why D is principled.** PHASE_8 §6.4 pins `quartal` as fusion's signature comping voicing;
+`theory/voicing.py:185` resolves it to `[[0, 5, 10, 15]]`, whose offset 5 is the natural 11.
+The pack's own pinned voicing table systematically produces notes its own validator counts as
+wrong — the same shape as **C-29**, which widened this same allowed set to admit quartal's ♯9.
+D fixes the cause, not the symptom, and keeps 0.98 strong on the other four packs. The widening
+must be **narrow** (§6.4 excludes 11 over dom7 for sound theoretical reasons — a global widening
+would blind the gate everywhere) and **strictly additive**.
+
+### Orchestrator measurement failures on this decision — recorded, not buried
+
+Four numbers reached the user and/or this plan file and were wrong. All four came from the
+orchestrator sampling narrowly and reporting firmly:
+
+| # | Claim | Reality |
+|---|---|---|
+| 1 | fusion floor **0.9760** (scoping, 192 renders) | not the floor |
+| 2 | fusion floor **0.9375** | only class (a); class (b) sits at 0.9732–0.9792 |
+| 3 | "the floor's exact value is insensitive across the distributional gap" | false — floor 20 skips 4.0 % of comping rows, floor 50 skips 16.2 % (4×) |
+| 4 | guard coverage cost **3.56 %** | a 12-seed, 2-length artifact; really 5.62 % at corpus lengths and **24.98 %** at smoke lengths (T2's figure, orchestrator-unverified) |
+
+**Root cause in every case: sweeps omitted length 120**, the only bucket where class (b) appears.
+**Standing rule for the rest of Phase 8: any L2-1 claim must be measured at ≥ 80 seeds × all
+supported moods × ≥ 5 lengths including 120, or stated as provisional.** This is the third
+session in which a confidently-reported wrong number about C-30 had to be retracted (see C-30's
+own text on seed-set sensitivity, and C8's lens-A correction) — the discipline is written here
+because remembering it has repeatedly failed.
+
+---
+
+## 3a. S23-2's SUSPENSION (historical — superseded by 3a-FINAL above)
 
 **The premise was wrong.** S23-2 was ratified on "fusion's stage-6 min ratio is **0.9760**, so a
 0.97 per-pack threshold clears it with margin" — scoping's figure from a 192-render sweep.
@@ -272,6 +348,53 @@ scopes are disjoint. T5 depends on T4; T6 is independent.
 | **Milestone rubric tooling** | No anchor text, no schema, no capture format. §8.4 pins 5-point scales × 4 axes (musicality, groove, style-fit, soloist space); the anchor descriptions have never been written. | 1 task |
 | **User listening block** | Human-only; orchestrator cannot self-certify. C5 reference-pack pass **60–90 min** · T1 levels **45–90 min** · T2 FM-piano **20–30 min** · A/B demo **25–40 min** · rubric **60–90 min**. **Total 3.5–5 h**, best split across sittings. | user |
 | **Whole-phase 4-lens review + final §14 DoD 1–11 sweep + close-out** | Must run last, over all nine chunks together (PROMPT §3). | 4 + orchestrator |
+
+### F4 — W2 is blind to a fill at a suppressed boundary (**NEW, found by T5+T6's review**)
+
+`quality/layer1.py:359-361` runs `legal_fill_bars.add(outgoing.start_bar + outgoing.length_bars - 1)`
+for **every** boundary — *including* suppressed ones — before the
+`if entered.type not in _SUPPRESSION_TYPES` guard on line 362. So W2's fill check is an
+**only-if** (a fill only lands in *a* legal fill bar) and permits a fill in a suppressed
+boundary's fill bar, which §3.2's device policy forbids.
+
+**Confirmed empirically, not just by reading.** The reviewer rendered a fill at a `breakdown`
+boundary under mutation and Layer 1 reported: `happy W2: NONE | total: 0`, `calm W2: NONE |
+total: 0` — completely silent.
+
+This is the **same defect family as F1**: a pinned check that does not see what it is defined
+over. It is now covered *from the test side* by T6's new assertion (b), which is why the mutant
+died — but **the validator itself remains blind**, so any render path not exercised by that test
+is unprotected.
+
+**Deliberately NOT fixed in C9.** Changing W2 is a Layer-1 behavior change against a §8.1-pinned
+check, mid-chunk, after scope was already ratified — PROMPT's escalation rule on scope growth
+applies. **Carried to C10** as a scoped candidate (exclude suppressed boundaries from
+`legal_fill_bars`), where it belongs alongside the other validator-coverage work. Logged here so
+it cannot be lost.
+
+### Correction to T5's performance attribution (for the close-out record)
+
+T5 reported the added cost as "the two Phase-6 render-level modules". **That is inverted.**
+Measured per-module CPU by the reviewer:
+
+| module | wall (isolated) | Σ CPU | share |
+|---|---|---|---|
+| `test_phase6_property` | 18.62 s | 176.6 s | 34.5 % |
+| `test_harmony_goldens` | 11.62 s | 112.0 s | 21.9 % |
+| `test_arrange` | 7.66 s | 79.6 s | 15.5 % |
+| `test_form` | 7.26 s | 78.7 s | 15.4 % |
+| `test_transitions_determinism` | 6.51 s | 61.2 s | 12.0 % |
+| `test_phase7_property` | 3.70 s | 4.1 s | 0.8 % |
+
+The render-level pair is 237.8 s CPU (46.4 %); the **plan-level trio is 270.3 s (52.8 %) —
+larger**. That follows directly from S23-3: the plan trio keeps the 39-length × 25-seed grid, so
+its 45 cells build 43,875 plans. **C10 must not optimize the wrong module.**
+
+**S23-4's premise is recorded as measured-and-exceeded, not silently carried:** the decision put
+25-seed depth in the default gate on an estimated "~90 s". Measured wall is **114–141 s**
+depending on machine load — 25–55 % over. Still acceptable (the four-gate loop stays ~3 min, and
+a marker tier is a tier that stops running), but the estimate was optimistic and the record says
+so, in the same spirit as this session's 45 s baseline correction.
 
 ### Findings raised mid-session, carried to C10's DoD sweep (not blockers now)
 
