@@ -28,7 +28,8 @@ The moods are **derived from the pack** (`resolve_pack(...).interpreter
 .supported_moods`), never hardcoded, so a pack gaining or losing a mood widens
 or narrows the matrix automatically rather than silently under-testing.
 
-`pipeline_warnings(doc, trace)` (Layer-2's warn-marked L2-2) is **surfaced but
+`pipeline_warnings(doc, trace)` (Layer-2's warn-marked L2-2, plus its
+`L2-1-SKIP:` unmeasurable-role diagnostics since S23-1) is **surfaced but
 never gating** — PHASE_8 §8.1 pins Layer 2 as "warn by default, fail where
 marked", and only the fail-marked L2-1 lives inside `validate_pipeline`. Layer 3
 is batch-only / warn-only and `styles/<pack>/calibration.yaml` does not exist

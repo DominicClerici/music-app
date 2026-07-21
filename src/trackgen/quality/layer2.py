@@ -13,6 +13,9 @@ that split by calling `layer2_failures` (L2-1) into its gating result and
   (§8.1, confirmed §4):
   **bass** = beat 1 only (`ticks % 1920 == 0`); **comping** = strong beats 1 & 3
   (`ticks % 1920 in {0, 960}`).
+  L2-1 measures **`trace.phrases_stage6`** — the pre-humanizer snapshot — not
+  `doc.tracks`; see `_check_l2_1_chord_tone_ratio` for why, and
+  `layer2_skip_diagnostics` for the loud unmeasurable-role signal.
 - **L2-2** voice crossing (**WARN**) — `layer2_warnings`. At every
   *voiced-sonority* instant — a tick where a bass note AND a comping note are both
   struck (a shared onset) — `max(sounding bass midi) < min(sounding comping midi)`
@@ -31,6 +34,8 @@ blessed calibration) the read returns `None` and the engine defaults are used.
 """
 
 from __future__ import annotations
+
+from typing import NamedTuple
 
 from trackgen.packs import resolve_pack
 from trackgen.pipeline.trace import GenerationTrace
@@ -118,54 +123,167 @@ def allowed_pitch_classes(chord: ChordEvent) -> set[int]:
     )
 
 
-def _check_l2_1_chord_tone_ratio(
-    doc: TrackDocument, trace: GenerationTrace
-) -> list[str]:
-    """FAIL if a role's strong-beat chord-tone ratio falls below its threshold.
+# Memo key for `_memoized_allowed_pitch_classes`: every field of the `ChordEvent`
+# that `allowed_pitch_classes` reads. `extensions` is included even though it is
+# empirically inert on shipped packs (`extensions ⊆ legal_extensions(quality)`, so
+# its pitch classes are already inside the `tension_pcs` term) — a *total* key
+# cannot rot, and `allowed_pitch_classes` is public, so a hand-built `ChordEvent`
+# carrying an extension its quality does not declare legal is reachable and would
+# otherwise collide. See `test_allowed_pitch_class_memo_matches_uncached_lookup`.
+_AllowedKey = tuple[int, str, tuple[str, ...], int, str]
 
-    For each strong-beat note (per-role beat set), the allowed pitch classes are
-    `allowed_pitch_classes(chord)`. A note whose governing chord is
-    undefined is skipped (excluded from both numerator and denominator) — with no
-    chord in force there is no set to measure it against, and a real render always
-    has a governing chord for every in-section note. A role with zero strong-beat
-    notes is skipped entirely (no division)."""
+
+def _memoized_allowed_pitch_classes(
+    cache: dict[_AllowedKey, set[int]], chord: ChordEvent
+) -> set[int]:
+    """`allowed_pitch_classes(chord)`, memoized in `cache` on the chord identity.
+
+    Pure-function memo: the return value must equal `allowed_pitch_classes(chord)`
+    for every `chord`, whatever the cache already holds. A render reuses a handful
+    of distinct chord identities across thousands of notes, so the memo removes
+    almost all of the repeated set construction."""
+    key: _AllowedKey = (
+        chord.chord.root_pc,
+        chord.chord.quality,
+        tuple(chord.chord.extensions),
+        chord.scale.root_pc,
+        chord.scale.name,
+    )
+    allowed = cache.get(key)
+    if allowed is None:
+        allowed = cache[key] = allowed_pitch_classes(chord)
+    return allowed
+
+
+class L2_1Measurement(NamedTuple):
+    """One measured `(track_id, role)` group's L2-1 population, at stage-6 grain.
+
+    `total` is the measurable denominator (strong-beat, pitched, chord-governed
+    notes); `in_set` the numerator; `pitched` every pitched note the group
+    emitted, measurable or not. `pitched > 0 and total == 0` is the *vacuous*
+    case — the group produced notes but L2-1 could measure none of them."""
+
+    track_id: str
+    role: str
+    total: int
+    in_set: int
+    pitched: int
+
+
+def measure_l2_1(trace: GenerationTrace) -> list[L2_1Measurement]:
+    """L2-1's per-`(track_id, role)` populations, read from `trace.phrases_stage6`.
+
+    **Grain (S23-1, C-31).** L2-1 is defined over notes "attacking on beats 1/3"
+    (§8.1). Those attacks exist on the *pre-humanizer* grid: stage 7 applies swing
+    and jitter, which displace onsets off ticks 0/960 by design, so an exact
+    `ticks % 1920 in strong` filter over `doc.tracks` discards most of the
+    population it is defined over — measured at 5–18 % retention, and **0 %** for
+    jazz and chill_lofi comping, where the check degenerated to a vacuous pass.
+    Reading `phrases_stage6` is the same treatment W7 already applies for the same
+    reason (`layer1.py::_check_w7_grid_legality`); L2-1 simply never got it.
+
+    A `Phrase` is one `(section, role)` span, so a track's notes arrive across
+    several phrases; they are accumulated per `track_id` (matching the per-track
+    grain of the document the check used to read). Groups appear in first-phrase
+    order, so the result is deterministic.
+
+    A note whose governing chord is undefined is excluded from both numerator and
+    denominator — with no chord in force there is no set to measure it against."""
+    stats: dict[str, list[int]] = {}
+    roles: dict[str, str] = {}
+    allowed_cache: dict[_AllowedKey, set[int]] = {}
+
+    for phrase in trace.phrases_stage6:
+        strong = _STRONG_BEATS.get(phrase.role)
+        if strong is None:
+            continue
+        acc = stats.setdefault(phrase.track_id, [0, 0, 0])
+        # `track_id → role` is 1:1 — an assumption the serializer already makes
+        # (`serialize._build_track` types the whole track from
+        # `track_phrases[0].role`), so this rewrite on a track's second and later
+        # phrases always writes back the value already there.
+        roles[phrase.track_id] = phrase.role
+        for note in phrase.notes:
+            if note.midi is None:
+                continue
+            acc[2] += 1
+            if note.ticks % _TICKS_PER_BAR not in strong:
+                continue
+            chord = governing_chord(trace, note.ticks)
+            if chord is None:
+                continue
+            allowed = _memoized_allowed_pitch_classes(allowed_cache, chord)
+            acc[0] += 1
+            if note.midi % 12 in allowed:
+                acc[1] += 1
+
+    return [
+        L2_1Measurement(track_id, roles[track_id], *stats[track_id])
+        for track_id in stats
+    ]
+
+
+def _l2_1_thresholds(doc: TrackDocument, trace: GenerationTrace) -> dict[str, float]:
+    """The `(bass, comping)` thresholds in force for this render, by role."""
     pack = trace.plan.style_pack.id
     mood = doc.meta.params.get("mood")
     loaded = load_l2_thresholds(pack, mood if isinstance(mood, str) else None)
     bass_threshold, comping_threshold = (
         loaded if loaded is not None else (_BASS_THRESHOLD, _COMPING_THRESHOLD)
     )
-    thresholds = {"bass": bass_threshold, "comping": comping_threshold}
+    return {"bass": bass_threshold, "comping": comping_threshold}
+
+
+def _check_l2_1_chord_tone_ratio(
+    doc: TrackDocument, trace: GenerationTrace
+) -> list[str]:
+    """FAIL if a role's strong-beat chord-tone ratio falls below its threshold.
+
+    Measures `measure_l2_1(trace)` (stage-6 grain — see there). A group with an
+    empty denominator yields no *failure* here: a division is impossible, and a
+    pack legitimately lacking a role must not be gated red. That case is instead
+    reported through `layer2_skip_diagnostics`, so it is never silent."""
+    thresholds = _l2_1_thresholds(doc, trace)
 
     violations: list[str] = []
-    for track in doc.tracks:
-        strong = _STRONG_BEATS.get(track.role)
-        if strong is None:
+    for m in measure_l2_1(trace):
+        if m.total == 0:
             continue
-        total = 0
-        in_set = 0
-        for note in track.notes:
-            if note.midi is None:
-                continue
-            if note.ticks % _TICKS_PER_BAR not in strong:
-                continue
-            chord = governing_chord(trace, note.ticks)
-            if chord is None:
-                continue
-            total += 1
-            if note.midi % 12 in allowed_pitch_classes(chord):
-                in_set += 1
-        if total == 0:
-            continue
-        ratio = in_set / total
-        threshold = thresholds[track.role]
+        ratio = m.in_set / m.total
+        threshold = thresholds[m.role]
         if ratio < threshold:
             violations.append(
-                f"L2-1: track '{track.id}' (role={track.role}) chord-tone ratio "
-                f"{ratio:.3f} on {total} strong-beat note(s) is below threshold "
-                f"{threshold:.3f} ({in_set}/{total} in-set)"
+                f"L2-1: track '{m.track_id}' (role={m.role}) chord-tone ratio "
+                f"{ratio:.3f} on {m.total} strong-beat note(s) is below threshold "
+                f"{threshold:.3f} ({m.in_set}/{m.total} in-set)"
             )
     return violations
+
+
+def _check_l2_1_unmeasurable(_doc: TrackDocument, trace: GenerationTrace) -> list[str]:
+    """WARN when an L2-1 role emitted notes but none of them were measurable.
+
+    `_doc` is unused — the diagnostic reads only `trace.phrases_stage6` — and is
+    kept for signature symmetry with the other `_check_*` predicates, all of which
+    the layer's public entry points call uniformly as `check(doc, trace)`.
+
+    The defect S23-1 repairs was not the wrong grain alone — it was that the
+    wrong grain *emptied the denominator silently*, so two packs' comping was
+    gated by a check measuring nothing and no caller could tell. An empty
+    denominator must therefore be **loud**. It is a warning rather than a failure
+    because a legitimate empty denominator exists (a pack that never sounds a
+    role), and gating on it would red-line valid renders.
+
+    Fires only when the group produced pitched notes yet none survived the
+    strong-beat / governing-chord filter — a role that emitted nothing at all has
+    nothing to report."""
+    return [
+        f"L2-1-SKIP: track '{m.track_id}' (role={m.role}) has no measurable "
+        f"strong-beat note among {m.pitched} pitched note(s) — L2-1 measured "
+        f"nothing for this track and its threshold was not applied"
+        for m in measure_l2_1(trace)
+        if m.total == 0 and m.pitched > 0
+    ]
 
 
 def _check_l2_2_voice_crossing(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
@@ -231,6 +349,18 @@ def layer2_failures(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
     return _check_l2_1_chord_tone_ratio(doc, trace)
 
 
+def layer2_skip_diagnostics(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
+    """`L2-1-SKIP:` diagnostics — an L2-1 role L2-1 could not measure at all.
+
+    Non-gating, and deliberately distinct from the `L2-1:` failure prefix so a
+    caller can tell "this role failed" from "this role was never checked"."""
+    return _check_l2_1_unmeasurable(doc, trace)
+
+
 def layer2_warnings(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
-    """L2-2 voice-crossing **warnings** (non-gating). Empty list == no warning."""
-    return _check_l2_2_voice_crossing(doc, trace)
+    """Layer-2 **non-gating** messages: L2-2 crossings + `L2-1-SKIP:` diagnostics.
+
+    Empty list == no warning and nothing went unmeasured. The skip half delegates
+    to `layer2_skip_diagnostics` rather than re-deriving it, so the two public
+    non-gating entry points cannot drift apart."""
+    return _check_l2_2_voice_crossing(doc, trace) + layer2_skip_diagnostics(doc, trace)

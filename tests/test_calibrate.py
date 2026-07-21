@@ -108,32 +108,41 @@ def test_calibrate_artifact_is_read_by_l2_1(
 def _flip_bass_beat1_out_of_set(
     trace: GenerationTrace,
 ) -> tuple[GenerationTrace, int]:
-    """Push every bass beat-1 note to a pitch class outside the governing chord's
-    tones ∪ scale, driving the bass strong-beat ratio to ~0 (mirrors the layer2
-    fixture helper, kept local to this module)."""
+    """Push every bass beat-1 note to a pitch class outside L2-1's allowed set,
+    driving the bass strong-beat ratio to ~0 (mirrors the layer2 fixture helper,
+    kept local to this module).
+
+    Mutates `phrases_stage6` — L2-1's measurement grain since S23-1 — and reads
+    the allowed set from `allowed_pitch_classes` rather than recomputing a narrow
+    copy. The narrow copy had been building "out-of-set" pitches against the
+    pre-C-29 definition, so 4 of its 60 flips landed on pitches the current
+    validator still calls in-set; reading the live definition keeps them genuinely
+    out-of-set as it evolves.
+
+    The ±3 semitone window is deliberate: it keeps a flipped note in register and
+    off the neighbouring voice. Measured on this test's own trace it never
+    exhausts (60/60 beat-1 notes flip), so a wider window would trade that
+    property for nothing."""
     from dataclasses import replace
 
     from trackgen.quality._common import governing_chord
-    from trackgen.theory.chords import chord_tones, scale_pcs
+    from trackgen.quality.layer2 import allowed_pitch_classes
 
-    doc = trace.document
     flipped = 0
-    new_tracks = []
-    for track in doc.tracks:
-        if track.role != "bass":
-            new_tracks.append(track)
+    new_phrases = []
+    for phrase in trace.phrases_stage6:
+        if phrase.role != "bass":
+            new_phrases.append(phrase)
             continue
         new_notes = []
-        for note in track.notes:
+        for note in phrase.notes:
             chord = (
                 governing_chord(trace, note.ticks)
                 if note.midi is not None and note.ticks % _TICKS_PER_BAR == 0
                 else None
             )
             if chord is not None and note.midi is not None:
-                allowed = set(chord_tones(chord.chord)) | set(
-                    scale_pcs(chord.scale.root_pc, chord.scale.name)
-                )
+                allowed = allowed_pitch_classes(chord)
                 nm = next(
                     (
                         note.midi + off
@@ -148,10 +157,8 @@ def _flip_bass_beat1_out_of_set(
                     flipped += 1
                     continue
             new_notes.append(note)
-        new_tracks.append(track.model_copy(update={"notes": new_notes}))
-    return replace(
-        trace, document=doc.model_copy(update={"tracks": new_tracks})
-    ), flipped
+        new_phrases.append(phrase.model_copy(update={"notes": new_notes}))
+    return replace(trace, phrases_stage6=new_phrases), flipped
 
 
 def test_calibrate_report_renders_expected_sections(

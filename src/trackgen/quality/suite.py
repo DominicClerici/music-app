@@ -8,8 +8,11 @@ Layer 2 is "warn by default, fail where marked"):
   Layer-2's fail-marked check (L2-1). Empty == valid; this is the gate used by
   CI/smoke.
 - `pipeline_warnings(doc, trace)` returns the **soft, non-gating warnings** —
-  Layer-2's warn-marked check (L2-2). A warning must NOT make a render invalid, so
-  it is reported separately and never folded into `validate_pipeline`.
+  Layer-2's warn-marked check (L2-2) plus its `L2-1-SKIP:` diagnostics (S23-1: an
+  L2-1 role whose denominator came out empty, i.e. a threshold that was never
+  applied — visible here rather than passing silently). A warning must NOT make a
+  render invalid, so it is reported separately and never folded into
+  `validate_pipeline`.
 
 Layer 3 (statistical style bands) is batch-only / warn-only and stays out of this
 per-render path entirely.
@@ -42,8 +45,9 @@ def validate_pipeline(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
 
 
 def pipeline_warnings(doc: TrackDocument, trace: GenerationTrace) -> list[str]:
-    """Return the **non-gating** soft warnings for `(doc, trace)` (L2-2).
+    """Return the **non-gating** soft warnings for `(doc, trace)`.
 
+    L2-2 voice crossings plus `L2-1-SKIP:` unmeasurable-role diagnostics.
     Warnings never make a render invalid; they are surfaced separately from the
     `validate_pipeline` gate. Layer 3 is batch-only and is not included here."""
     return layer2_warnings(doc, trace)
