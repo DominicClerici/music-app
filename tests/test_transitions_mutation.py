@@ -174,6 +174,37 @@ def test_hat_lift_promotes_last_offbeat_hat_in_second_bar() -> None:
     assert all("hat_open" not in n.tags for n in hats.notes if n.ticks != BAR + 720)
 
 
+def test_hat_lift_clamps_sustain_at_a_dropout_entered_breakdown() -> None:
+    """S22-10: the last offbeat 8th sits at pos 1680, so the pinned 360-tick lift
+    would end 120 ticks into a breakdown 6b just truncated every sustain at."""
+    sec = section("A", 0, 4)
+    hats = drum_builder("hats", [note(BAR + 1680, 0.5, ["hat_closed"])])
+    _hat_lift([hats], sec, 0, 2 * BAR, _HUGE, frozenset({2 * BAR}))
+    lifted = hats.notes[0]
+    assert "hat_open" in lifted.tags and "var" in lifted.tags  # still promoted
+    assert lifted.duration_ticks == 240
+    assert lifted.ticks + lifted.duration_ticks == 2 * BAR  # ends AT the entry
+
+
+def test_hat_lift_unclamped_when_the_breakdown_is_out_of_reach() -> None:
+    sec = section("A", 0, 4)
+    # an offbeat 8th early enough that the full 360 clears the entry, plus a
+    # dropout already behind it — neither constrains the lift.
+    hats = drum_builder("hats", [note(BAR + 240, 0.5, ["hat_closed"])])
+    _hat_lift([hats], sec, 0, 2 * BAR, _HUGE, frozenset({960, 2 * BAR}))
+    assert hats.notes[0].duration_ticks == 360
+
+
+def test_hat_lift_skips_when_the_clamped_remainder_is_inaudible() -> None:
+    # Degenerate: < 60 ticks to the entry (C-07 — inaudible fragments are not
+    # written), so the operator no-ops rather than emitting a stub open hat.
+    sec = section("A", 0, 4)
+    hats = drum_builder("hats", [note(BAR + 1680, 0.5, ["hat_closed"])])
+    before = [n.model_copy() for n in hats.notes]
+    _hat_lift([hats], sec, 0, 2 * BAR, _HUGE, frozenset({BAR + 1680 + 30}))
+    assert [n.model_dump() for n in hats.notes] == [n.model_dump() for n in before]
+
+
 def test_hat_lift_no_op_without_offbeat_hat_closed() -> None:
     sec = section("A", 0, 4)
     # a 2nd-bar hat but on the beat (not pos%480==240), and an open hat.

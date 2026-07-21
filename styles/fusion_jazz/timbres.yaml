@@ -1,0 +1,369 @@
+# fusion_jazz timbres (PHASE_8 §6.6) — full recipes for all 8
+# interpreter-declared flavors (TB1). The §6.6 defining entries (funk_kit,
+# synth_moog, electric_finger, rhodes, clav, analog_poly, glass_pad) are
+# authored to spec under the four S22-7 rulings; fusion_ride_kit has no §6.6
+# recipe at all and is authored in-idiom as a ride-forward funk_kit sibling
+# (the §6.6 bus/master is pack-wide, so it differs at voice level only).
+#
+# The 70s jazz-funk aesthetic: tight and dry throughout — the driest reverb bus
+# of the five packs, short decays everywhere, minimal sends, a Moog-class
+# resonant bass and a Rhodes/clav comping pair.
+#
+# Mapped params (drum resonance / noise.playbackRate / sends, bass
+# filterEnvelope.baseFrequency + octaves / filter.Q / envelope.attack,
+# comping/pads filterEnvelope.baseFrequency / envelope.attack /
+# mix.sends.reverb, the two FM flavors' modulationIndex) are omitted from
+# base/mix — the merged mod tables are their sole authority (§3.3 base XOR mod).
+#
+# S22-7 fixes, per the ratified ruling:
+#   1. fusion_ride_kit invented (§6.1 declares 8 flavors, §6.6 prints 7).
+#   2. synth_moog keeps §6.6's pinned `Q: 4` and gains a brightness override
+#      emitting only filterEnvelope.baseFrequency (the bass default also maps
+#      filter.Q — base XOR mod).
+#   3. clav's printed `attack: 0.003` moves to a narrow attackHardness band
+#      (the comping default maps envelope.attack — base XOR mod).
+#   4. glass_pad (FMSynth) gains a brightness → modulationIndex override; the
+#      pads default brightness → filterEnvelope.baseFrequency is illegal on
+#      FMSynth and §6.6 does not mention it (the organ_swell silent trap, S21).
+
+flavors:
+  drums:
+    funk_kit:
+      # §6.6: TIGHT AND DRY — short decays everywhere (kick decay 0.22, snare
+      # 0.12, sustain 0), minimal sends. Snare crack and hat/ride/crash
+      # resonance ride the engine brightness defaults; no mod overrides needed.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 4
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -8, pan: 0 } # kick dry (PHASE_7 architecture)
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: white } # playbackRate mapped (default crack range)
+              envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 }
+          mix: { volumeDb: -10, pan: 0 } # send mapped (space)
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 320
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.035, release: 0.015 } # tight 16ths
+          mix: { volumeDb: -16, pan: 0.25, sends: { reverb: -24 } } # driest fixed send of the five packs
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 420
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.4, release: 0.5 } # resonance mapped
+          mix: { volumeDb: -15, pan: -0.2, sends: { reverb: -22 } } # minimal send
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.2, release: 1.0 } # short for a crash
+          mix: { volumeDb: -15, pan: -0.35 } # send mapped (space)
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: -0.3 } # send mapped (space)
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: -0.1 } # send mapped (space)
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: 0.15 } # send mapped (space)
+        perc: # cross-stick (the §6.4 rung-1 voice; §3.6 rim→perc precedent)
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.02 }
+          mix: { volumeDb: -15, pan: 0.2 }
+    fusion_ride_kit:
+      # S22-7 fix 1: no §6.6 recipe exists (§6.1 declares 8 flavors, §6.6 prints
+      # 7) — authored in-idiom as a RIDE-FORWARD funk_kit sibling for §6.4's
+      # rung-4 ride drive: the ride is brighter (higher MetalSynth frequency,
+      # up-ranged resonance) and more present (+3 dB, longer wash), the hats
+      # step back so the ride leads. Otherwise the same tight-and-dry character
+      # and the identical voice architecture; bus/master are pack-wide, so this
+      # flavor differs at voice level only.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 4
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.22, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -8, pan: 0 }
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 }
+          mix: { volumeDb: -10, pan: 0 }
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -13
+              frequency: 300 # a touch darker than funk_kit: the ride leads
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.035, release: 0.015 }
+          mix: { volumeDb: -18, pan: 0.25, sends: { reverb: -24 } } # stepped back
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -11
+              frequency: 500 # brighter than funk_kit's 420: the ping cuts
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.55, release: 0.7 } # more wash
+          mix: { volumeDb: -12, pan: -0.2, sends: { reverb: -20 } } # forward
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.2, release: 1.0 }
+          mix: { volumeDb: -15, pan: -0.35 }
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: -0.3 }
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: -0.1 }
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.04
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.25, sustain: 0, release: 0.2 }
+          mix: { volumeDb: -13, pan: 0.15 }
+        perc:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.02 }
+          mix: { volumeDb: -15, pan: 0.2 }
+      mod:
+        brightness:
+          ride: # up-ranged vs the 3500–7000 default: the ride-forward signature
+            - { param: resonance, min: 4500, max: 9000, curve: exp }
+          hats: # down-ranged vs the 2000–5500 default, so the ride stays on top
+            - { param: resonance, min: 1800, max: 4500, curve: exp }
+
+  bass:
+    synth_moog:
+      # §6.6: MonoSynth sawtooth, filter {lowpass, rolloff -24, Q 4}, snappy
+      # filterEnvelope (base ~120 Hz band, 3.5 octaves — the top of the default
+      # attackHardness octaves ramp); dry.
+      #
+      # S22-7 fix 2: §6.6's printed `Q: 4` collides with the bass role default
+      # brightness → filter.Q (base XOR mod). The Moog resonance is explicitly
+      # pinned, so Q stays in base and brightness is overridden to emit ONLY
+      # filterEnvelope.baseFrequency (the default's 120–2500 band, unchanged).
+      engine: { type: MonoSynth }
+      base:
+        oscillator: { type: sawtooth }
+        envelope: { decay: 0.25, sustain: 0.6, release: 0.5 } # attack mapped
+        filter: { type: lowpass, rolloff: -24, Q: 4 } # §6.6's pinned Moog resonance
+        filterEnvelope: { attack: 0.002, decay: 0.22, sustain: 0.15, release: 0.4 }
+          # snappy; baseFrequency mapped (override), octaves mapped (default → 3.5)
+      effects: []
+      mix: { volumeDb: -10, pan: 0 } # dry (bass space default is [])
+      mod:
+        brightness: # filter.Q dropped — base owns it (§3.3 base XOR mod)
+          - { param: filterEnvelope.baseFrequency, min: 120, max: 2500, curve: exp }
+    electric_finger:
+      # §6.6: triangle core, gentler filter, ~20 ms attack band. MonoSynth
+      # (required: every other engine class makes the bass brightness/
+      # attackHardness defaults illegal).
+      engine: { type: MonoSynth }
+      base:
+        oscillator: { type: triangle }
+        envelope: { decay: 0.3, sustain: 0.5, release: 0.6 } # attack mapped (override)
+        filter: { type: lowpass, rolloff: -12 } # gentler than the Moog; Q mapped (default)
+        filterEnvelope: { attack: 0.004, decay: 0.35, sustain: 0.2, release: 0.5, octaves: 2 }
+          # baseFrequency mapped; octaves free after the attackHardness override —
+          # authored low, the "gentler filter"
+      effects: []
+      mix: { volumeDb: -10, pan: 0 } # dry
+      mod:
+        attackHardness: # the ~20 ms finger band (geometric centre exactly 0.020 s);
+          # filterEnvelope.octaves dropped so nothing snaps on a plucked note
+          - { param: envelope.attack, min: 0.032, max: 0.0125, curve: exp }
+
+  comping:
+    rhodes:
+      # §6.6: PolySynth/FMSynth sine/sine, carrier decay 2.2, the tine-ping
+      # modulationEnvelope, light Chorus insert. brightness → modulationIndex
+      # 3–14 is §6.6's own stated override (the mellow-Mark-I → bright-DX7
+      # axis); it is also required, since FMSynth has no filterEnvelope.
+      engine: { type: PolySynth, voice: FMSynth, maxPolyphony: 12 }
+      base:
+        harmonicity: 1 # Mark I
+        oscillator: { type: sine }
+        envelope: { decay: 2.2, sustain: 0, release: 1.2 } # carrier decay 2.2; attack mapped
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0, release: 0.2 } # the tine ping
+      effects:
+        - { type: Chorus, options: { frequency: 0.8, delayTime: 3.5, depth: 0.3, wet: 0.25 } } # light
+      mix: { volumeDb: -13, pan: -0.2 } # reverb send mapped (space)
+      mod:
+        brightness: # §6.6 verbatim
+          - { param: modulationIndex, min: 3, max: 14, curve: exp }
+    clav:
+      # §6.6: PolySynth/MonoSynth sawtooth, decay 0.18 / sustain 0, resonant
+      # lowpass filterEnvelope (base ~400 Hz band via brightness, 4 octaves);
+      # insert AutoFilter {frequency: 2.5, baseFrequency: 350, octaves: 2.5,
+      # depth: 0.5, wet: 0.4} — the wah (§3.7).
+      #
+      # S22-7 fix 3: §6.6's printed base `attack: 0.003` collides with the
+      # comping role default attackHardness → envelope.attack (base XOR mod).
+      # decay/sustain stay in base; the fast attack is expressed as a NARROW
+      # attackHardness band whose geometric centre is exactly 0.003 s.
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 12 }
+      base:
+        oscillator: { type: sawtooth }
+        envelope: { decay: 0.18, sustain: 0, release: 0.15 } # attack mapped (override band)
+        filter: { type: lowpass, rolloff: -12, Q: 3 } # resonant
+        filterEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.1, release: 0.2, octaves: 4 }
+          # baseFrequency mapped (default 400–8000 = §6.6's ~400 Hz band)
+      effects:
+        - { type: AutoFilter, options: { frequency: 2.5, baseFrequency: 350, octaves: 2.5, depth: 0.5, wet: 0.4 } } # the wah (§3.7)
+      mix: { volumeDb: -13, pan: -0.2 } # reverb send mapped (space)
+      mod:
+        attackHardness: # narrow band around §6.6's printed 0.003 (centre 0.003)
+          - { param: envelope.attack, min: 0.006, max: 0.0015, curve: exp }
+
+  pads:
+    analog_poly:
+      # §6.6: PolySynth/MonoSynth fatsawtooth (count 3, spread 25), attack band
+      # around 0.35 s, + StereoWidener (width ONLY). MonoSynth voice keeps the
+      # pads default brightness (filterEnvelope.baseFrequency) legal.
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: fatsawtooth, count: 3, spread: 25 }
+        envelope: { decay: 0.5, sustain: 0.8, release: 2.4 } # attack mapped (override)
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.6, release: 1.8, octaves: 2 }
+          # baseFrequency mapped
+      effects:
+        - { type: StereoWidener, options: { width: 0.7 } }
+      mix: { volumeDb: -19, pan: 0 } # reverb send mapped (space)
+      mod:
+        attackHardness: # §6.6's "attack band around 0.35 s" (geometric centre
+          # 0.346) — narrower than the pads default 1.2 → 0.005
+          - { param: envelope.attack, min: 1.0, max: 0.12, curve: exp }
+    glass_pad:
+      # §6.6: "brighter FM alternative" to analog_poly ⇒ FMSynth: bell-class
+      # harmonicity, slow modulation swell, long release.
+      #
+      # S22-7 fix 4: FMSynth has no filterEnvelope, so the pads role default
+      # brightness → filterEnvelope.baseFrequency is ILLEGAL here (TB7) and
+      # §6.6 does not mention an override — the exact organ_swell silent trap
+      # from S21. Overridden to the FM lever, up-ranged past rhodes' 3–14 to
+      # earn the "brighter" and "glass" of the name.
+      engine: { type: PolySynth, voice: FMSynth, maxPolyphony: 8 }
+      base:
+        harmonicity: 2 # bell-class ratio; the glassy partial
+        oscillator: { type: sine }
+        envelope: { decay: 1.2, sustain: 0.7, release: 2.8 } # attack mapped (default swell)
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.8, decay: 1.2, sustain: 0.5, release: 2.0 } # slow FM swell
+      effects: []
+      mix: { volumeDb: -20, pan: 0 } # reverb send mapped (space)
+      mod:
+        brightness: # FMSynth ⇒ full override (TB7): modulationIndex, brighter
+          # than rhodes' 3–14
+          - { param: modulationIndex, min: 4, max: 18, curve: exp }
+
+bus:
+  # §6.6 verbatim — the driest room of the five packs (70s damped-head practice
+  # as data).
+  reverb: { decay: [0.6, 1.8], preDelay: [0.008, 0.02], returnFilterHz: 400 }
+
+master: # §6.6 verbatim (TB4: Limiter last)
+  - { type: Compressor, options: { threshold: -20, ratio: 2, attack: 0.03, release: 0.25 } }
+  - { type: Limiter, options: { threshold: -1 } }

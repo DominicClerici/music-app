@@ -197,9 +197,12 @@ def apply_devices(
     t_last_bar: int,
     *,
     explain: ExplainCollector | None = None,
-) -> None:
+) -> frozenset[int]:
     """Run 6b in place: enumerate boundaries, then per boundary draw + render in
-    §3.8 order on a single `derive(transitions, "devices")` RNG."""
+    §3.8 order on a single `derive(transitions, "devices")` RNG.
+
+    Returns the entered ticks a §3.5 dropout was actually applied at, so 6c can
+    honour the same no-sustain-across-the-entry rule (see `mutation._hat_lift`)."""
     assert pack.transitions is not None
     spec = pack.transitions
     rng = Rng(
@@ -208,6 +211,7 @@ def apply_devices(
         )
     )
     drum_rung = {e.section_id: e.intensity for e in arr.entries if e.role == "drums"}
+    dropout_ticks: set[int] = set()
 
     for boundary in _boundaries(form):
         # 6a owns bars at/after T_last's bar — such a boundary is not a real
@@ -235,6 +239,7 @@ def apply_devices(
         entered_type = boundary.entered.type
         if entered_type == "breakdown":
             _apply_dropout(builders, boundary.entered_tick)
+            dropout_ticks.add(boundary.entered_tick)
             continue
         if entered_type == "postchorus":
             continue  # smooth continuation — no device, no crash, no draw.
@@ -268,3 +273,5 @@ def apply_devices(
                 "crash",
                 guard_existing_kick=True,
             )
+
+    return frozenset(dropout_ticks)

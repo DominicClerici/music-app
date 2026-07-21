@@ -109,9 +109,19 @@ def stage6_passes(inp: Stage6Inputs) -> tuple[list[Phrase], list[Phrase]]:
     t_last = find_t_last(inp.hp)
     builders = to_builders(inp.phrases)
     hold_ending(builders, inp.sf, inp.hp, inp.plan, inp.pack, t_last)
-    apply_devices(builders, inp.sf, inp.ap, inp.plan, inp.pack, t_last // BAR)
+    dropout_ticks = apply_devices(
+        builders, inp.sf, inp.ap, inp.plan, inp.pack, t_last // BAR
+    )
     post_6b = to_phrases(builders)
-    final = mutate(post_6b, inp.sf, inp.hp, inp.ap, inp.plan, inp.pack)
+    final = mutate(
+        post_6b,
+        inp.sf,
+        inp.hp,
+        inp.ap,
+        inp.plan,
+        inp.pack,
+        dropout_ticks=dropout_ticks,
+    )
     return post_6b, final
 
 

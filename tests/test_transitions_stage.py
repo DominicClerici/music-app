@@ -625,6 +625,76 @@ def test_breakdown_entered_gets_dropout_no_crash() -> None:
     assert fill_snares_bar7 == []
 
 
+def test_hat_lift_never_sustains_across_a_dropout_entered_breakdown() -> None:
+    """S22-10 regression, end-to-end through the pinned 6a→6b→6c order.
+
+    A pack combining `hat_lift` with a `breakdown` section (the combination no
+    reference pack had before fusion_jazz): 6b truncates every sustain at the
+    breakdown entry, then 6c must not re-introduce one by lifting the last
+    offbeat 8th of the preceding bar (pos 1680 + 360 = 120 ticks past the entry).
+    This is exactly what quality validator W2 checks."""
+    form = SongForm(
+        template_id="t",
+        total_bars=16,
+        sections=[
+            section("A", "verse", 0, 8, 0.5, [8]),
+            section("B", "breakdown", 8, 4, 0.2, [4]),
+            section("C", "outro", 12, 4, 0.3, [4]),
+        ],
+    )
+    pack = make_pack(
+        [fill_env("f", 2, [{"pos": 1200, "voice": "snare", "velocity": 0.6}])],
+        {
+            **_TRANSITIONS_POP,
+            # TR3 requires a `none` weight; skew it so every drum unit lifts.
+            "mutation": {
+                "drums": {"none": 1, "hat_lift": 10_000},
+                "comping": {"none": 1},
+            },
+        },
+    )
+    arr = ArrangementPlan(entries=[drum_entry(s.id, 2) for s in form.sections])
+    chords = HarmonicPlan(chords=[final_chord(13 * BAR, "C")], keys=[])
+
+    entry = 8 * BAR
+    target = entry - 240  # the last offbeat 8th before the breakdown entry.
+    phrases = [
+        *_phrases_for(form),
+        Phrase(
+            track_id="hats",
+            role="drums",
+            start_tick=0,
+            end_tick=8 * BAR,
+            notes=[
+                PhraseNote(
+                    ticks=t,
+                    duration_ticks=120,
+                    midi=None,
+                    velocity=0.5,
+                    tags=["hat_closed"],
+                )
+                for t in range(240, 8 * BAR, 480)
+            ],
+        ),
+    ]
+    out = transitions(phrases, form, chords, arr, make_plan(), pack)
+
+    lifted = [
+        n for p in out if p.track_id == "hats" for n in p.notes if n.ticks == target
+    ]
+    assert len(lifted) == 1
+    assert "hat_open" in lifted[0].tags  # the operator did fire on this unit
+    assert lifted[0].ticks + lifted[0].duration_ticks <= entry
+    # the W2 predicate itself: nothing sustains across the breakdown entry.
+    crossing = [
+        (p.track_id, n.ticks, n.duration_ticks)
+        for p in out
+        for n in p.notes
+        if n.ticks < entry < n.ticks + n.duration_ticks
+    ]
+    assert crossing == []
+
+
 def test_postchorus_entered_gets_none() -> None:
     form = SongForm(
         template_id="t",

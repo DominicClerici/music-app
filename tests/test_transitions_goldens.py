@@ -126,10 +126,10 @@ def _fired_ops(
 
     def wrap(name: str, fn: Any) -> Any:
         def recorded(
-            builders: Any, section: Any, u_lo: int, u_hi: int, fbt: int
+            builders: Any, section: Any, u_lo: int, u_hi: int, fbt: int, *rest: Any
         ) -> None:
             fired.append((u_lo // BAR, name))
-            fn(builders, section, u_lo, u_hi, fbt)
+            fn(builders, section, u_lo, u_hi, fbt, *rest)
 
         return recorded
 

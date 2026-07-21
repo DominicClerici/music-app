@@ -1,0 +1,7 @@
+# fusion_jazz transitions (PHASE_8 §6.5, verbatim).
+phraseFill: { odds: [1, 2] }
+stop:       { enabled: true, odds: [1, 4] }   # the funk break
+crash:      { velocity: [0.45, 0.85] }
+mutation:
+  drums:   { none: 6, kick_pickup: 2, drop_ornament: 2, hat_lift: 1 }
+  comping: { none: 3, anticipate: 2, drop_hit: 1 }

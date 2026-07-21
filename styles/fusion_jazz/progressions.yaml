@@ -1,0 +1,63 @@
+# fusion_jazz progressions (PHASE_8 §6.3). Authored extensions (#11/#9) and sus chains
+# carry the idiom; every pool entry is dominant- or sus-coloured.
+pools:
+  tune_16:
+    - id: cantaloupe_class        # i7 | bVI7#11 | vi7 | i7, 4 bars each
+      weight: 60
+      modes: [minor, dorian]
+      phrases:
+        a: [[i7], [~], [~], [~]]
+        b: [[bVI7(#11)], [~], [~], [~]]      # authored extension (§3.5)
+        c: [[vi7], [~], [~], [~]]
+        d: [[i7], [~], [~], [~]]
+    - id: dominant_16             # Watermelon-class 16-bar dominant blues
+      weight: 40
+      modes: [mixolydian, major]
+      phrases:
+        a: [[I7], [~], [~], [~]]
+        b: [[IV7], [~], [I7], [~]]
+        c: [[V7], [IV7], [V7], [IV7]]
+        d: [[I7], [~], [~], [~]]
+  modal_32:                       # sus-chain AABA (Maiden Voyage shape)
+    - id: sus_chain
+      weight: 100
+      modes: [dorian, minor]
+      phrases:
+        a: [[I7sus4], [~], [~], [~], [bIII7sus4], [~], [~], [~]]
+        b: [[bII7sus4], [~], [~], [~], [VIImaj7], [~], [~], [~]]
+    - id: sus_chain_mixo          # P6 coverage for the major-class modes
+      weight: 100
+      modes: [mixolydian, major]
+      phrases:
+        a: [[I7sus4], [~], [~], [~], [bVII7sus4], [~], [~], [~]]
+        b: [[IV7sus4], [~], [~], [~], [bVImaj7], [~], [~], [~]]
+  vamp:                           # every entry authored to END OPEN — amended 2026-07-21
+                                  # (S22-3, user-ratified). `vamp` serves main/breakdown/outro,
+                                  # so same-tag adjacency wakes PHASE_4 §5.1's draw-free
+                                  # deceptive fallback on any tonic-rooted T-function ending;
+                                  # ending open keeps vamps looping without harmonic drift
+                                  # (DoD §14.10).
+    - { id: dorian_funk,  weight: 40, modes: [dorian, minor],
+        phrases: { a: [[i7], [~], [IV7], [~]] } }                  # Chameleon
+    - { id: sus_pedal,    weight: 20, modes: [mixolydian, major],
+        phrases: { a: [[I7sus4], [~], [~], [bVII7]] } }            # S22-3: a one-chord tonic
+                                  # pedal cannot be rotated open — pedal for 3 of 4 bars, then
+                                  # the mixolydian bVII
+    - { id: minor_launch, weight: 20, modes: [minor, dorian],
+        phrases: { a: [[i7], [~], [iiø7], [V7(#9)]] } }            # S22-3: pure rotation of the
+                                  # printed iiø7 | V7(#9) | i7 | ~ — all content preserved,
+                                  # now ending on the dominant
+    - { id: mixo_vamp,    weight: 20, modes: [mixolydian, major],
+        phrases: { a: [[I7], [~], [bVII7], [~]] } }
+  intro:
+    - { id: groove_in,      weight: 100, modes: [dorian, minor],
+        phrases: { a: [[i7], [~], [IV7], [~]] } }                  # ends open (P7)
+    - { id: mixo_groove_in, weight: 100, modes: [mixolydian, major],
+        phrases: { a: [[I7], [~], [bVII7], [~]] } }
+
+turnarounds: []                   # vamps and static 16-bar forms loop untouched (§3.3)
+
+finals:
+  - { id: dorian_plagal, weight: 60, modes: [dorian, minor], bars: [[IV7], [i7]] }
+  - { id: sharp_nine,    weight: 40, modes: [dorian, minor], bars: [[V7(#9)], [i7]] }
+  - { id: backdoor,      weight: 100, modes: [mixolydian, major], bars: [[bVII7], [I7]] }

@@ -246,7 +246,8 @@ independently reproduced by the orchestrator)
   genuinely live and carry §6.4's defining content (`fu_dr_2` sits at rung 2, which is live);
   PT5 + variety require a rung-1 bank regardless; and §6.4's rung-1 content (sparse funk,
   root/♭7 halves, footballs) is the ladder's least load-bearing tier. Record the measured
-  dormancy as a caveat (C-26) with the per-template rung table, and annotate §6.4.
+  dormancy as a caveat (**C-28** — renumbered from the draft's C-26, which S22-10 took when
+  it was raised later at T1) with the per-template rung table, and annotate §6.4.
   **Alternative:** push rung-1 content up a tier as blues did — rejected here because it would
   displace live, correct content for no reachability gain.
 - **S22-6 ("the first dorian-primary pack" — wrong derived claim):** constraint 8. Measured
@@ -274,6 +275,101 @@ independently reproduced by the orchestrator)
   `I7sus4(13)`. **Recommended: three one-line annotations, no behavior change.**
 - **S22-9 (pack version):** manifest lands at `version: 0.1.0` per §6.1 (S20-4/S21-5
   precedent). **Recommended: 0.1.0.**
+- **S22-10 (RAISED AT T1, RULED 2026-07-21 — the first engine change of C6/C7/C8):**
+  T1 found, and the orchestrator independently confirmed, a **stage-6 ordering defect**.
+  Pinned order is `6a HOLD → 6b devices → 6c mutation` (`transitions/stage.py:4-6`); 6b's
+  dropout truncates every note sustaining across a breakdown entry (`devices.py:166`, §3.5),
+  then 6c's `_hat_lift` sets `duration_ticks = 360` on an offbeat-8th hat
+  (`mutation.py:161`). The last offbeat 8th in a bar is pos 1680, so the lift extends to 2040
+  — 120 ticks past the bar line — **re-introducing exactly the sustain the dropout removed**,
+  and W2 (`quality/layer1.py:391-399`) correctly fires. Measured ~4 % of T1's 168 scratch
+  renders. `_hat_lift` is the **only** operator that lengthens a note. This is not a fusion
+  authoring choice: §6.2's `breakdown`, §6.5's `hat_lift: 1`, and §6.4's `fu_dr_2`
+  `{pos: 1680, voice: hat_closed}` are all pinned verbatim. **fusion_jazz is the first pack to
+  combine `hat_lift` with `breakdown`** (pop_rock ✓/✗, jazz ✗/✗, chill_lofi ✗/✓, blues ✓/✗) —
+  which is why four prior packs never reached it. **User ruled: ENGINE FIX — clamp the lift**
+  so it never sustains past a dropout-entered breakdown boundary, which is what §3.5 already
+  mandates for every other note. **Provably a no-op for all four existing packs** (none
+  combines the two ingredients); the no-op is **self-verifying** — all 6327 tests, every
+  golden, and all 48 corpus cells must stay byte-identical. **If any golden moves, the fix is
+  NOT a no-op: stop and re-escalate for the full contingency-14 bless collateral
+  (generatorVersion bump, serialize/milestone literals, 48-cell re-bless).** Rejected:
+  dropping `hat_lift` from §6.5 (leaves the defect live for the next pack), and
+  accept-and-caveat (knowingly ships renders failing a hard Layer-1 validator).
+
+- **S22-11 (RAISED AT T2, RULED 2026-07-21):** §6.4's bass rung-2 parenthetical is internally
+  inconsistent. Prose "tresillo skeleton (3+3+2 in 16ths)" = 360+360+240 = **960 ticks**
+  (2 cells/bar); the printed third duration **480** = 4 sixteenths overruns the next cell
+  onset at 960 by **240 ticks**. The T2 reviewer confirmed nothing downstream truncates it
+  (`retrigger` splits only at *chord* boundaries; there is no note-overlap validator), so the
+  printed reading would emit **two simultaneously sounding bass notes** — refuting the
+  "sustain deliberately exceeding its slot" reading. Per ROADMAP §3 rule 1 the **prose is the
+  pinned data text** and the printed durations are the derived sample; T2's original authoring
+  had the weights inverted. **User ruled: the literal 3+3+2 doubled cell is the weight-3
+  anchor (`fu_bs_2`); the printed continuation is retained as the weight-2 sibling
+  (`fu_bs_2b`)** — a valid whole-bar 3+3+4+3+3 ostinato, so both candidates are individually
+  sound and the variety lint needs two anyway. Ids swapped so the anchor is unsuffixed.
+  §6.4 annotated; `dur 480` recorded as a wrong printed sample.
+- **S22-13 (RAISED AT THE T3 REVIEW, RULED 2026-07-21):** §6.4 pins quartal as fusion's
+  comping "low-rung signature", but quartal `[0, 5, 10, 15]`'s top voice is a **♯9**, which
+  L2-1's allowed set (chord tones ∪ scale tones) rejects over fusion's majority
+  auto-resolved key (F mixolydian, `I7` → F9). Measured: **19/192 renders fail**
+  `validate_pipeline` (orchestrator); 71/448 (reviewer) — all six major-resolving moods,
+  zero in mysterious/tense (dorian/minor already contain that ♭3). ♯9 over a dom7 is
+  canonical funk/jazz vocabulary (the Hendrix chord), so **L2-1 was under-modelling altered
+  tensions, failing correct music**. **User ruled: widen L2-1's allowed set to additionally
+  admit the alterations PHASE_4 §6.4 already declares legal per chord quality** (dom7: 9, ♭9,
+  ♯9, ♯11, 13, ♭13) — reusing the existing legality table, strictly additive.
+  **Generation-neutral**: the orchestrator verified `quality/` is never imported anywhere in
+  the generation path, so no golden moves, no re-bless, no `generatorVersion` bump — unlike
+  S22-10. Rejected: dropping quartal from comping rungs 1–2 (measured 0/192 failures, but
+  guts §6.4's pinned signature and makes DoD §14.10's "quartal **Rhodes** sits under C5"
+  literally unsatisfiable, since rhodes is a *comping* flavor — quartal would live only on
+  pads); reordering quartal last (measured **no effect**, 71/448 — the Viterbi cost is
+  order-independent); deferring to T7 calibration (contradicts §8.1's bootstrap order, and
+  T5's DoD slice requires `validate_pipeline == []` to land at all). §8.1 annotated; C-29.
+- **S22-14 (RAISED AT THE T2 REVIEW, RULED 2026-07-21):** §6.4 pins "`approach` into changes"
+  on rung-4 bass, authored as `{pos: 1680, dur: 240, degree: approach, push: true}`. The
+  composition is broken: `push` advances the frame to the chord *after* the first boundary in
+  span, so `_place_degree` resolves `approach` against `_next_chord(effective)` — the chord
+  **two changes ahead**. Orchestrator-measured over 48 renders: **0 of 399** approach events
+  land a half-step below the chord arriving at the next barline. **The reviewer's claimed
+  remedy was overstated** — it reported push-removal restoring 100%; two independent
+  measurements (orchestrator 72/408 = 18%; fix agent 59/744-with-change = 16.5%) put it near
+  **18%**, because the pattern tiles every bar while fusion's chords span 2–4 bars, so ~half
+  of firings have no change to approach at all. **User ruled: drop `push: true` from those two
+  events, accept the residual, caveat it** — the off-change firings are mostly benign
+  (measured 56.5% land on the governing chord's root, 28.0% a perfect 5th). Rejected:
+  replacing `approach` with the blues chord-tone idiom on one or both siblings (a larger
+  deviation from pinned §6.4 than the defect warrants). §6.4 annotated; flagged for the T8
+  listening pass.
+
+- **S22-15 (RAISED AT THE S22-13 IMPLEMENTATION, RULED 2026-07-21):** the S22-13 widening did
+  the bulk of the work but did **not** fully clear L2-1. Quartal `[0, 5, 10, 15]` carries
+  **two** tensions over a dominant: the ♯9 (offset 15, now legal) **and a natural 11**
+  (offset 5 = P4). §6.4 excludes `11` on dom7 (only `#11`) — correctly: a P4 over a dominant
+  is the classic avoid note, which is why `7sus4` exists as a separate chord. (`min7` *does*
+  admit `11`, which is exactly why mysterious/tense — dorian/minor — were always clean.)
+  Measured after the widening: **2/400 renders fail**, each from a **single** offending note
+  against the 0.98 threshold (ratios 0.970 on 33 notes, 0.929 on 14); the implementing agent
+  measured 5/192 on its own seed set. **All 12 actual fusion_jazz corpus cells validate
+  clean** (verified: energetic/calm/tense × 120/240 s × both pinned seeds → 0/12), so T9 is
+  unaffected. A clean A/B on the current pack: quartal at comping r1–2 → 2/400; quartal
+  removed → 0/400. **User ruled: accept the 0.5 %, caveat it, and let T7 calibration set the
+  real per-pack threshold.** Rationale: `validate_pipeline` is a QA report, not a generation
+  path (nothing crashes); §8.1's own bootstrap order is defaults → listening → `calibrate`,
+  and §12 Q4 pins the L2 thresholds as **data**, tunable per pack without design change — so
+  a fusion comping threshold set from the blessed batch is the designed outcome, not a
+  workaround. Preserves both §6.4's pinned quartal signature and DoD §14.10's "quartal
+  **Rhodes** sits under C5". **If T8 listening dislikes the quartal-over-dominant sound,
+  revisit then — with ears, not arithmetic.** Rejected: dropping quartal from comping r1–2
+  (clean at 0/400 but costs the §6.4 signature and makes §14.10's clause unsatisfiable, since
+  rhodes is a *comping* flavor); widening L2-1 again to admit natural 11 on dom7 (musically
+  wrong, and would take dom7's allowed set to 12/12, eroding the gate for all five packs —
+  the implementing agent measured the reached maximum at 11/12 and warned against this).
+  **T5 consequence:** its end-to-end property slice must not assert `validate_pipeline == []`
+  over arbitrary seeds — pin the corpus-clean coordinates, or assert the accepted rate
+  explicitly rather than zero.
 
 ---
 
@@ -404,5 +500,5 @@ fusion slices **and §14.5's corpus clause**, honest ledger); (c) test quality/c
 (non-vacuous, discriminating, golden-blind slots selection-locked; measure the fusion blind set
 for the C-20/C-22/C-23 record). Validation agents on findings; fix loop ≤2 cycles; gates.
 Close-out: PROGRESS.md (statuses, session log row, fresh handoff for **C9 — the Phase 8
-close-out**), CAVEATS entries (S22-3 deceptive/§3.3+D6 amendment; C-26 rung-1 + mixolydian
+close-out**), CAVEATS entries (S22-3 deceptive/§3.3+D6 amendment; C-28 rung-1 + mixolydian
 dormancy; S22-4 quartal note; **C-17 status → resolved**), final commit.

@@ -74,6 +74,10 @@ All three new packs use `mode: patterns`. Blues bass is **authored boogie/box/pe
 - **Lo-fi** models its A/B loop structure as **`main`/`breakdown` alternation**: the stripped section *is* `breakdown` (entered by the PHASE_6 §3.5 `dropout` device — dormant until now; arrangement-capped at 2 layers; energy base 0.25). Loop identity across sections is structural: `main`, `breakdown`, `intro`, and `outro` all point at **one `harmonyTag` (`loop`)** — one progression draw serves the whole track, which is the genre. `variant` stays **label-only in v1** (dispositions PHASE_3 Q1's variant row — no consumer existed and none is added; §12 Q2 reserves the load-bearing design).
 - **Fusion** ships two template families: **`tune`** (`intro? + head + repeat(solo) + head + outro` — the Cantaloupe/Watermelon class, `head` at 16 bars with a 32-bar AABA option) and **`vamp`** (`intro + repeat(main) + breakdown + main + outro` — the Chameleon class). `main` and `breakdown` share the `vamp` tag so the strip-down keeps the groove's harmony.
 - **Both packs ship `turnarounds: []`**, and PHASE_4 D6 makes *both* boundary transforms (turnaround and deceptive) inert on an empty list — verified against the failure case: a vamp ending on the tonic (Cantaloupe's final i7) at a same-tag boundary would otherwise be deceptive-substituted every cycle. Vamps loop untouched by construction. Corollary: a doubled final chorus in pop_rock cannot wake the deceptive rule either (pop also ships `[]`), so PHASE_3 Q2 / PHASE_4 Q7 stay honestly deferred (§3.8).
+  *[amended 2026-07-21, S22-3 (user-ratified), C-27: **the "both inert" claim above is wrong**, and PHASE_4's own normative text already says so (§5.1 step 5 and §5.4's "None eligible (or empty run) → **deceptive fallback**"). An empty `turnarounds` list makes only the *turnaround* transform inert; the **deceptive** substitution is a fixed, draw-free fallback that fires on **any** same-tag boundary whose section ends tonic-rooted with `function == "T"`. D6's parenthetical held for pop_rock only because **pop has no same-tag adjacency** — which PHASE_4 §5.4 states explicitly. Fusion's `vamp` tag serves `main`/`breakdown`/`outro` repeatedly and `tune_16` serves `head`/`solo`/`solo`/`head`, so the rule wakes at nearly every boundary: measured **874 substitutions across 336 renders** (`tune_16` 625, `vamp` 249). A reproduced render (calm, `vamp`, `sus_pedal`) rendered a one-chord pedal as `I7sus4 | vi | I7sus4 | vi | …` for half the track — **violating DoD §14.10's "vamps loop without harmonic drift".*
+  *The real rule: both boundary transforms are inert only **absent same-tag adjacency**; with same-tag adjacency and an empty `turnarounds` list, the deceptive fallback fires on every tonic-rooted, T-function section ending.*
+  *Authoring rule (the general form of the lo-fi `loop` rule in the bullet below): every entry in a tag that has same-tag adjacency must be authored **rotated to end open**, or its sections will be deceptive-substituted every cycle.*
+  *Fusion's response: the `vamp` pool is re-rotated — `minor_launch` → `[[i7], [~], [iiø7], [V7(#9)]]` (a pure rotation, all content preserved, ends on the dominant), `sus_pedal` → `[[I7sus4], [~], [~], [bVII7]]` (a one-chord tonic pedal cannot be rotated open; this keeps the pedal for 3 of 4 bars and ends on the mixolydian ♭VII, squarely in idiom); `dorian_funk` and `mixo_vamp` already end open. `tune_16`'s chorus-boundary substitution is **accepted as-is** — it is precisely the relaunch device D6 was built for, and a substituted chord at a head/solo turnaround is idiomatic jazz — with the known limitation that the substitution is **fixed and draw-free**, so every chorus relaunches with the same chord.]*
 - One authoring rule falls out of P7 for lo-fi's shared tag: because `loop` also serves `intro`, every `loop` entry must end **open** (not degree-1-rooted). Loops are therefore authored **rotated to end open** (`Imaj7–vi7–ii7–V7`, not `ii7–V7–Imaj7–~`) — which is what loop-friendly progressions look like anyway; the finals pool closes the song.
 
 ### 3.4 Named feel profiles + pack selector (D5; resolves PHASE_6 Q7)
@@ -551,9 +555,11 @@ mutation:
 
 ```yaml
 # styles/fusion_jazz/manifest.yaml
-id: fusion_jazz
+formatVersion: 1                 # [amended 2026-07-21, S22-1 (user-ratified): printed
+id: fusion_jazz                  #  snippet omitted the required Manifest fields]
 name: Fusion Jazz
 version: 0.1.0
+engine: ">=0.1"                  # [amended 2026-07-21, S22-1: sibling-verbatim value]
 timeSignatures: [[4, 4]]
 tempoRange: [75, 145]            # core funk-fusion 85-120 + the medium tier
 ```
@@ -565,17 +571,31 @@ defaultMood: energetic
 # vs the PHASE_2 §5 sketch ("fusion sits near jazz"): near but not identical —
 # fusion picks up triumphant (jazz dropped it) and drops romantic/dark/melancholic.
 
-modes: [dorian, mixolydian, minor, major]   # the first dorian-primary pack
+modes: [major, mixolydian, dorian, minor]   # [amended 2026-07-21, S22-2 (user-ratified):
+                                 #  the printed `[dorian, mixolydian, minor, major]` is a HARD
+                                 #  LOAD FAILURE — `packs/models.py` requires `modes` to be a
+                                 #  subsequence of the mode ladder `major, mixolydian, dorian,
+                                 #  minor, phrygian`. Reordered here, `tonics` reordered to
+                                 #  match. Behaviourally inert: `_resolve_mode` is set-based
+                                 #  with a brighter-rung tie-break and returns the identical
+                                 #  mode for all 8 fusion moods under either ordering. The
+                                 #  printed "the first dorian-primary pack" gloss is a wrong
+                                 #  derived claim — see the S22-6 note below.]
 tonics:
-  dorian:     [D, G, Bb]         # Bb dorian = Chameleon
-  mixolydian: [F, Bb]
-  minor:      [C, A]
   major:      [F, C]
+  mixolydian: [F, Bb]
+  dorian:     [D, G, Bb]         # Bb dorian = Chameleon — [amended 2026-07-21, S22-8: auto
+                                 #  renders take `tonics[mode][0]` = **D**; the Chameleon key
+                                 #  Bb requires an explicit `key.tonic` param]
+  minor:      [C, A]
 
 feel: swing16                    # NO swingRatio override: the table evaluated at 2×tempo gives
                                  # 58% at 100 BPM → straight at ~120+ — matching the funk corpus.
-                                 # At the slow edge (75-90) it reaches 63-66% — Purdie-shuffle
+                                 # At the slow edge (75-90) it reaches 61.5-65.5% — Purdie-shuffle
                                  # territory, accepted; revisit via the §8.4 error-spotting log.
+                                 # [amended 2026-07-21, S22-8: the printed "63-66%" is a wrong
+                                 #  derived sample; measured 61.5-65.5% across 75-90 BPM. The
+                                 #  "58% at 100 BPM" and "straight at ~120+" figures are exact.]
 feelTable: tight                 # §3.4
 
 expressionRanges:
@@ -592,6 +612,16 @@ ensembles:
   default:     { drums: funk_kit, bass: synth_moog, comping: rhodes, pads: analog_poly }
   headhunters: { drums: funk_kit, bass: synth_moog, comping: clav, pads: analog_poly }
 ```
+
+*[amended 2026-07-21, S22-6 (user-ratified), C-28: **"the first dorian-primary pack" is a wrong derived claim.** Measured auto mode-resolution (`_ideal_rung` → `_resolve_mode`) over the eight supported moods resolves **major 6 of 8**, dorian 1, minor 1:*
+
+| mood | resolved mode |
+| --- | --- |
+| energetic · calm · dreamy · nostalgic · triumphant · happy | **major** (6/8) |
+| mysterious | **dorian** (1/8) |
+| tense | **minor** (1/8) |
+
+*and **`mixolydian` is structurally unreachable** — `_ideal_rung` places it at valence ∈ [0.00, 0.25) and no fusion mood lands in that band, so `sus_pedal` / `mixo_vamp` / `dominant_16` / `sus_chain_mixo` / `mixo_groove_in` / `backdoor` are auto-dormant (P6 requires the coverage regardless). The §8.2 corpus triple (energetic, calm, tense) therefore captures **zero dorian cells**; `tests/test_fusion_jazz_pack.py` compensates with explicit `key.mode: dorian` pins (Bb and D) covering the `cantaloupe_class` / `dorian_funk` / quartal paths. Dorian remains the pack's *idiomatic* centre — it is simply not its auto-resolution majority.]*
 
 ### 6.2 `forms.yaml`
 
@@ -694,6 +724,12 @@ pools:
         phrases: { a: [[I7], [~], [bVII7], [~]] } }
 
 turnarounds: []                   # vamps and static 16-bar forms loop untouched (§3.3)
+                                  # [amended 2026-07-21, S22-3, C-27: NOT untouched — an empty
+                                  #  list disables only the turnaround transform; the deceptive
+                                  #  fallback still fires on every tonic-rooted T-function
+                                  #  ending at a same-tag boundary. `minor_launch` and
+                                  #  `sus_pedal` are authored re-rotated to end open; see the
+                                  #  §3.3 S22-3 annotation for the rule and the measurements.]
 
 finals:
   - { id: dorian_plagal, weight: 60, modes: [dorian, minor], bars: [[IV7], [i7]] }
@@ -717,7 +753,22 @@ finals:
     {pos: 1440, voice: hat_closed, velocity: 0.58}, {pos: 1680, voice: hat_closed, velocity: 0.42}]}
 ```
 
-**Bass** (`mode: patterns`): rung 1 — root/♭7 (`seventh`) half notes; rung 2 — the **tresillo skeleton** (3+3+2 in 16ths: `root` @0 dur 360, `seventh` @360 dur 360, `root` @720 dur 480 …); rung 3 — 16th funk: root/octave with low-velocity `minDensity`-gated ghost 16ths on the e/a; rung 4 — dense 16ths, octave pops, `approach` into changes, pushes. **Comping** (Rhodes/clav): rung 1 footballs; rung 2 sparse syncopated stabs + and-of-4 `push`; rung 3 16th anticipations; rung 4 clav-style stabby 16ths. Voicing classes `{1: [quartal, rootless_a], 2: [quartal, rootless_a], 3: [rootless_a, rootless_b], 4: [rootless_a, rootless_b]}` — quartal harmony as the low-rung signature. **Pads**: `{1–4: [quartal]}`, sustained, retrigger.
+**Bass** (`mode: patterns`): rung 1 — root/♭7 (`seventh`) half notes; rung 2 — the **tresillo skeleton** (3+3+2 in 16ths: `root` @0 dur 360, `seventh` @360 dur 360, `root` @720 dur 480 …) *[amended 2026-07-21, S22-11 (user-ratified): the printed parenthetical is internally inconsistent. The prose "3+3+2 in 16ths" is 360 + 360 + 240 = **960** ticks — a half-bar cell, doubled per bar — but the printed third duration **480** overruns the next cell's onset by 240 ticks, and nothing downstream truncates it (`retrigger` splits only at **chord** boundaries; there is no note-overlap validator), so the printed reading emits two simultaneously sounding bass notes. Per ROADMAP §3 arbitration rule 1 the **prose wins**: the literal 3+3+2 doubled cell is the rung-2 anchor (`fu_bs_2`, weight 3). The printed `dur 480` is a **wrong printed sample**; it is retained as the weight-2 sibling `fu_bs_2b`, re-read as a valid whole-bar 3+3+4+3+3 ostinato, for variety.]*; rung 3 — 16th funk: root/octave with low-velocity `minDensity`-gated ghost 16ths on the e/a; rung 4 — dense 16ths, octave pops, `approach` into changes, pushes *[amended 2026-07-21, S22-14 (user-ratified): **`approach` composed with `push` is broken** — `push` advances the retarget frame to the chord *after* the first boundary in the note's span, so the `approach` degree resolves against the chord **two changes ahead**. Measured over 48 renders: **0 of 399** approach firings resolved correctly as authored; **72 of 408** resolved correctly with `push` removed. `push: true` is therefore **dropped from the `approach` events** (pushes stay on the non-approach events of the rung-4 bank). **Accepted residual:** the pattern tiles every bar while fusion's chords span 2–4 bars, so roughly half of all firings have no change to approach; measured **38 %** land on the root and **39 %** on a perfect 4th against the sounding chord (~24 % genuine tensions) — consonant, idiomatic, and preferable to replacing the device, which is why it is accepted rather than re-authored. **Flagged for the §8.4 listening pass.**]*. **Comping** (Rhodes/clav): rung 1 footballs; rung 2 sparse syncopated stabs + and-of-4 `push`; rung 3 16th anticipations; rung 4 clav-style stabby 16ths. Voicing classes `{1: [quartal, rootless_a, rootless_b], 2: [quartal, rootless_a, rootless_b], 3: [rootless_a, rootless_b], 4: [rootless_a, rootless_b]}` — quartal harmony as the low-rung signature. **Pads**: `{1–4: [quartal]}`, sustained, retrigger.
+
+*[amended 2026-07-21, S22-4 (user-ratified), C-27's sibling ruling: the printed rungs 1–2 classes `[quartal, rootless_a]` produce an **uncaught `ValueError`** (`src/trackgen/parts/voicing.py` — no candidate in any declared class). Quartal `[0, 5, 10, 15]` needs a 15-semitone span; the comping arrangement lane leaves a 7–9 semitone root window, and for `Bbm9` (i7+9 in **Bb dorian — §6.1's own pinned Chameleon key**) and `A7#9` (V7(#9) in D dorian) at comping lane low 50 (`registerBias ≥ +0.15` ⇒ moods calm/triumphant/happy) `rootless_a` is empty too, so both printed classes come back empty. Measured **54 of 1152** explicit-`key`-override renders crashed; an independent sweep of 20 304 (mood, key, token, rung) combinations found **38 empty** under the printed map and **0** under the ratified map. `rootless_b` is added as a third fallback at rungs 1–2; **quartal is still tried first**, so the pinned low-rung quartal signature is preserved. Data fix, no engine change.]*
+
+*[amended 2026-07-21, S22-5 (user-ratified), C-28: **measured rung reachability.** The ladder is authored **exactly as printed — no re-map** (unlike blues' S21-2), because rungs 2–4 are all live and carry §6.4's defining content, and PT5 + the variety lint require a rung-1 bank regardless. But three dormancies are now measured facts a later session must know:*
+
+| template / section | kind | energy range | live rungs |
+| --- | --- | --- | --- |
+| tune / intro · outro | intro · ending | 0.376–0.485 · 0.414–0.522 | rung ignored |
+| tune / **head** | main | 0.526–0.635 | **2, 3** |
+| tune / **solo** | main | 0.676–0.935 | **3, 4** |
+| vamp / **main** | main | 0.526–0.710 | **2, 3** |
+| vamp / **breakdown** | main | 0.339–0.448 | **2 only** |
+| fallback / solo | main | 0.826–0.935 | **4 only** |
+
+*— **rung 1 is dead grid-wide** (a proof, not a sample: rung 1 needs pre-envelope `e < 0.1333`, and the lowest base is `breakdown` 0.25 at the lowest arousal, calm −0.65 ⇒ `e = 0.185`); **rung 4 is `tune`-template-only** (`vamp` maxes at 0.710), so the rung-4 ride drive is a tune-template device; and **`breakdown` is arrangement-capped to 2 layers**, so it renders **drums + bass only** — its rung-2 comping/pads content never sounds there. Rung-1 banks are golden-blind completeness content (the C-20 class), selection-locked by `tests/test_fusion_jazz_variety.py`.]*
 
 ### 6.5 `transitions.yaml`
 
@@ -765,7 +816,7 @@ pop_rock and jazz run through the §9.3 authoring checklist **first** — they a
 
 **Layer 2 — musical rule checks.** Per render; warn by default, fail where marked:
 
-- **L2-1 chord-tone-on-strong-beat ratio** (fail below threshold): for bass and comping, the fraction of notes attacking on beats 1/3 whose pitch class ∈ governing chord tones ∪ chord scale. Thresholds per style live in the pack's calibration artifact (§8.2); engine defaults: bass beat-1 ≥ 0.95, comping strong-beat ≥ 0.98. This is the highest-signal single metric for retargeting/voicing bugs.
+- **L2-1 chord-tone-on-strong-beat ratio** (fail below threshold): for bass and comping, the fraction of notes attacking on beats 1/3 whose pitch class ∈ governing chord tones ∪ chord scale *[amended 2026-07-21, S22-13 (user-ratified), C-29: the allowed set is **widened** to `chord tones ∪ chord scale ∪ the alterations PHASE_4 §6.4 already declares legal for the chord's quality`* (for a dominant 7th: 9, ♭9, ♯9, ♯11, 13, ♭13). *Forcing reason: quartal's top voice is a **♯9**, which over a dominant 7th is canonical funk/jazz vocabulary (the Hendrix chord) — L2-1 as pinned was under-modelling altered tensions and failed **19 of 192** fusion renders on musically correct content. The widening is **strictly additive** (it can only admit pitches, never reject one it previously accepted) and reuses §6.4's existing legality table rather than inventing one. **Generation-neutral:** `quality/` is never imported by the generation path, so no golden moves and no `generatorVersion` bump.]*. Thresholds per style live in the pack's calibration artifact (§8.2); engine defaults: bass beat-1 ≥ 0.95, comping strong-beat ≥ 0.98. This is the highest-signal single metric for retargeting/voicing bugs.
 - **L2-2 voice crossing** (warn): whenever bass and comping sound simultaneously, `max(bass) < min(comping)`.
 - Deliberately absent: parallel-fifths/octaves failure — rock parallel fifths are idiomatic; voice-leading quality is the Viterbi optimizer's job, not a gate.
 

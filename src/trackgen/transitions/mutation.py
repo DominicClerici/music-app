@@ -28,6 +28,10 @@ explicit exclusion: 6b already deletes every note in a stop window, so no
 surviving event can be targeted there, and the only additive operator
 (`kick_pickup`) places strictly earlier than any cleared window (see
 `kick_pickup`). Frozen `Phrase`s are rebuilt via `_common`, never mutated.
+
+6c runs *after* 6b, so it must also not undo 6b: `hat_lift` — the only operator
+that lengthens a note — clamps its sustain at any §3.5 dropout-entered breakdown
+6b truncated at (S22-10), which is why `mutate` takes `dropout_ticks`.
 """
 
 from __future__ import annotations
@@ -58,6 +62,8 @@ _PICKUP = 240  # the pickup / anticipation displacement (§3.7).
 _EXCLUDED_TAGS = frozenset({"fill", "crash", "hold"})
 _DRUM_UNIT_BARS = 2
 _COMPING_UNIT_BARS = 8
+_HAT_LIFT_DUR = 360  # the open-hat sustain `hat_lift` writes (§3.7).
+_MIN_AUDIBLE = 60  # sub-60-tick fragments are inaudible and dropped (C-07).
 
 
 # --- unit enumeration ---------------------------------------------------------
@@ -129,15 +135,29 @@ def _with_var(tags: list[str]) -> list[str]:
 # --- drum operators -----------------------------------------------------------
 
 
+def _lift_duration(tick: int, dropout_ticks: frozenset[int]) -> int | None:
+    """The open-hat sustain for a lift at `tick`, clamped so it never crosses a
+    §3.5 dropout-entered breakdown (S22-10). 6b truncated every sustain across
+    that entry; 6c runs after it, so an unclamped 360-tick lift on the last
+    offbeat 8th of a bar (pos 1680 → 2040) would silently re-introduce exactly
+    the sustain the dropout removed and trip validator W2. `None` = no audible
+    lift is possible, so the caller no-ops."""
+    limits = [entered - tick for entered in dropout_ticks if entered > tick]
+    duration = min([_HAT_LIFT_DUR, *limits])
+    return duration if duration >= _MIN_AUDIBLE else None
+
+
 def _hat_lift(
     builders: list[Builder],
     section: FormSection,
     u_lo: int,
     u_hi: int,
     final_bar_tick: int,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> None:
     """The **last** `hat_closed` at an offbeat-8th (`tick % 480 == 240`) in the
-    unit's **second bar** → `hat_open`, dur 360, tag `"var"`. None → no-op."""
+    unit's **second bar** → `hat_open`, dur 360 (clamped short of a dropout-
+    entered breakdown), tag `"var"`. None → no-op."""
     hats = _drum_builder(builders, section, "hats")
     if hats is None:
         return
@@ -153,13 +173,16 @@ def _hat_lift(
     if not cands:
         return
     target = sorted(cands, key=lambda n: n.ticks)[-1]
+    duration = _lift_duration(target.ticks, dropout_ticks)
+    if duration is None:
+        return
     tags = [t for t in target.tags if t != "hat_closed"]
     if "hat_open" not in tags:
         tags.append("hat_open")
     _replace(
         hats,
         target,
-        target.model_copy(update={"duration_ticks": 360, "tags": _with_var(tags)}),
+        target.model_copy(update={"duration_ticks": duration, "tags": _with_var(tags)}),
     )
 
 
@@ -169,6 +192,7 @@ def _drop_ornament(
     u_lo: int,
     u_hi: int,
     final_bar_tick: int,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> None:
     """Delete the **last** `minDensity` (ornament-tagged) event in the unit,
     across every drum voice-track. None → no-op. (Only ornament notes are
@@ -196,6 +220,7 @@ def _kick_pickup(
     u_lo: int,
     u_hi: int,
     final_bar_tick: int,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> None:
     """Target = **last** kick in the unit not at a bar start; add a kick at
     `target − 240` iff no kick lies within ±120 of that tick; velocity
@@ -240,6 +265,7 @@ def _anticipate(
     u_lo: int,
     u_hi: int,
     final_bar_tick: int,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> None:
     """Target = **last** comping attack at a bar start in the unit, excluding the
     unit's first attack; shift the whole chord (all notes at that tick) by −240,
@@ -285,6 +311,7 @@ def _drop_hit(
     u_lo: int,
     u_hi: int,
     final_bar_tick: int,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> None:
     """Delete the **last** comping attack in the unit whose bar holds ≥ 2 comping
     attacks (the guard prevents a fully silent bar; the non-bar-start restriction
@@ -310,7 +337,7 @@ def _drop_hit(
     comp.notes = [n for n in comp.notes if n.ticks != drop_tick]
 
 
-_Operator = Callable[[list[Builder], FormSection, int, int, int], None]
+_Operator = Callable[[list[Builder], FormSection, int, int, int, frozenset[int]], None]
 
 _DRUM_OPS: dict[str, _Operator] = {
     "hat_lift": _hat_lift,
@@ -335,8 +362,12 @@ def mutate(
     pack: StylePack,
     *,
     explain: ExplainCollector | None = None,
+    dropout_ticks: frozenset[int] = frozenset(),
 ) -> list[Phrase]:
-    """6c: draw and apply one mutation per (role, unit) on its own sub-stream."""
+    """6c: draw and apply one mutation per (role, unit) on its own sub-stream.
+
+    `dropout_ticks` are the entered ticks 6b applied a §3.5 dropout at (see
+    `devices.apply_devices`); the operators must not sustain a note across one."""
     assert pack.transitions is not None
     spec = pack.transitions
     final_bar_tick = (find_t_last(chords) // BAR) * BAR
@@ -364,6 +395,6 @@ def mutate(
                 )
             if op == "none":
                 continue
-            ops[op](builders, section, u_lo, u_hi, final_bar_tick)
+            ops[op](builders, section, u_lo, u_hi, final_bar_tick, dropout_ticks)
 
     return to_phrases(builders)

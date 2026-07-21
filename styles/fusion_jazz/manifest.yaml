@@ -1,0 +1,8 @@
+# fusion_jazz pack manifest (PHASE_8 §6.1, verbatim + S22-1 formatVersion/engine).
+formatVersion: 1
+id: fusion_jazz
+name: Fusion Jazz
+version: 0.1.0
+engine: ">=0.1"
+timeSignatures: [[4, 4]]
+tempoRange: [75, 145]            # core funk-fusion 85-120 + the medium tier

@@ -1,0 +1,37 @@
+# fusion_jazz interpreter config (PHASE_8 §6.1).
+supportedMoods: [energetic, calm, mysterious, dreamy, nostalgic, triumphant, happy, tense]
+defaultMood: energetic
+# vs the PHASE_2 §5 sketch ("fusion sits near jazz"): near but not identical —
+# fusion picks up triumphant (jazz dropped it) and drops romantic/dark/melancholic.
+
+modes: [major, mixolydian, dorian, minor]   # amended 2026-07-21 (S22-2, user-ratified): the
+                                 # printed order [dorian, mixolydian, minor, major] violates the
+                                 # interpreter's Rule 3 (modes must be a MODE_LADDER-ordered
+                                 # subsequence) and is a hard load failure; set and semantics
+                                 # unchanged (selection is ladder-distance — verified to resolve
+                                 # the identical mode for all 8 supported moods)
+tonics:
+  major:      [F, C]
+  mixolydian: [F, Bb]
+  dorian:     [D, G, Bb]         # Bb dorian = Chameleon (needs an explicit key.tonic — S22-8)
+  minor:      [C, A]
+
+feel: swing16                    # NO swingRatio override: the table evaluated at 2×tempo gives
+                                 # 58% at 100 BPM → straight at ~120+ — matching the funk corpus.
+                                 # At the slow edge (75-90) it reaches 61.5-65.5% — Purdie-shuffle
+                                 # territory, accepted; revisit via the §8.4 error-spotting log.
+feelTable: tight                 # §3.4
+
+expressionRanges:
+  density:    [0.30, 0.90]
+  dissonance: [0.55, 0.90]       # m9/11 floor
+
+flavors:
+  drums:   [funk_kit, fusion_ride_kit]
+  bass:    [synth_moog, electric_finger]
+  comping: [rhodes, clav]
+  pads:    [analog_poly, glass_pad]
+
+ensembles:
+  default:     { drums: funk_kit, bass: synth_moog, comping: rhodes, pads: analog_poly }
+  headhunters: { drums: funk_kit, bass: synth_moog, comping: clav, pads: analog_poly }

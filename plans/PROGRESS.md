@@ -277,6 +277,31 @@ verified non-colliding, 48 → **60 (C-17 closes)**; fusion is a third fully-pop
 Pads and quartal comping both genuinely render (unlike chill_lofi's C-22). No C-25 repeat —
 every §6.3 pool entry fires. Fusion is C-24-safe (no triplet content; every `pos % 120 == 0`).
 
+**S22-10 raised at T1 and ruled 2026-07-21 — the first engine change since C5.** Stage-6
+ordering defect: 6b's dropout truncates sustains at a breakdown entry (§3.5,
+`devices.py:166`), then 6c's `_hat_lift` sets `duration_ticks = 360` on the offbeat-8th hat at
+bar-pos 1680 (`mutation.py:161`) → 2040, 120 ticks past the bar line, re-introducing the
+sustain W2 forbids (~4 % of T1's 168 scratch renders). **fusion_jazz is the first pack ever to
+combine `hat_lift` with `breakdown`** (pop_rock ✓/✗ · jazz ✗/✗ · chill_lofi ✗/✓ · blues ✓/✗ —
+orchestrator-verified), which is why four packs never reached it. User ruled **engine fix:
+clamp the lift**; provably a no-op for all four existing packs, self-verifying via
+byte-identical goldens + all 6327 tests. Any golden movement ⇒ stop and re-escalate for full
+contingency-14 bless collateral.
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Config quintet (manifest+S22-1 / interpreter+S22-2 / forms / progressions+S22-3 / transitions) — 10/10 scratch checks; S22-3 regression measured **0 deceptive on 979 `vamp` sections** across 168 renders (`tune_16` 169/236, accepted per ruling); **raised S22-10** | opus | done | (commit 1, pending) |
+| T2 | Drums + bass banks | opus | in progress | (commit 1) |
+| T3 | Comping + pads banks (incl. the S22-4 quartal fix) | opus | in progress | (commit 1) |
+| T4 | Timbres — 8 flavors incl. the four S22-7 fixes | opus | in progress | (commit 1) |
+| E1 | **S22-10 engine fix** — clamp `_hat_lift` at dropout-entered breakdown boundaries + discriminating tests; no-op proof required | opus | in progress | (commit 1) |
+| T5 | Integration + fusion test suite → **commit 1** (atomic) | opus | not started | |
+| T6 | Full-grid audition + first-use verification | opus | not started | |
+| T7 | Calibrate → commit 2 | opus | not started | |
+| T8 | **USER listening gate** | user | not started | |
+| T9 | Corpus 48 → **60** (C-17 closes) → commit 3 | orch | not started | |
+| T10 | 3-lens whole-chunk review + close-out | opus ×3 | not started | |
+
 #### Phase 8 — Chunk 7 — session 21 (`plans/sessions/SESSION_21.md`)
 
 **Status: in progress — S21-1…S21-5 ALL USER-RATIFIED as recommended (2026-07-21).**

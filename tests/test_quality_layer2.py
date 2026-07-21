@@ -24,12 +24,19 @@ from trackgen.quality import calibration
 from trackgen.quality._common import governing_chord
 from trackgen.quality.layer2 import (
     _check_l2_2_voice_crossing,
+    allowed_pitch_classes,
     layer2_failures,
     layer2_warnings,
     load_l2_thresholds,
 )
 from trackgen.quality.suite import pipeline_warnings, validate_pipeline
-from trackgen.theory.chords import chord_tones, scale_pcs
+from trackgen.schema.ir import ChordQuality, ChordSpec, EventScale
+from trackgen.theory.chords import (
+    EXTENSION_OFFSETS,
+    chord_tones,
+    legal_extensions,
+    scale_pcs,
+)
 
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
 _JAZZ: dict[str, object] = {
@@ -53,14 +60,14 @@ def _l2_2_fired(messages: list[str]) -> bool:
 
 
 def _out_of_set_midi(trace: GenerationTrace, midi: int, tick: int) -> int | None:
-    """A midi near `midi` whose pitch class is outside the governing chord's
-    tones ∪ scale at `tick` (or `None` if the tick has no governing chord)."""
+    """A midi near `midi` whose pitch class is outside L2-1's allowed set at
+    `tick` (or `None` if the tick has no governing chord). Reads the allowed set
+    from `allowed_pitch_classes` rather than recomputing it, so these fixtures
+    stay genuinely out-of-set as that definition evolves (S22-13)."""
     chord = governing_chord(trace, tick)
     if chord is None:
         return None
-    allowed = set(chord_tones(chord.chord)) | set(
-        scale_pcs(chord.scale.root_pc, chord.scale.name)
-    )
+    allowed = allowed_pitch_classes(chord)
     for offset in (1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6):
         cand = midi + offset
         if 0 <= cand <= 127 and cand % 12 not in allowed:
@@ -231,6 +238,150 @@ def test_l2_1_uses_calibration_yaml_threshold_override(
     assert any("role=bass" in m and "below threshold 0.900" in m for m in messages)
     # The default threshold is NOT what L2-1 measured against.
     assert not any("below threshold 0.950" in m for m in messages)
+
+
+# ---------------------------------------------------------------------------
+# L2-1 — altered tensions in the allowed set (S22-13)
+# ---------------------------------------------------------------------------
+
+# F as a root: the fusion_jazz majority auto-resolved key, and the chord over
+# which a quartal comping voicing ([0, 5, 10, 15] — `theory/voicing.py`) sounds
+# its top voice a minor tenth up, i.e. the ♯9.
+_F = 5
+_QUARTAL_TOP = 15
+
+
+def _pc(root_pc: int, semitones: int) -> int:
+    return (root_pc + semitones) % 12
+
+
+def _retune(
+    trace: GenerationTrace,
+    quality: ChordQuality,
+    symbol: str,
+    scale_name: str,
+    comping_pc: int,
+) -> GenerationTrace:
+    """Put every chord event on `F<quality>`/`F <scale_name>`, and every comping
+    strong-beat note onto pitch class `comping_pc`.
+
+    Gives L2-1 a comping part that is 100% one pitch class over one known
+    quality, so the ratio is exactly 1.0 or 0.0 — the check's verdict is then a
+    direct read of whether that pitch class is in the allowed set."""
+    chords = [
+        event.model_copy(
+            update={
+                "chord": ChordSpec(
+                    root_pc=_F, quality=quality, extensions=[], symbol=symbol
+                ),
+                "scale": EventScale(root_pc=_F, name=scale_name),
+            }
+        )
+        for event in trace.harmony.chords
+    ]
+    harmony = trace.harmony.model_copy(update={"chords": chords})
+
+    new_tracks = []
+    for track in trace.document.tracks:
+        if track.role != "comping":
+            new_tracks.append(track)
+            continue
+        notes = [
+            note.model_copy(update={"midi": note.midi - (note.midi % 12) + comping_pc})
+            if note.midi is not None
+            and note.ticks % _TICKS_PER_BAR in (_BEAT_1 | _BEAT_3)
+            else note
+            for note in track.notes
+        ]
+        new_tracks.append(track.model_copy(update={"notes": notes}))
+    document = trace.document.model_copy(update={"tracks": new_tracks})
+    return replace(trace, harmony=harmony, document=document)
+
+
+def _comping_failed(trace: GenerationTrace) -> bool:
+    return any(
+        m.startswith("L2-1:") and "role=comping" in m
+        for m in layer2_failures(trace.document, trace)
+    )
+
+
+def test_l2_1_quartal_sharp9_over_dom7_is_in_set() -> None:
+    """S22-13 — the motivating case. A comping part built entirely from the ♯9
+    that a quartal voicing puts on top of a dom7 passes L2-1, even though that
+    pitch class is neither a chord tone nor in the chord-scale: ♯9 is a §6.4
+    legal tension for dom7 (the Hendrix chord).
+
+    Discriminating: under L2-1's pre-S22-13 allowed set (tones ∪ scale only)
+    this ratio is 0.000 and the check fires — asserted directly below."""
+    base = generate_trace(_POP)
+    trace = _retune(base, "dom7", "F7", "mixolydian", _pc(_F, _QUARTAL_TOP))
+
+    assert not _comping_failed(trace)
+
+    # The pre-widening set really did exclude it, so this test fails on revert.
+    old_allowed = {
+        pc
+        for event in trace.harmony.chords
+        for pc in set(chord_tones(event.chord))
+        | set(scale_pcs(event.scale.root_pc, event.scale.name))
+    }
+    assert _pc(_F, _QUARTAL_TOP) not in old_allowed
+    # ...and it is admitted *because* §6.4 declares it legal for this quality.
+    assert "#9" in legal_extensions("dom7")
+
+
+def test_l2_1_still_fails_on_a_pitch_no_rule_admits() -> None:
+    """The widening is not a blanket pass. The major 7th over a dom7 is not a
+    chord tone, is not in F mixolydian, and is not a §6.4-legal dom7 tension —
+    it is the one pitch class no term admits, and L2-1 still fails on it."""
+    natural_7 = _pc(_F, 11)
+    base = generate_trace(_POP)
+    trace = _retune(base, "dom7", "F7", "mixolydian", natural_7)
+
+    assert natural_7 not in allowed_pitch_classes(trace.harmony.chords[0])
+    assert natural_7 not in {
+        _pc(_F, EXTENSION_OFFSETS[ext]) for ext in legal_extensions("dom7")
+    }
+    assert _comping_failed(trace)
+
+
+def test_l2_1_extension_legality_is_quality_specific() -> None:
+    """Legality is read per quality, not pooled. The very pitch class that passes
+    over dom7 above (♯9) is rejected over maj7, whose §6.4 set is {9, ♯11, 13} —
+    so the widening cannot launder a tension across qualities."""
+    sharp_9 = _pc(_F, _QUARTAL_TOP)
+    assert "#9" not in legal_extensions("maj7")
+
+    base = generate_trace(_POP)
+    trace = _retune(base, "maj7", "Fmaj7", "ionian", sharp_9)
+
+    assert sharp_9 not in allowed_pitch_classes(trace.harmony.chords[0])
+    assert _comping_failed(trace)
+
+
+def test_allowed_pitch_classes_is_strictly_additive() -> None:
+    """Additivity, over every (quality, scale) pair the theory module defines:
+    the S22-13 allowed set is always a superset of the old tones ∪ scale set, so
+    no note that passed L2-1 before can fail it now."""
+    from trackgen.theory.chords import QUALITY_INTERVALS, SCALE_INTERVALS
+
+    base = generate_trace(_POP)
+    event = base.harmony.chords[0]
+    for quality in QUALITY_INTERVALS:
+        for scale_name in SCALE_INTERVALS:
+            for root in range(12):
+                probe = event.model_copy(
+                    update={
+                        "chord": ChordSpec(
+                            root_pc=root, quality=quality, extensions=[], symbol="X"
+                        ),
+                        "scale": EventScale(root_pc=root, name=scale_name),
+                    }
+                )
+                old = set(chord_tones(probe.chord)) | set(
+                    scale_pcs(probe.scale.root_pc, probe.scale.name)
+                )
+                assert old <= allowed_pitch_classes(probe)
 
 
 # ---------------------------------------------------------------------------

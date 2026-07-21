@@ -1,0 +1,46 @@
+# fusion_jazz forms (PHASE_8 §6.2, verbatim). Two templates: the tune (head/solo/head)
+# and the vamp (groove vehicle with strip-down/rebuild).
+energyRange: [0.20, 0.95]
+
+sections:
+  intro:     { bars: [[4, 3], [8, 1]], phrases: { 4: [a], 8: [a, a] },
+               harmonyTag: { 4: intro, 8: intro } }
+  head:      { bars: [[16, 3], [32, 1]],
+               phrases: { 16: [a, b, c, d], 32: [a, a, b, a] },
+               harmonyTag: { 16: tune_16, 32: modal_32 } }
+  solo:      { inherit: head }
+  main:      { bars: [[8, 1]], phrases: { 8: [a, a] }, harmonyTag: { 8: vamp } }
+  breakdown: { bars: [[8, 1]], phrases: { 8: [a, a] }, harmonyTag: { 8: vamp } }
+  outro:     { bars: [[4, 1]], phrases: { 4: [a] }, harmonyTag: { 4: vamp } }
+
+templates:
+  - id: tune                     # Cantaloupe / Watermelon / Maiden Voyage class
+    weight: 60
+    spine:
+      - { section: intro, optional: [1, 1] }
+      - { section: head }
+      - repeat: { count: [1, null], slots: [ { section: solo } ] }
+      - { section: head }
+      - { section: outro }
+    ending: { tagBars: 0, close: cold }
+    degrade:
+      - { shrink: intro }
+      - { drop: intro }
+      - { drop: outro }
+    fallback: { section: solo, bars: 16 }
+
+  - id: vamp                     # Chameleon class: groove vehicle with strip-down/rebuild
+    weight: 40
+    spine:
+      - { section: intro }
+      - repeat: { count: [2, null], slots: [ { section: main } ] }
+      - { section: breakdown }
+      - { section: main }
+      - { section: outro, optional: [2, 1] }
+    ending: { tagBars: 0, close: fade }
+    degrade:
+      - { drop: outro }
+      - { shrink: intro }
+      - { drop: breakdown }
+      - { drop: intro }
+    fallback: { section: main, bars: 8 }

@@ -120,9 +120,9 @@ def _engine_dispatched_ops(
     fired: list[tuple[int, str]] = []
 
     def wrap(name: str, fn: Any) -> Any:
-        def recorded(b: Any, s: Any, lo: int, hi: int, fbt: int) -> None:
+        def recorded(b: Any, s: Any, lo: int, hi: int, fbt: int, *rest: Any) -> None:
             fired.append((lo // BAR, name))
-            fn(b, s, lo, hi, fbt)
+            fn(b, s, lo, hi, fbt, *rest)
 
         return recorded
 

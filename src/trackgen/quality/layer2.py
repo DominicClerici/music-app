@@ -7,8 +7,10 @@ that split by calling `layer2_failures` (L2-1) into its gating result and
 
 - **L2-1** chord-tone-on-strong-beat ratio (**FAIL** below threshold) —
   `layer2_failures`. For the fraction of a role's strong-beat notes whose pitch
-  class lies in the governing chord's tones ∪ chord-scale, the ratio must clear
-  the role threshold. The strong-beat sets are asymmetric (§8.1, confirmed §4):
+  class lies in the governing chord's tones ∪ chord-scale ∪ the §6.4 legal
+  altered tensions for its quality (S22-13 — see `allowed_pitch_classes`), the
+  ratio must clear the role threshold. The strong-beat sets are asymmetric
+  (§8.1, confirmed §4):
   **bass** = beat 1 only (`ticks % 1920 == 0`); **comping** = strong beats 1 & 3
   (`ticks % 1920 in {0, 960}`).
 - **L2-2** voice crossing (**WARN**) — `layer2_warnings`. At every
@@ -35,7 +37,13 @@ from trackgen.pipeline.trace import GenerationTrace
 from trackgen.quality._common import governing_chord
 from trackgen.quality.calibration import load_calibration
 from trackgen.schema.document import TrackDocument
-from trackgen.theory.chords import chord_tones, scale_pcs
+from trackgen.schema.ir import ChordEvent
+from trackgen.theory.chords import (
+    EXTENSION_OFFSETS,
+    chord_tones,
+    legal_extensions,
+    scale_pcs,
+)
 
 # PHASE_1: PPQ 480, 4/4 — one beat is 480 ticks, one bar 1920 ticks.
 _TICKS_PER_BEAT = 480
@@ -86,13 +94,37 @@ def load_l2_thresholds(
     return float(bass), float(comping)
 
 
+def allowed_pitch_classes(chord: ChordEvent) -> set[int]:
+    """The L2-1 in-set pitch classes for a governing chord (S22-13).
+
+    `chord tones ∪ chord-scale ∪ legal altered tensions`. The third term reuses
+    PHASE_4 §6.4's own legality table (`theory.chords.legal_extensions`) — the
+    same hard filter dressing and the document validator enforce — rather than a
+    second, drift-prone list. Without it, a voicing that sounds a tension the
+    §6.4 table declares legal for the quality (canonically: a quartal comping
+    voicing's ♯9 over a dom7) counts as out-of-set purely because that alteration
+    is absent from the parent scale — a validator gap, not a musical fault. The
+    term is strictly additive: it only unions in more classes, so anything that
+    passed before still passes, and legality stays quality-specific (a ♯9 is
+    in-set over dom7 and still out-of-set over maj7)."""
+    tension_pcs = {
+        (chord.chord.root_pc + EXTENSION_OFFSETS[ext]) % 12
+        for ext in legal_extensions(chord.chord.quality)
+    }
+    return (
+        set(chord_tones(chord.chord))
+        | set(scale_pcs(chord.scale.root_pc, chord.scale.name))
+        | tension_pcs
+    )
+
+
 def _check_l2_1_chord_tone_ratio(
     doc: TrackDocument, trace: GenerationTrace
 ) -> list[str]:
     """FAIL if a role's strong-beat chord-tone ratio falls below its threshold.
 
     For each strong-beat note (per-role beat set), the allowed pitch classes are
-    the governing chord's tones ∪ its chord-scale. A note whose governing chord is
+    `allowed_pitch_classes(chord)`. A note whose governing chord is
     undefined is skipped (excluded from both numerator and denominator) — with no
     chord in force there is no set to measure it against, and a real render always
     has a governing chord for every in-section note. A role with zero strong-beat
@@ -121,10 +153,7 @@ def _check_l2_1_chord_tone_ratio(
             if chord is None:
                 continue
             total += 1
-            allowed = set(chord_tones(chord.chord)) | set(
-                scale_pcs(chord.scale.root_pc, chord.scale.name)
-            )
-            if note.midi % 12 in allowed:
+            if note.midi % 12 in allowed_pitch_classes(chord):
                 in_set += 1
         if total == 0:
             continue

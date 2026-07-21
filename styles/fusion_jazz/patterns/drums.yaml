@@ -1,0 +1,403 @@
+# fusion_jazz drum pattern bank (PHASE_8 §6.4).
+# Drum events only — drums are lane-exempt (§5.2), so no retarget (PT9).
+# Carries the pack-level layeringOrder (PT10, once per pack).
+#
+# Ladder authored EXACTLY as §6.4 prints it — NO re-map (S22-5, user-ratified).
+# Scoping measured rung 1 as dead grid-wide and rung 4 as `tune`-template-only;
+# rungs 2–3 carry the defining content and are live. PT5 + the variety lint
+# require a full rung-1..4 bank regardless, so rung 1 is authored as §6.4's
+# sparse-funk tier and its dormancy is caveat-recorded (C-28), not annotated
+# here (the [0.20, 0.95] envelope makes all four rungs lint-reachable).
+#
+# GRID: every authored `pos` satisfies `pos % 120 == 0` — fusion is all-straight
+# (16ths = 120 ticks). There is NO triplet content anywhere in this pack, so W7
+# (§3.1 one-grid-per-Phrase, pre-humanizer) cannot fire from this bank. §6.1's
+# "Purdie-shuffle territory" note is a feel observation about the swing16 ratio,
+# not an instruction to author 160/320 offsets (C-24 lesson).
+#
+# cross-stick is authored as the `perc` voice — no `cross_stick` member exists in
+# the DrumVoice enum (established chill_lofi rim→perc §3.6 precedent).
+#
+# id scheme: the numeric suffix tracks the RUNG; `b` is the weight-2 sibling of
+# the weight-3 anchor (the 3/2 convention), intro `i`/`ib`, ending `e`/`eb`,
+# fills `f1`/`f2`/`f3`. Every main/intro/ending entry is UNGATED, so each of the
+# 6 variety slots (main 1–4, intro, ending) has exactly 2 surviving candidates
+# at every supported (mood, tempo) cell.
+layeringOrder: [drums, bass, comping, pads]
+patterns:
+  # rung 1 (dormant per C-28) — sparse funk: kick on 1, cross-stick (perc) on
+  # 2 and 4, straight 8th hats
+  - id: fu_dr_1
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.80 }
+      - { pos: 480, voice: perc, velocity: 0.50 }
+      - { pos: 1440, voice: perc, velocity: 0.48 }
+      - { pos: 0, voice: hat_closed, velocity: 0.40 }
+      - { pos: 240, voice: hat_closed, velocity: 0.30 }
+      - { pos: 480, voice: hat_closed, velocity: 0.36 }
+      - { pos: 720, voice: hat_closed, velocity: 0.30 }
+      - { pos: 960, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.30 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.36 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.32 }
+
+  # rung 1 (dormant, sibling) — a genuinely different sparse-funk reading rather
+  # than a nudge of `fu_dr_1`: the kick answers late on the "a" of 3 instead of
+  # anchoring 1-and-3, the cross-stick (perc) moves off the 2/4 backbeat onto 4
+  # and the "a" of 4, and the hat bed inverts to OFFBEAT 8ths only, so the bar
+  # floats rather than marking the pulse. Still 8th-grid and still rung-1 sparse
+  # (8 events vs `fu_dr_1`'s 11, same 0.80 peak); the pair now shares only 6 of
+  # 13 (pos, voice) slots instead of 11 of 12, which is what a variety pair is
+  # for. Rung 1 is dormant (C-28), so this is completeness work, not audible.
+  - id: fu_dr_1b
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.80 }
+      - { pos: 1080, voice: kick, velocity: 0.62 }
+      - { pos: 1440, voice: perc, velocity: 0.50 }
+      - { pos: 1800, voice: perc, velocity: 0.40 }
+      - { pos: 240, voice: hat_closed, velocity: 0.36 }
+      - { pos: 720, voice: hat_closed, velocity: 0.30 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.36 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.30 }
+
+  # rung 2 (WORKHORSE) — light 16th funk. DEFINING ENTRY §6.4:709-717, id +
+  # energyLevel + lengthTicks + weight + event list preserved BYTE-VERBATIM;
+  # `role: drums` added silently (the printed snippet omits the required field —
+  # established `bl_dr_2` precedent, no amendment needed). The hat line carries
+  # the HARD QUARTER ACCENTS §6.4 insists on (0.58–0.62 on 0/480/960/1440 vs
+  # 0.40–0.42 on the offbeats) — the groove fails without them.
+  - id: fu_dr_2
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.92 }
+      - { pos: 720, voice: kick, velocity: 0.78 }
+      - { pos: 1200, voice: kick, velocity: 0.72, minDensity: 0.50 }
+      - { pos: 480, voice: snare, velocity: 0.90 }
+      - { pos: 1440, voice: snare, velocity: 0.88 }
+      - { pos: 1080, voice: snare, velocity: 0.25, minDensity: 0.60 }  # ghost, e-of-3
+      - { pos: 0, voice: hat_closed, velocity: 0.62 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.58 }
+      - { pos: 720, voice: hat_closed, velocity: 0.40 }
+      - { pos: 960, voice: hat_closed, velocity: 0.60 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.58 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.42 }
+
+  # rung 2 (sibling, weight 2) — light 16th funk with the kick syncopation moved
+  # to the "e of 2" (pos 600) and an "a of 3" gated push; same 2/4 snare and the
+  # same hard-quarter-accent 8th hat bed
+  - id: fu_dr_2b
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 600, voice: kick, velocity: 0.74 }
+      - { pos: 1320, voice: kick, velocity: 0.72, minDensity: 0.50 }
+      - { pos: 480, voice: snare, velocity: 0.88 }
+      - { pos: 1440, voice: snare, velocity: 0.86 }
+      - { pos: 840, voice: snare, velocity: 0.24, minDensity: 0.60 }  # ghost, a-of-2
+      - { pos: 0, voice: hat_closed, velocity: 0.60 }
+      - { pos: 240, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.56 }
+      - { pos: 720, voice: hat_closed, velocity: 0.38 }
+      - { pos: 960, voice: hat_closed, velocity: 0.58 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.56 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.40 }
+
+  # rung 3 — full funk: quarter-accented 8th hats with a minDensity-gated 16th
+  # layer on the e's, a busier kick, and gated ghost snares around the backbeat
+  - id: fu_dr_3
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.95 }
+      - { pos: 720, voice: kick, velocity: 0.84 }
+      - { pos: 1200, voice: kick, velocity: 0.78 }
+      - { pos: 1560, voice: kick, velocity: 0.72, minDensity: 0.60 }
+      - { pos: 480, voice: snare, velocity: 0.93 }
+      - { pos: 1440, voice: snare, velocity: 0.91 }
+      - { pos: 360, voice: snare, velocity: 0.24, minDensity: 0.55 }
+      - { pos: 1080, voice: snare, velocity: 0.26, minDensity: 0.60 }
+      - { pos: 0, voice: hat_closed, velocity: 0.68 }
+      - { pos: 240, voice: hat_closed, velocity: 0.46 }
+      - { pos: 480, voice: hat_closed, velocity: 0.64 }
+      - { pos: 720, voice: hat_closed, velocity: 0.44 }
+      - { pos: 960, voice: hat_closed, velocity: 0.66 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.46 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.64 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.46 }
+      - { pos: 120, voice: hat_closed, velocity: 0.32, minDensity: 0.55 }
+      - { pos: 600, voice: hat_closed, velocity: 0.30, minDensity: 0.55 }
+      - { pos: 1080, voice: hat_closed, velocity: 0.32, minDensity: 0.55 }
+      - { pos: 1560, voice: hat_closed, velocity: 0.32, minDensity: 0.55 }
+
+  # rung 3 (sibling, weight 2) — THE DISPLACED BACKBEAT (§6.4): the beat-2 snare
+  # is pushed early to the "a" of 1, tick 360 — Chameleon's signature. Beat 4
+  # keeps its backbeat, so the bar reads 1 . a-of-1 . . 4 rather than 2 and 4.
+  - id: fu_dr_3b
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.95 }
+      - { pos: 600, voice: kick, velocity: 0.82 }
+      - { pos: 960, voice: kick, velocity: 0.78 }
+      - { pos: 1320, voice: kick, velocity: 0.72, minDensity: 0.60 }
+      - { pos: 360, voice: snare, velocity: 0.93 }  # displaced backbeat, "a" of 1
+      - { pos: 1440, voice: snare, velocity: 0.91 }
+      - { pos: 1080, voice: snare, velocity: 0.26, minDensity: 0.55 }
+      - { pos: 1800, voice: snare, velocity: 0.24, minDensity: 0.60 }
+      - { pos: 0, voice: hat_closed, velocity: 0.66 }
+      - { pos: 240, voice: hat_closed, velocity: 0.44 }
+      - { pos: 480, voice: hat_closed, velocity: 0.62 }
+      - { pos: 720, voice: hat_closed, velocity: 0.44 }
+      - { pos: 960, voice: hat_closed, velocity: 0.64 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.44 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.62 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.46 }
+      - { pos: 360, voice: hat_closed, velocity: 0.30, minDensity: 0.55 }
+      - { pos: 840, voice: hat_closed, velocity: 0.32, minDensity: 0.55 }
+      - { pos: 1320, voice: hat_closed, velocity: 0.30, minDensity: 0.55 }
+      - { pos: 1800, voice: hat_closed, velocity: 0.32, minDensity: 0.55 }
+
+  # rung 4 (`tune`-solo tier per C-28) — ride-based drive: ride 8ths over a busy
+  # 16th-displaced kick, hard 2/4 backbeat, gated ghost snares, quarter foot-hat.
+  # The hat->ride switch is the rung 3->4 energy lever; §6.4's verified machinery
+  # fact makes this automatically tight — swing16 displaces only
+  # `pos % 240 == 120` events, so an 8th-grid ride line passes through straight.
+  - id: fu_dr_4
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: ride, velocity: 0.74 }
+      - { pos: 240, voice: ride, velocity: 0.56 }
+      - { pos: 480, voice: ride, velocity: 0.70 }
+      - { pos: 720, voice: ride, velocity: 0.56 }
+      - { pos: 960, voice: ride, velocity: 0.72 }
+      - { pos: 1200, voice: ride, velocity: 0.56 }
+      - { pos: 1440, voice: ride, velocity: 0.70 }
+      - { pos: 1680, voice: ride, velocity: 0.58 }
+      - { pos: 0, voice: kick, velocity: 0.96 }
+      - { pos: 360, voice: kick, velocity: 0.82 }
+      - { pos: 720, voice: kick, velocity: 0.86 }
+      - { pos: 1080, voice: kick, velocity: 0.80 }
+      - { pos: 1440, voice: kick, velocity: 0.84 }
+      - { pos: 1800, voice: kick, velocity: 0.76, minDensity: 0.60 }
+      - { pos: 480, voice: snare, velocity: 0.94 }
+      - { pos: 1440, voice: snare, velocity: 0.92 }
+      - { pos: 840, voice: snare, velocity: 0.28, minDensity: 0.60 }
+      - { pos: 1320, voice: snare, velocity: 0.26, minDensity: 0.60 }
+      - { pos: 0, voice: hat_closed, velocity: 0.48 }
+      - { pos: 480, voice: hat_closed, velocity: 0.46 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.46 }
+
+  # rung 4 (sibling, weight 2) — ride drive with the kick pushed onto the "e" of
+  # 1 and the "a" of 3, an open hat lifting the last offbeat 8th, and a third
+  # gated ghost. The busiest entry in the bank
+  - id: fu_dr_4b
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: ride, velocity: 0.74 }
+      - { pos: 240, voice: ride, velocity: 0.56 }
+      - { pos: 480, voice: ride, velocity: 0.70 }
+      - { pos: 720, voice: ride, velocity: 0.56 }
+      - { pos: 960, voice: ride, velocity: 0.72 }
+      - { pos: 1200, voice: ride, velocity: 0.56 }
+      - { pos: 1440, voice: ride, velocity: 0.70 }
+      - { pos: 1680, voice: ride, velocity: 0.58 }
+      - { pos: 0, voice: kick, velocity: 0.96 }
+      - { pos: 240, voice: kick, velocity: 0.80 }
+      - { pos: 720, voice: kick, velocity: 0.86 }
+      - { pos: 960, voice: kick, velocity: 0.82 }
+      - { pos: 1320, voice: kick, velocity: 0.80 }
+      - { pos: 1680, voice: kick, velocity: 0.78 }
+      - { pos: 1800, voice: kick, velocity: 0.74, minDensity: 0.65 }
+      - { pos: 480, voice: snare, velocity: 0.94 }
+      - { pos: 1440, voice: snare, velocity: 0.92 }
+      - { pos: 600, voice: snare, velocity: 0.28, minDensity: 0.60 }
+      - { pos: 1080, voice: snare, velocity: 0.26, minDensity: 0.60 }
+      - { pos: 1800, voice: snare, velocity: 0.28, minDensity: 0.65 }
+      - { pos: 1680, voice: hat_open, velocity: 0.58 }
+      - { pos: 0, voice: hat_closed, velocity: 0.48 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+
+  # intro — thinned sparse funk: single downbeat kick, cross-stick 2/4, quarter
+  # hats
+  - id: fu_dr_i
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.78 }
+      - { pos: 480, voice: perc, velocity: 0.46 }
+      - { pos: 1440, voice: perc, velocity: 0.44 }
+      - { pos: 0, voice: hat_closed, velocity: 0.38 }
+      - { pos: 480, voice: hat_closed, velocity: 0.34 }
+      - { pos: 960, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.34 }
+
+  # intro (sibling) — 8th hats over a two-kick skeleton with a 16th snare pickup
+  # on the "a" of 4 leading into the first head/main
+  - id: fu_dr_ib
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.78 }
+      - { pos: 1200, voice: kick, velocity: 0.62 }
+      - { pos: 0, voice: hat_closed, velocity: 0.38 }
+      - { pos: 240, voice: hat_closed, velocity: 0.30 }
+      - { pos: 480, voice: hat_closed, velocity: 0.34 }
+      - { pos: 720, voice: hat_closed, velocity: 0.30 }
+      - { pos: 960, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.30 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.34 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.32 }
+      - { pos: 1800, voice: snare, velocity: 0.58 }
+
+  # ending — the funk wind-down, in this pack's own idiom rather than the settled
+  # kick/snare/hat close the other packs use: a ride declares the last bar, 16th
+  # ghosts (cross-stick on the "e" of 1, ghost snares on the "a" of 1 and the "a"
+  # of 2) keep the pocket alive under it, and the whole figure STOPS after beat 3
+  # — the last quarter is left empty, which is what makes it read as a close and
+  # not a groove. Peak 0.84 keeps it below the rung-2+ mains.
+  - id: fu_dr_e
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.84 }
+      - { pos: 720, voice: kick, velocity: 0.72 }
+      - { pos: 960, voice: kick, velocity: 0.74 }
+      - { pos: 480, voice: snare, velocity: 0.78 }
+      - { pos: 360, voice: snare, velocity: 0.26 }
+      - { pos: 840, voice: snare, velocity: 0.24 }
+      - { pos: 120, voice: perc, velocity: 0.34 }
+      - { pos: 0, voice: ride, velocity: 0.56 }
+      - { pos: 480, voice: ride, velocity: 0.52 }
+      - { pos: 960, voice: ride, velocity: 0.54 }
+
+  # ending (sibling) — the band-hit tag: crash + kick + snare struck together on
+  # 1, a 16th cross-stick and ghost filling the gap, a pushed "e of 2" kick into
+  # a hard hit on the "and" of 2, then nothing but one ride decay on 3. Dries out
+  # even faster than `fu_dr_e`; the cold-stop / vamp-out reading of the same bar.
+  - id: fu_dr_eb
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: crash, velocity: 0.66, dur: 960 }
+      - { pos: 0, voice: kick, velocity: 0.86 }
+      - { pos: 0, voice: snare, velocity: 0.82 }
+      - { pos: 360, voice: perc, velocity: 0.30 }
+      - { pos: 480, voice: snare, velocity: 0.28 }
+      - { pos: 600, voice: kick, velocity: 0.70 }
+      - { pos: 720, voice: snare, velocity: 0.80 }
+      - { pos: 960, voice: ride, velocity: 0.50 }
+
+  # fill (medium) — 16th linear figure across beats 3–4: unbroken 16ths moving
+  # snare -> toms, quiet-to-hard. Exactly 1 bar (PT1); window [960, 1920), and
+  # the last event at pos 1800 reaches the barline (TR7). UNGATED (PT12/TR5).
+  - id: fu_dr_f1
+    role: drums
+    kind: fill
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 960, voice: snare, velocity: 0.46 }
+      - { pos: 1080, voice: snare, velocity: 0.42 }
+      - { pos: 1200, voice: tom_high, velocity: 0.54 }
+      - { pos: 1320, voice: snare, velocity: 0.50 }
+      - { pos: 1440, voice: tom_mid, velocity: 0.62 }
+      - { pos: 1560, voice: snare, velocity: 0.58 }
+      - { pos: 1680, voice: tom_low, velocity: 0.70 }
+      - { pos: 1800, voice: snare, velocity: 0.76 }
+
+  # fill (large) — 16th linear figure from beat 2, kick-anchored at the halfway
+  # point; window [480, 1920). Busier than the jazz bank's fills, per §6.4
+  - id: fu_dr_f2
+    role: drums
+    kind: fill
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 480, voice: snare, velocity: 0.42 }
+      - { pos: 600, voice: snare, velocity: 0.46 }
+      - { pos: 720, voice: tom_high, velocity: 0.52 }
+      - { pos: 840, voice: snare, velocity: 0.48 }
+      - { pos: 960, voice: kick, velocity: 0.72 }
+      - { pos: 1080, voice: snare, velocity: 0.54 }
+      - { pos: 1200, voice: tom_mid, velocity: 0.60 }
+      - { pos: 1320, voice: snare, velocity: 0.58 }
+      - { pos: 1440, voice: tom_low, velocity: 0.68 }
+      - { pos: 1560, voice: snare, velocity: 0.64 }
+      - { pos: 1680, voice: tom_low, velocity: 0.74 }
+      - { pos: 1800, voice: snare, velocity: 0.82 }
+
+  # fill (whole-bar barrage) — unbroken 16th linear run over the full bar,
+  # descending snare -> tom_high -> tom_mid -> tom_low; window [0, 1920)
+  - id: fu_dr_f3
+    role: drums
+    kind: fill
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 0, voice: kick, velocity: 0.78 }
+      - { pos: 120, voice: snare, velocity: 0.40 }
+      - { pos: 240, voice: snare, velocity: 0.44 }
+      - { pos: 360, voice: tom_high, velocity: 0.50 }
+      - { pos: 480, voice: snare, velocity: 0.52 }
+      - { pos: 600, voice: kick, velocity: 0.70 }
+      - { pos: 720, voice: snare, velocity: 0.50 }
+      - { pos: 840, voice: tom_high, velocity: 0.56 }
+      - { pos: 960, voice: snare, velocity: 0.58 }
+      - { pos: 1080, voice: tom_mid, velocity: 0.62 }
+      - { pos: 1200, voice: snare, velocity: 0.60 }
+      - { pos: 1320, voice: tom_mid, velocity: 0.66 }
+      - { pos: 1440, voice: tom_low, velocity: 0.70 }
+      - { pos: 1560, voice: snare, velocity: 0.68 }
+      - { pos: 1680, voice: tom_low, velocity: 0.76 }
+      - { pos: 1800, voice: snare, velocity: 0.84 }

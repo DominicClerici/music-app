@@ -47,7 +47,18 @@ def transitions(
     builders = to_builders(phrases)
 
     hold_ending(builders, form, chords, plan, pack, t_last)  # 6a
-    apply_devices(builders, form, arr, plan, pack, t_last // BAR, explain=explain)  # 6b
+    dropout_ticks = apply_devices(  # 6b
+        builders, form, arr, plan, pack, t_last // BAR, explain=explain
+    )
 
     result = to_phrases(builders)
-    return mutate(result, form, chords, arr, plan, pack, explain=explain)  # 6c
+    return mutate(  # 6c
+        result,
+        form,
+        chords,
+        arr,
+        plan,
+        pack,
+        explain=explain,
+        dropout_ticks=dropout_ticks,
+    )

@@ -1,0 +1,230 @@
+# fusion_jazz bass pattern bank (PHASE_8 §6.4).
+# Pattern mode; pitched events author chord-degrees, never literal pitches
+# (ROADMAP invariant 2). `retarget` is the bank-level default — §6.4 prints no
+# retarget block, but PT9 (`packs/models.py:251-270`) requires one with span
+# >= 12 on every pitched role, so these are the sibling-identical values
+# {28, 45, retrigger} (span 17). Established precedent, no amendment needed.
+#
+# Ladder authored EXACTLY as §6.4 prints it — NO re-map (S22-5, user-ratified).
+# Rung 1 is dormant grid-wide (C-28) but PT5 + the variety lint require it.
+#
+# GRID: every authored `pos` satisfies `pos % 120 == 0` — all-straight 16ths,
+# no triplet content anywhere in this pack (W7 §3.1; C-24 lesson).
+#
+# id scheme: numeric suffix tracks the RUNG; `b` is the weight-2 sibling of the
+# weight-3 anchor (3/2 convention), intro `i`/`ib`, ending `e`/`eb`. Every entry
+# is UNGATED, so each of the 6 variety slots (main 1–4, intro, ending) has
+# exactly 2 surviving candidates at every supported (mood, tempo) cell.
+mode: patterns
+retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
+patterns:
+  # rung 1 (dormant per C-28) — root/b7 half notes (§6.4). The `seventh` degree
+  # resolves against the pack's pinned dom7/min7 vocabulary to the flat seventh
+  - id: fu_bs_1
+    role: bass
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 960, dur: 960, degree: seventh, octave: 0, velocity: 0.58 }
+
+  # rung 1 (dormant, sibling) — root half, then root/b7 quarters
+  - id: fu_bs_1b
+    role: bass
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 960, dur: 480, degree: root, octave: 0, velocity: 0.58 }
+      - { pos: 1440, dur: 480, degree: seventh, octave: 0, velocity: 0.56 }
+
+  # rung 2 (WORKHORSE) — the TRESILLO SKELETON (§6.4), authored as the LITERAL
+  # 3+3+2 doubled cell: onsets 0 | 360 | 720 ‖ 960 | 1320 | 1680, durations
+  # 360/360/240 twice. 3+3+2 sixteenths = 960 ticks = half a bar, so two cells
+  # tile 1920 exactly and no note overruns the next onset.
+  #
+  # §6.4's rung-2 parenthetical is self-inconsistent: its prose pins "tresillo
+  # skeleton (3+3+2 in 16ths)" while its printed events give the third note dur
+  # 480 (a 4), which overruns the next cell onset at 960 by 240 ticks. Nothing
+  # downstream truncates that overlap — `retrigger` splits only at CHORD
+  # boundaries and there is no note-overlap validator — so the printed reading
+  # sounds two bass notes at once. Per ROADMAP §3 arbitration rule 1 the prose
+  # is the pinned data text and the printed durations are a derived sample, so
+  # the literal cell is the weight-3 anchor and takes the unsuffixed id
+  # (matching the `<id>`/`<id>b` convention). The printed continuation survives
+  # as `fu_bs_2b` at weight 2, so the slot still carries both readings.
+  - id: fu_bs_2
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 360, degree: root, octave: 0, velocity: 0.68 }
+      - { pos: 360, dur: 360, degree: seventh, octave: 0, velocity: 0.64 }
+      - { pos: 720, dur: 240, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 360, degree: root, octave: 0, velocity: 0.68 }
+      - { pos: 1320, dur: 360, degree: seventh, octave: 0, velocity: 0.64 }
+      - { pos: 1680, dur: 240, degree: fifth, octave: 0, velocity: 0.66 }
+
+  # rung 2 (sibling, weight 2) — §6.4's printed three events kept verbatim
+  # (`root` @0 dur 360, `seventh` @360 dur 360, `root` @720 dur 480) and
+  # continued to tile the bar: onset spacing 360 | 360 | 480 | 360 | 360 =
+  # 3+3+4+3+3 sixteenths = 16. A whole-bar reading rather than a doubled cell,
+  # which is what makes the printed dur-480 third note internally consistent.
+  - id: fu_bs_2b
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 360, degree: root, octave: 0, velocity: 0.68 }
+      - { pos: 360, dur: 360, degree: seventh, octave: 0, velocity: 0.64 }
+      - { pos: 720, dur: 480, degree: root, octave: 0, velocity: 0.70 }
+      - { pos: 1200, dur: 360, degree: seventh, octave: 0, velocity: 0.64 }
+      - { pos: 1560, dur: 360, degree: root, octave: 0, velocity: 0.66 }
+
+  # rung 3 — 16th funk: root/octave anchors with low-velocity, minDensity-gated
+  # ghost 16ths on the e's and a's (§6.4)
+  - id: fu_bs_3
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 240, degree: root, octave: 0, velocity: 0.80 }
+      - { pos: 120, dur: 120, degree: root, octave: 0, velocity: 0.30, minDensity: 0.60 }
+      - { pos: 360, dur: 120, degree: seventh, octave: 0, velocity: 0.68 }
+      - { pos: 720, dur: 240, degree: root, octave: 1, velocity: 0.74 }
+      - { pos: 840, dur: 120, degree: root, octave: 0, velocity: 0.30, minDensity: 0.60 }
+      - { pos: 1200, dur: 240, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 1440, dur: 240, degree: root, octave: 0, velocity: 0.76 }
+      - { pos: 1560, dur: 120, degree: root, octave: 0, velocity: 0.32, minDensity: 0.60 }
+      - { pos: 1800, dur: 120, degree: seventh, octave: 0, velocity: 0.66 }
+
+  # rung 3 (sibling, weight 2) — 16th funk with the octave pop on the "e" of 2
+  # and a second octave lift closing the bar; gated ghosts on the a-of-1 and
+  # e-of-3
+  - id: fu_bs_3b
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 360, degree: root, octave: 0, velocity: 0.80 }
+      - { pos: 360, dur: 120, degree: root, octave: 0, velocity: 0.30, minDensity: 0.60 }
+      - { pos: 600, dur: 120, degree: root, octave: 1, velocity: 0.72 }
+      - { pos: 720, dur: 240, degree: seventh, octave: 0, velocity: 0.70 }
+      - { pos: 1080, dur: 120, degree: root, octave: 0, velocity: 0.32, minDensity: 0.60 }
+      - { pos: 1200, dur: 240, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 1440, dur: 240, degree: root, octave: 0, velocity: 0.76 }
+      - { pos: 1680, dur: 240, degree: root, octave: 1, velocity: 0.72 }
+
+  # rung 4 (`tune`-solo tier per C-28) — dense 16ths: octave pops, gated ghost
+  # 16ths, and a bar-end `approach` note driving into the change.
+  #
+  # The `approach` is authored UN-PUSHED even though §6.4's rung-4 prose names
+  # both devices. Composing them is broken: `retarget_event` with `push=True`
+  # first advances the effective frame to the chord AFTER the first in-span
+  # boundary, and `_place_degree` then resolves `approach` against
+  # `_next_chord(effective)` — i.e. the chord TWO changes ahead, not the one
+  # arriving at the barline. Measured over 48 renders: pushed, 3 of 736 firings
+  # land a half-step below the arriving chord; un-pushed, 59 of 744 — and 59 of
+  # the 358 firings that actually have a change to approach (16.5%).
+  #
+  # Accepted residual: the pattern tiles every bar while fusion's chords span
+  # 2-4 bars, so ~52% of firings have no change to approach at all and the
+  # degree falls back to the governing chord — measured 56% land on its root
+  # and 28% a perfect 5th above. Musically inert rather than wrong, so the
+  # bar-end drive is kept rather than replaced.
+  - id: fu_bs_4
+    role: bass
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 120, degree: root, octave: 0, velocity: 0.86 }
+      - { pos: 120, dur: 120, degree: root, octave: 0, velocity: 0.40, minDensity: 0.55 }
+      - { pos: 240, dur: 120, degree: root, octave: 1, velocity: 0.76 }
+      - { pos: 480, dur: 120, degree: seventh, octave: 0, velocity: 0.74 }
+      - { pos: 600, dur: 120, degree: root, octave: 0, velocity: 0.42, minDensity: 0.55 }
+      - { pos: 720, dur: 120, degree: root, octave: 0, velocity: 0.80 }
+      - { pos: 960, dur: 120, degree: fifth, octave: 0, velocity: 0.76 }
+      - { pos: 1080, dur: 120, degree: root, octave: 1, velocity: 0.74 }
+      - { pos: 1200, dur: 120, degree: root, octave: 0, velocity: 0.78 }
+      - { pos: 1440, dur: 120, degree: seventh, octave: 0, velocity: 0.74 }
+      - { pos: 1560, dur: 120, degree: root, octave: 0, velocity: 0.44, minDensity: 0.55 }
+      - { pos: 1680, dur: 240, degree: approach, octave: 0, velocity: 0.80 }
+
+  # rung 4 (sibling, weight 2) — dense 16ths, octave pops on 2 and 3, three
+  # gated ghosts, un-pushed `approach` into the change (see `fu_bs_4` above for
+  # why `push` is not composed with `approach`)
+  - id: fu_bs_4b
+    role: bass
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 120, degree: root, octave: 0, velocity: 0.88 }
+      - { pos: 240, dur: 120, degree: root, octave: 1, velocity: 0.78 }
+      - { pos: 360, dur: 120, degree: root, octave: 0, velocity: 0.42, minDensity: 0.55 }
+      - { pos: 480, dur: 120, degree: root, octave: 0, velocity: 0.82 }
+      - { pos: 720, dur: 120, degree: seventh, octave: 0, velocity: 0.76 }
+      - { pos: 840, dur: 120, degree: root, octave: 0, velocity: 0.44, minDensity: 0.55 }
+      - { pos: 960, dur: 120, degree: root, octave: 1, velocity: 0.80 }
+      - { pos: 1200, dur: 120, degree: fifth, octave: 0, velocity: 0.76 }
+      - { pos: 1320, dur: 120, degree: root, octave: 0, velocity: 0.44, minDensity: 0.55 }
+      - { pos: 1440, dur: 120, degree: root, octave: 0, velocity: 0.82 }
+      - { pos: 1560, dur: 120, degree: seventh, octave: 0, velocity: 0.74 }
+      - { pos: 1680, dur: 240, degree: approach, octave: 0, velocity: 0.82 }
+
+  # intro — whole-note root under the groove-in vamp
+  - id: fu_bs_i
+    role: bass
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.60 }
+
+  # intro (sibling) — root held with a b7 16th pickup on the "a" of 4
+  - id: fu_bs_ib
+    role: bass
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 1680, degree: root, octave: 0, velocity: 0.60 }
+      - { pos: 1800, dur: 120, degree: seventh, octave: 0, velocity: 0.58 }
+
+  # ending — whole-note root
+  - id: fu_bs_e
+    role: bass
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.62 }
+
+  # ending (sibling) — fifth-to-root settle
+  - id: fu_bs_eb
+    role: bass
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 480, degree: fifth, octave: 0, velocity: 0.60 }
+      - { pos: 480, dur: 1440, degree: root, octave: 0, velocity: 0.64 }
