@@ -1,0 +1,8 @@
+# blues pack manifest (PHASE_8 §5.1, verbatim + S21-1 formatVersion/engine).
+formatVersion: 1
+id: blues
+name: Blues
+version: 0.1.0
+engine: ">=0.1"
+timeSignatures: [[4, 4]]
+tempoRange: [50, 150]            # slow 12/8-feel ballads through rock-blues shuffle

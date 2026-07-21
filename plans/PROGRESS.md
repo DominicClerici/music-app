@@ -241,11 +241,11 @@ aggressive, romantic) safe, 36→48; C-12 safe (crash lo 0.45 → min 0.518).
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Config quintet (manifest+S21-1 / interpreter / forms / progressions / transitions) | opus | not started | — |
-| T2 | Drums + bass banks (S21-2 re-map; tempo-gated 12/8 at rung 3) | opus | not started | — |
-| T3 | Comping + pads banks (S21-2 re-map) | opus | not started | — |
-| T4 | timbres.yaml — all 8 flavors; AMSynth brightness overrides ×2 | opus | not started | — |
-| T5 | Integration + blues tests → commit 1 (atomic; lint 0/0; first-use pins) | opus | not started | — |
+| T1 | Config quintet (manifest+S21-1 / interpreter / forms / progressions / transitions) — 20/20 scratch checks; review **APPROVE** (zero findings; byte-fidelity sweep + independent loader verification incl. P7/P8/P9/P11); uncommitted until T5 (atomic) | opus | done | (commit 1) |
+| T2 | Drums + bass banks — 30 patterns (16 dr / 14 bs); both §5.4 anchors byte-verbatim at re-mapped rung 3 (`bl_dr_2` w3, `bl_bs_3` w1 preserved); gated [50,75] 12/8 pairs beside ungated slots; ghost gates 0.60/0.62 recomputed live-not-dead by reviewer; review **CHANGES-REQUIRED → fixed**: 1 MAJOR — drums header comment contained the literal `expected-unreachable` token, silencing the file's unreachable-content lint via the substring scan (latent; orchestrator reworded both banks' headers, re-verified `_silenced_files() == set()`); 2 NITs fixed/accepted. Reviewer confirmed full pack loads + lint 0/0 | opus | done (fix verified) | (commit 1) |
+| T3 | Comping + pads banks — 26 entries; triplet-roll re-located to rung 3 (gated); pads ladder non-overlapping bands; review **APPROVE-WITH-NITS** (comment imprecision fixed inline by orchestrator; pad 0.04 sibling delta reviewer-accepted) | opus | done (fix verified) | (commit 1) |
+| T4 | timbres.yaml — all 8 flavors; THREE full TB7 overrides (organ_drawbar, organ_swell, upright_soft/FMSynth); kick-dry adjudicated vs PHASE_7 D2 (correct); review **APPROVE** (78 allowlist pairs / 0 illegal; §5.6 fidelity line-by-line) | opus | done | (commit 1) |
+| T5 | Integration + blues tests — lint 0/0; 111 new tests (55 pack incl. 6 first-use pin groups + 56 variety with 53 locked-seed draws); 2 literal edits (`test_interpreter_pack.py:114` set, unregistered-example → fusion_jazz); 4 PHASE_8 §5 amendments (S21-1/S21-2+C-23/S21-3/S21-4); **one real defect found+fixed: triplet snare fill `bl_dr_f1` tripped W7 on 190/192 cells (grid-blind fill tiling) → re-authored straight-grid → C-24** (§5.4 fills wording fix pending sign-off); gates orchestrator-verified 6302/1 | opus | done | (commit 1) |
 | T6 | Full-grid audition + first-use verification (report-only) | opus | not started | — |
 | T7 | Calibrate → first blessed `styles/blues/calibration.yaml` | orchestrator+opus | not started | — |
 | T8 | USER listening gate (§14.8/§14.10 blues slices; log.jsonl append) | user | not started | — |

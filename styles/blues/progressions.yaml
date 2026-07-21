@@ -1,0 +1,65 @@
+# blues progressions (PHASE_8 §5.3, verbatim). Dominant quality authored on every chord.
+pools:
+  blues_12:
+    - id: quick_change             # the modern jam default; authored CLOSED so turnarounds relaunch
+      weight: 60
+      modes: [major]
+      phrases:
+        a: [[I7], [IV7], [I7], [~]]
+        b: [[IV7], [~], [I7], [~]]
+        c: [[V7], [IV7], [I7], [~]]
+    - id: plain
+      weight: 25
+      modes: [major]
+      phrases:
+        a: [[I7], [~], [~], [~]]
+        b: [[IV7], [~], [I7], [~]]
+        c: [[V7], [IV7], [I7], [~]]
+    - id: hendrix                  # aggressive corner: authored #9 (§3.5)
+      weight: 15
+      modes: [major]
+      valence: [-1.0, -0.3]
+      dissonance: [0.70, 1.0]
+      phrases:
+        a: [[I7(#9)], [IV7], [I7(#9)], [~]]
+        b: [[IV7], [~], [I7(#9)], [~]]
+        c: [[V7(#9)], [IV7], [I7(#9)], [~]]
+    - id: minor_12
+      weight: 100
+      modes: [minor]
+      phrases:
+        a: [[i7], [iv7], [i7], [~]]
+        b: [[iv7], [~], [i7], [~]]
+        c: [[bVI7], [V7], [i7], [~]]   # the signature minor-blues cadence
+  blues_8:                         # Key-to-the-Highway changes; ends V7 = built-in relaunch
+    - { id: key_highway, weight: 100, modes: [major],
+        phrases: { a: [[I7], [V7], [IV7], [~]], b: [[I7], [V7], [I7], [V7]] } }
+    - { id: minor_8, weight: 100, modes: [minor],
+        phrases: { a: [[i7], [V7], [iv7], [~]], b: [[i7], [V7], [i7], [V7]] } }
+  blues_16:                        # doubled-front 16-bar
+    - { id: sixteen, weight: 100, modes: [major],
+        phrases: { a: [[I7], [~], [~], [~]], b: [[IV7], [~], [I7], [~]], c: [[V7], [IV7], [I7], [~]] } }
+    - { id: minor_16, weight: 100, modes: [minor],
+        phrases: { a: [[i7], [~], [~], [~]], b: [[iv7], [~], [i7], [~]], c: [[bVI7], [V7], [i7], [~]] } }
+  intro:
+    - { id: v_vamp,        weight: 60, modes: [major], phrases: { a: [[V7], [~], [V7], [~]] } }
+    - { id: turnaround_in, weight: 40, modes: [major], phrases: { a: [[I7], [IV7], [I7], [V7]] } }
+    - { id: minor_v_vamp,  weight: 100, modes: [minor], phrases: { a: [[V7], [~], [i7], [V7]] } }
+  outro:
+    - { id: tag_out,       weight: 100, modes: [major], phrases: { a: [[I7], [IV7], [I7], [V7]] } }
+    - { id: minor_tag_out, weight: 100, modes: [minor], phrases: { a: [[i7], [iv7], [i7], [V7]] } }
+
+turnarounds:                       # every chorus boundary relaunches like a real band
+  - { id: v_four,      weight: 50, modes: [major], bars: [[V7, IV7], [I7, V7]] }
+  - { id: quick_v,     weight: 30, modes: [major], bars: [[I7, V7]] }
+  - { id: jazz_turn,   weight: 20, modes: [major], dissonance: [0.60, 1.0],
+      bars: [[I7, VI7], [ii7, V7]] }
+  - { id: minor_turn,  weight: 60, modes: [minor], bars: [[i7, iv7], [bVI7, V7]] }
+  - { id: minor_quick, weight: 40, modes: [minor], bars: [[i7, V7]] }
+
+finals:
+  - { id: authentic,    weight: 40, modes: [major], bars: [[V7], [I7]] }
+  - { id: plagal,       weight: 30, modes: [major], bars: [[IV7], [I7]] }
+  - { id: tritone,      weight: 30, modes: [major], dissonance: [0.60, 1.0], bars: [[bII7], [I7]] }
+  - { id: minor_auth,   weight: 60, modes: [minor], bars: [[V7], [i7]] }
+  - { id: minor_plagal, weight: 40, modes: [minor], bars: [[iv7], [i7]] }

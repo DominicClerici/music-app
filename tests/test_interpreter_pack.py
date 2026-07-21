@@ -111,11 +111,11 @@ def test_stub_pack_still_loads_with_no_interpreter() -> None:
 
 
 def test_registered_styles_excludes_stub() -> None:
-    assert registered_styles() == {"pop_rock", "jazz", "chill_lofi"}
+    assert registered_styles() == {"pop_rock", "jazz", "chill_lofi", "blues"}
 
 
 def test_resolve_pack_unregistered_style_returns_none() -> None:
-    assert resolve_pack("blues") is None
+    assert resolve_pack("fusion_jazz") is None
 
 
 # --- §5.1 Rules: one rejection test per rule class ---------------------------

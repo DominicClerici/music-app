@@ -1,0 +1,208 @@
+# blues bass pattern bank (PHASE_8 §5.4, under the SESSION_21 S21-2 re-map).
+# Pattern mode; pitched events author chord-degrees, never literal pitches
+# (invariant 2). retarget is the bank-level default {28, 45, retrigger}
+# (span 17 >= 12, PT9); the loader injects it into every entry. The boogie/box
+# is the blues bass identity (§3.2) — the `sixth` degree earns its reservation.
+#
+# S21-2 rung re-map (user-ratified): rendered sections sit at rungs 3–4, so the
+# real content is there — rung 3 the box + the 2-bar boogie cell (+ tempo-gated
+# slow-blues triplet arpeggios), rung 4 the shuffled-8th boogie with pushes.
+# Rungs 1–2 are sparser completeness variants (PT5 + variety require 2 ungated
+# candidates each; dormant in practice, caveat-recorded — no unreachable-content
+# annotation, per S21-2).
+#
+# id scheme: numeric suffix tracks the RUNG. `bl_bs_3` is the §5.4 defining
+# 2-bar boogie cell (id, events, energyLevel 3, and weight 1 all preserved
+# BYTE-VERBATIM); its rung-3 partner `bl_bs_3b` is the box, authored at weight 3
+# so the slot has a full-weight ungated workhorse beside the pinned weight-1
+# boogie (a 3/1 pair — the pinned anchor weight prevents the usual 3/2). Slow-
+# blues arpeggios `bl_bs_3s`/`bl_bs_3sb` are triplet-grid (§3.1), tempo-gated to
+# [50, 75] (BONUS — do not count toward variety).
+mode: patterns
+retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
+patterns:
+  # rung 1 (dormant) — whole-note root
+  - id: bl_bs_1
+    role: bass
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.62 }
+
+  # rung 1 (dormant, variant) — half-note roots (beats 1 and 3)
+  - id: bl_bs_1b
+    role: bass
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.62 }
+      - { pos: 960, dur: 960, degree: root, octave: 0, velocity: 0.58 }
+
+  # rung 2 (dormant) — root + fifth halves (root beat 1, fifth beat 3)
+  - id: bl_bs_2
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 960, degree: fifth, octave: 0, velocity: 0.62 }
+
+  # rung 2 (dormant, variant) — root half + fifth/root quarters
+  - id: bl_bs_2b
+    role: bass
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 960, degree: root, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 480, degree: fifth, octave: 0, velocity: 0.62 }
+      - { pos: 1440, dur: 480, degree: root, octave: 0, velocity: 0.58 }
+
+  # rung 3 (WORKHORSE) — the 2-bar boogie cell. DEFINING ENTRY §5.4, id + event
+  # list + energyLevel 3 + weight 1 all preserved BYTE-VERBATIM. Resolves against
+  # the pinned dom7s to R–3–5–6–b7–6–5–3 (the `sixth` degree's reserved purpose).
+  - id: bl_bs_3
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 3840
+    weight: 1
+    events:
+      - { pos: 0,    dur: 480, degree: root,    octave: 0, velocity: 0.76 }
+      - { pos: 480,  dur: 480, degree: third,   octave: 0, velocity: 0.70 }
+      - { pos: 960,  dur: 480, degree: fifth,   octave: 0, velocity: 0.72 }
+      - { pos: 1440, dur: 480, degree: sixth,   octave: 0, velocity: 0.70 }
+      - { pos: 1920, dur: 480, degree: seventh, octave: 0, velocity: 0.74 }
+      - { pos: 2400, dur: 480, degree: sixth,   octave: 0, velocity: 0.70 }
+      - { pos: 2880, dur: 480, degree: fifth,   octave: 0, velocity: 0.72 }
+      - { pos: 3360, dur: 480, degree: third,   octave: 0, velocity: 0.70 }
+
+  # rung 3 (partner, weight 3) — the box: root, fifth, seventh, root(octave 1)
+  # quarters. The steady one-bar rung-3 workhorse beside the pinned boogie cell.
+  - id: bl_bs_3b
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 480, degree: root, octave: 0, velocity: 0.72 }
+      - { pos: 480, dur: 480, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 960, dur: 480, degree: seventh, octave: 0, velocity: 0.72 }
+      - { pos: 1440, dur: 480, degree: root, octave: 1, velocity: 0.70 }
+
+  # rung 3 (slow-blues, GATED [50,75]) — sparse triplet arpeggio: root on 1,
+  # fifth/third on triplet positions, space between. Pure triplet grid (§3.1).
+  - id: bl_bs_3s
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    eligibility: { tempoBpm: [50, 75] }
+    events:
+      - { pos: 0, dur: 320, degree: root, octave: 0, velocity: 0.70 }
+      - { pos: 640, dur: 160, degree: fifth, octave: 0, velocity: 0.62 }
+      - { pos: 960, dur: 320, degree: root, octave: 0, velocity: 0.68 }
+      - { pos: 1600, dur: 160, degree: third, octave: 0, velocity: 0.62 }
+
+  # rung 3 (slow-blues, GATED [50,75], variant) — triplet arpeggio, different
+  # contour (fifth up early, third late). Pure triplet grid
+  - id: bl_bs_3sb
+    role: bass
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    eligibility: { tempoBpm: [50, 75] }
+    events:
+      - { pos: 0, dur: 320, degree: root, octave: 0, velocity: 0.70 }
+      - { pos: 320, dur: 160, degree: fifth, octave: 0, velocity: 0.60 }
+      - { pos: 960, dur: 320, degree: root, octave: 0, velocity: 0.68 }
+      - { pos: 1280, dur: 160, degree: third, octave: 0, velocity: 0.60 }
+
+  # rung 4 — shuffled-8th boogie (authored on the straight-8th grid; swing
+  # renders the shuffle), with a `push`-flagged bar-end root pushing into the
+  # next bar
+  - id: bl_bs_4
+    role: bass
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 240, dur: 240, degree: third, octave: 0, velocity: 0.66 }
+      - { pos: 480, dur: 240, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 720, dur: 240, degree: sixth, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 240, degree: seventh, octave: 0, velocity: 0.72 }
+      - { pos: 1200, dur: 240, degree: sixth, octave: 0, velocity: 0.66 }
+      - { pos: 1440, dur: 240, degree: fifth, octave: 0, velocity: 0.70 }
+      - { pos: 1680, dur: 240, degree: root, octave: 0, velocity: 0.68, push: true }
+
+  # rung 4 (sibling, weight 2) — shuffled-8th boogie, octave-lifted contour with
+  # a `push`-flagged bar-end third
+  - id: bl_bs_4b
+    role: bass
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 240, degree: root, octave: 0, velocity: 0.74 }
+      - { pos: 240, dur: 240, degree: fifth, octave: 0, velocity: 0.66 }
+      - { pos: 480, dur: 240, degree: sixth, octave: 0, velocity: 0.68 }
+      - { pos: 720, dur: 240, degree: seventh, octave: 0, velocity: 0.66 }
+      - { pos: 960, dur: 240, degree: root, octave: 1, velocity: 0.70 }
+      - { pos: 1200, dur: 240, degree: seventh, octave: 0, velocity: 0.66 }
+      - { pos: 1440, dur: 240, degree: fifth, octave: 0, velocity: 0.68 }
+      - { pos: 1680, dur: 240, degree: third, octave: 0, velocity: 0.66, push: true }
+
+  # intro — whole-note root
+  - id: bl_bs_i
+    role: bass
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.60 }
+
+  # intro (variant) — root held with a fifth pickup on 4& into the first downbeat
+  - id: bl_bs_ib
+    role: bass
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 1440, degree: root, octave: 0, velocity: 0.60 }
+      - { pos: 1680, dur: 240, degree: fifth, octave: 0, velocity: 0.58 }
+
+  # ending — whole-note root
+  - id: bl_bs_e
+    role: bass
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.62 }
+
+  # ending (variant) — fifth-to-root cadential settle
+  - id: bl_bs_eb
+    role: bass
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 480, degree: fifth, octave: 0, velocity: 0.60 }
+      - { pos: 480, dur: 1440, degree: root, octave: 0, velocity: 0.62 }

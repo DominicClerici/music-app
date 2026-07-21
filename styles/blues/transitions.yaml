@@ -1,0 +1,7 @@
+# blues transitions (PHASE_8 §5.5, verbatim).
+phraseFill: { odds: [1, 2] }             # blues fills often
+stop:       { enabled: true, odds: [1, 3] }  # the 1-beat band stop into a rung-4 chorus
+crash:      { velocity: [0.45, 0.90] }
+mutation:
+  drums:   { none: 8, kick_pickup: 2, drop_ornament: 1, hat_lift: 1 }
+  comping: { none: 3, anticipate: 2, drop_hit: 1 }

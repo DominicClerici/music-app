@@ -1,0 +1,23 @@
+# blues forms (PHASE_8 §5.2, verbatim). All-solo form — the R2 rising energy arch.
+energyRange: [0.15, 0.95]
+
+sections:
+  intro: { bars: [[4, 1]], phrases: { 4: [a] }, harmonyTag: { 4: intro } }
+  solo:  { bars: [[12, 4], [8, 1], [16, 1]],
+           phrases: { 12: [a, b, c], 8: [a, b], 16: [a, a, b, c] },
+           harmonyTag: { 12: blues_12, 8: blues_8, 16: blues_16 } }
+  outro: { bars: [[4, 1]], phrases: { 4: [a] }, harmonyTag: { 4: outro } }
+
+templates:
+  - id: jam
+    weight: 100
+    spine:
+      - { section: intro, optional: [1, 1] }
+      - repeat: { count: [3, null], slots: [ { section: solo } ] }
+      - { section: outro, optional: [2, 1] }
+    ending: { tagBars: 4, close: cold }
+    degrade:
+      - { shrink: intro }
+      - { drop: intro }
+      - { drop: outro }
+    fallback: { section: solo, bars: 12 }

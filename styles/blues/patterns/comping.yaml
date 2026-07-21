@@ -1,0 +1,183 @@
+# blues comping pattern bank (PHASE_8 §5.4, under the S21-2 rung re-map).
+# degree: chord rhythm cells; the voicing pass supplies the rootless-9th stab
+# pitches. Bank retarget is the §5.4/constraint-10 default {50, 69, retrigger}
+# (the pattern-fold window only — chord-voicing registers are owned by the
+# arrangement comping lane, C-21; these values do NOT enforce a register floor).
+# voicing.classes maps each rung to candidate classes (PT7): shell/triad at the
+# dormant low rungs, the rootless-9th sound (rootless_a/b) at the live rungs 3-4.
+#
+# S21-2 dormancy: blues' form is all-solo and every solo renders at energy
+# >= 0.624 (rung 3 min, rung 4 at the arch's peak), so rung-1 and rung-2 mains
+# NEVER render grid-wide. They are authored as sparser completeness variants
+# (PT5 + variety require 2 ungated candidates per rung) — honest dormant content,
+# monotone under rung 3, recorded in the caveat rather than lint markers
+# (the envelope keeps every rung lint-reachable, so no unreachable marker fires).
+#
+# Ladder is monotone across rungs: mean velocity rises rung 1 -> 4 (density is
+# flat 2 -> 3; rung-3 crispness comes from shorter stab durations + velocity).
+# The chank (rung 3) is the crisp workhorse; rung 4 drives with
+# and-of-4 pushes (the only slots §5.4's driving-stab intent wants anticipation).
+voicing:
+  classes:
+    1: [shell2, triad_open]
+    2: [shell3, rootless_a]
+    3: [rootless_a, rootless_b]
+    4: [rootless_a, rootless_b]
+retarget: { registerLow: 50, registerHigh: 69, onChordChange: retrigger }
+patterns:
+  # rung 1 (dormant completeness) — sustained whole-note chord, the stillest comp
+  - id: bl_cp_1
+    role: comping
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.50 }
+
+  # rung 1 (variant) — two sustained half-note blocks with a mid-bar re-voice
+  - id: bl_cp_1b
+    role: comping
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 900, degree: chord, velocity: 0.50 }
+      - { pos: 960, dur: 900, degree: chord, velocity: 0.48 }
+
+  # rung 2 (dormant completeness) — sparser stabs, the chank's seed on 2 & 4,
+  # still lighter and less crisp than the rung-3 workhorse
+  - id: bl_cp_2
+    role: comping
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 480, dur: 360, degree: chord, velocity: 0.56 }
+      - { pos: 1440, dur: 360, degree: chord, velocity: 0.54 }
+
+  # rung 2 (variant) — 2 & 4 stabs with a soft answering and-of-4 tail
+  - id: bl_cp_2b
+    role: comping
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 480, dur: 300, degree: chord, velocity: 0.57 }
+      - { pos: 1440, dur: 240, degree: chord, velocity: 0.55 }
+      - { pos: 1680, dur: 240, degree: chord, velocity: 0.53 }
+
+  # rung 3 (WORKHORSE) — the chank: crisp stabs on beats 2 & 4
+  - id: bl_cp_3
+    role: comping
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 480, dur: 240, degree: chord, velocity: 0.68 }
+      - { pos: 1440, dur: 240, degree: chord, velocity: 0.66 }
+
+  # rung 3 (variant) — Charleston/gap-stab: dotted-quarter Charleston figure
+  # (1, 2&) answered by a gap stab on beat 4
+  - id: bl_cp_3b
+    role: comping
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 660, degree: chord, velocity: 0.66 }
+      - { pos: 720, dur: 300, degree: chord, velocity: 0.64 }
+      - { pos: 1440, dur: 240, degree: chord, velocity: 0.62 }
+
+  # rung 3 (tempo-gated bonus, does NOT count toward variety) — slow-blues 12/8
+  # triplet roll: chord hits on the triplet grid (pos_in_beat 0/160/320), gated
+  # to the [50, 75] slow tier where the swing8 transform can't reach these onsets
+  - id: bl_cp_3s
+    role: comping
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    eligibility: { tempoBpm: [50, 75] }
+    events:
+      - { pos: 0, dur: 160, degree: chord, velocity: 0.60 }
+      - { pos: 160, dur: 160, degree: chord, velocity: 0.58 }
+      - { pos: 320, dur: 160, degree: chord, velocity: 0.60 }
+      - { pos: 960, dur: 160, degree: chord, velocity: 0.60 }
+      - { pos: 1120, dur: 160, degree: chord, velocity: 0.58 }
+      - { pos: 1280, dur: 160, degree: chord, velocity: 0.60 }
+
+  # rung 4 — driving stabs: offbeat 8th-grid hits with an and-of-4 push
+  # anticipating the next bar (swing renders the shuffle)
+  - id: bl_cp_4
+    role: comping
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 240, dur: 240, degree: chord, velocity: 0.74 }
+      - { pos: 720, dur: 240, degree: chord, velocity: 0.72 }
+      - { pos: 1200, dur: 240, degree: chord, velocity: 0.74 }
+      - { pos: 1680, dur: 240, degree: chord, velocity: 0.76, push: true }
+
+  # rung 4 (variant) — on-beat driving comp with the same and-of-4 push
+  - id: bl_cp_4b
+    role: comping
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 240, degree: chord, velocity: 0.74 }
+      - { pos: 480, dur: 240, degree: chord, velocity: 0.72 }
+      - { pos: 960, dur: 240, degree: chord, velocity: 0.74 }
+      - { pos: 1440, dur: 240, degree: chord, velocity: 0.72 }
+      - { pos: 1680, dur: 240, degree: chord, velocity: 0.76, push: true }
+
+  # intro — settled whole-note chord easing in
+  - id: bl_cp_i
+    role: comping
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.48 }
+
+  # intro (variant) — two thinned half-note swells
+  - id: bl_cp_ib
+    role: comping
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 960, degree: chord, velocity: 0.46 }
+      - { pos: 960, dur: 960, degree: chord, velocity: 0.48 }
+
+  # ending — settled whole-note chord, rings out
+  - id: bl_cp_e
+    role: comping
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, dur: 1920, degree: chord, velocity: 0.52 }
+
+  # ending (variant) — sustain with a settling beat-4 re-voice
+  - id: bl_cp_eb
+    role: comping
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, dur: 1440, degree: chord, velocity: 0.52 }
+      - { pos: 1440, dur: 480, degree: chord, velocity: 0.50 }

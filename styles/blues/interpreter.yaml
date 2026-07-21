@@ -1,0 +1,29 @@
+# blues interpreter config (PHASE_8 §5.1).
+supportedMoods: [energetic, nostalgic, melancholic, aggressive, dark, tense, mysterious, romantic]
+defaultMood: energetic           # the medium shuffle is the shipped-product archetype
+# vs the PHASE_2 §5 sketch (drop triumphant/dreamy): ALSO drops happy and calm —
+# both fight the dominant-7 grit. Mood → tempo tiers verified: melancholic 68 → slow blues,
+# energetic 139.5 → [126, 150] → uptempo shuffle, nostalgic 86.5 → medium-slow.
+
+modes: [major, minor]
+tonics:
+  major: [E, A, G, C]            # guitar keys
+  minor: [A, E, D]
+
+feel: swing8                     # NO swingRatio override: the PHASE_2 §6.4 tempo table
+                                 # matches measured blues shuffle as-is (0.722 slow → ~0.58 fast)
+feelTable: straight              # §3.4: electric-blues comping sits on the beat
+
+expressionRanges:
+  density:    [0.25, 0.80]
+  dissonance: [0.50, 0.90]       # the color floor; dominant-EVERYWHERE comes from authoring (§5.3)
+
+flavors:
+  drums:   [blues_kit, roadhouse_kit]
+  bass:    [electric_round, upright_soft]
+  comping: [crunch_guitar, organ_drawbar]
+  pads:    [organ_swell, warm_strings]
+
+ensembles:
+  default: { drums: blues_kit, bass: electric_round, comping: crunch_guitar, pads: organ_swell }
+  lounge:  { drums: roadhouse_kit, bass: upright_soft, comping: organ_drawbar, pads: warm_strings }

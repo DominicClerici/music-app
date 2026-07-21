@@ -328,9 +328,11 @@ mutation:
 
 ```yaml
 # styles/blues/manifest.yaml
-id: blues
+formatVersion: 1                 # [amended 2026-07-21, S21-1 (user-ratified): printed
+id: blues                        #  snippet omitted the required Manifest fields]
 name: Blues
 version: 0.1.0
+engine: ">=0.1"                  # [amended 2026-07-21, S21-1: sibling-verbatim value]
 timeSignatures: [[4, 4]]
 tempoRange: [50, 150]            # slow 12/8-feel ballads through rock-blues shuffle
 ```
@@ -350,6 +352,9 @@ tonics:
 
 feel: swing8                     # NO swingRatio override: the PHASE_2 §6.4 tempo table
                                  # matches measured blues shuffle as-is (0.722 slow → ~0.58 fast)
+                                 # [S21-4: the §6.4 table yields 0.722 flat ≤90 BPM and 0.655 at
+                                 # the 150 ceiling — ~0.58 is unreachable within [50,150]; behavior
+                                 # identical to jazz's existing table path]
 feelTable: straight              # §3.4: electric-blues comping sits on the beat
 
 expressionRanges:
@@ -458,7 +463,12 @@ turnarounds:                       # every chorus boundary relaunches like a rea
       bars: [[I7, VI7], [ii7, V7]] }
   - { id: minor_turn,  weight: 60, modes: [minor], bars: [[i7, iv7], [bVI7, V7]] }
   - { id: minor_quick, weight: 40, modes: [minor], bars: [[i7, V7]] }
+```
 
+*[S21-3: all turnarounds end plain V7 — C-03's SubV admission (bII7-final turnarounds)
+is NOT exercised by this pack; the tritone final's `bII7` is parse-only.]*
+
+```yaml
 finals:
   - { id: authentic,    weight: 40, modes: [major], bars: [[V7], [I7]] }
   - { id: plagal,       weight: 30, modes: [major], bars: [[IV7], [I7]] }
@@ -472,6 +482,8 @@ Note the P4 discipline: because `solo` serves 12-, 8-, and 16-bar options, each 
 ### 5.4 Pattern-bank conventions & defining entries
 
 **Drums** — the two shuffle families across the rung ladder, plus tempo-gated slow-blues triplet patterns (§3.1):
+
+*[amended 2026-07-21, S21-2 (user-ratified), C-23: the printed rung ladder is a derived sample that does not survive §5.2's all-solo form. `main`-kind patterns render **only in `solo` sections**, and the R2 solo energy arch (base 0.60 + 0.30·index/total + 0.10·arousal, envelope [0.15, 0.95]) puts **every rendered solo at energy ≥ 0.624** (rung 3 minimum) with the **final solo at rung 4 for all 8 moods** — so rungs 1–2 mains never render grid-wide. The authored ladder is therefore re-mapped onto the reachable band: the Chicago family (incl. `bl_dr_2`, which lands at **energyLevel 3**, id+events byte-verbatim) and the tempo-gated slow-blues 12/8 patterns sit at **rung 3**; Texas + double-shuffle at **rung 4** (the hat→ride lever moves to the 3→4 boundary the rising arch actually crosses). Comping re-maps equivalently (chank/Charleston → rung 3, driving stabs → rung 4; the tempo-gated triplet-roll → rung 3); bass box/boogie → rung 3, full boogie/pushes → rung 4. Rungs 1–2 are authored as sparser completeness variants (PT5 + the variety lint still require ≥2 ungated candidates each — honest dormant content, recorded in CAVEATS not lint markers, since the [0.15, 0.95] envelope keeps every rung lint-reachable). The energy formulas and §5.2's all-solo form are the pinned inputs; the printed rung expectations are the derived samples that do not survive them.]*
 
 - Rung 1: sparse shuffle, cross-stick 2/4 (ungated) **plus** `eligibility: {tempoBpm: [50, 75]}` slow-blues patterns authored on the triplet grid (ride triplets `pos 0/160/320/480/…`, cross-stick 2/4, kick 1 + pickup into 3).
 - Rung 2: **Chicago** — kick 1 & 3, straight-8th hats (swing renders the shuffle), hard snare 2/4.

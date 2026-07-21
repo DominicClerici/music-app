@@ -1,0 +1,318 @@
+# blues timbres (PHASE_8 §5.6) — full recipes for all 8 interpreter-declared
+# flavors (TB1). The §5.6 defining entries (blues_kit, electric_round,
+# crunch_guitar, organ_drawbar, organ_swell, warm_strings) are authored to spec;
+# roadhouse_kit (darker/drier sibling) and upright_soft (from the jazz `upright`
+# precedent) are in-idiom. The electric-blues aesthetic: cracky backbeat, a
+# prominent ride, sawtooth guitar grit, drawbar-organ shimmer.
+#
+# Mapped params (drum resonance / noise.playbackRate / sends, bass
+# filterEnvelope.baseFrequency+octaves / filter.Q / envelope.attack, both
+# organs' brightness→harmonicity, comping/pads envelope.attack + sends) are
+# omitted from base/mix — the merged mod tables are their sole authority
+# (§3.3 base XOR mod).
+
+flavors:
+  drums:
+    blues_kit:
+      # §5.6: roomy MembraneSynth kick (decay 0.45), cracky white NoiseSynth
+      # snare (decay 0.11), prominent MetalSynth ride. Snare brightness rides the
+      # default noise.playbackRate crack range; no mod overrides needed.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.06
+              octaves: 4
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.45, sustain: 0.01, release: 1.2 }
+          mix: { volumeDb: -9, pan: 0 } # kick dry (PHASE_7 architecture)
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: white } # cracky; playbackRate mapped (default range)
+              envelope: { attack: 0.001, decay: 0.11, sustain: 0, release: 0.05 }
+          mix: { volumeDb: -10, pan: 0 } # send mapped (space)
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 280
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.05, release: 0.02 }
+          mix: { volumeDb: -16, pan: 0.3, sends: { reverb: -18 } } # resonance mapped
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 420
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.45, release: 0.7 }
+          mix: { volumeDb: -13, pan: -0.2, sends: { reverb: -14 } } # prominent: the blues ride
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.6, release: 1.5 }
+          mix: { volumeDb: -14, pan: -0.35 } # send mapped (space)
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -13, pan: -0.3 } # send mapped (space)
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -13, pan: -0.1 } # send mapped (space)
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -13, pan: 0.15 } # send mapped (space)
+        perc: # cross-stick / shaker (the §3.6 rim→perc precedent)
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.06, sustain: 0, release: 0.03 }
+          mix: { volumeDb: -16, pan: 0.2 }
+    roadhouse_kit:
+      # in-idiom sibling: darker (lower MetalSynth frequencies + down-ranged
+      # brightness) and drier (lower fixed hat/ride sends). Same voice
+      # architecture as blues_kit.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 4
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.38, sustain: 0, release: 0.5 }
+          mix: { volumeDb: -9, pan: 0 }
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: white } # playbackRate mapped (roadhouse override ↓)
+              envelope: { attack: 0.002, decay: 0.10, sustain: 0, release: 0.05 }
+          mix: { volumeDb: -11, pan: 0 }
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -13
+              frequency: 220 # darker than blues_kit
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.04, release: 0.02 }
+          mix: { volumeDb: -17, pan: 0.25, sends: { reverb: -22 } } # drier
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 380 # darker
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.42, release: 0.6 }
+          mix: { volumeDb: -14, pan: -0.2, sends: { reverb: -18 } } # drier
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 280
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.4, release: 1.4 }
+          mix: { volumeDb: -15, pan: -0.35 }
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.33, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.3 }
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.33, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.1 }
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.33, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: 0.15 }
+        perc:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 }
+          mix: { volumeDb: -17, pan: 0.2 }
+      mod:
+        brightness:
+          snare: # darker/drier: down-ranged vs the 2.0–4.0 crack default
+            - { param: noise.playbackRate, min: 1.2, max: 2.8, curve: linear }
+          hats: # darkened vs the 2000–5500 default
+            - { param: resonance, min: 1800, max: 4000, curve: exp }
+          ride: # darkened vs the 3500–7000 default
+            - { param: resonance, min: 3000, max: 5500, curve: exp }
+
+  bass:
+    electric_round: # §5.6: MonoSynth triangle, lowpass rolloff −12, round attack; dry
+      engine: { type: MonoSynth }
+      base:
+        oscillator: { type: triangle }
+        envelope: { decay: 0.3, sustain: 0.5, release: 0.7 } # attack mapped (override)
+        filter: { type: lowpass, rolloff: -12 } # Q mapped
+        filterEnvelope: { attack: 0.005, decay: 0.4, sustain: 0.2, release: 0.6 }
+          # baseFrequency mapped; octaves free after the attackHardness override
+      effects: []
+      mix: { volumeDb: -11, pan: 0 } # dry (no send: bass space default is [])
+      mod: # round attack: a soft→gentle band (the §5.6 0.06→0.004 lever), octaves
+        # dropped from attackHardness so nothing snaps hard on a picked note
+        attackHardness:
+          - { param: envelope.attack, min: 0.06, max: 0.004, curve: exp }
+    upright_soft: # in-idiom from the jazz `upright` FM-pizz precedent, softer/woodier
+      engine: { type: FMSynth }
+      base:
+        harmonicity: 1
+        oscillator: { type: sine }
+        envelope: { decay: 0.7, sustain: 0, release: 0.5 } # attack mapped (override)
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.006, decay: 0.18, sustain: 0, release: 0.12 }
+      effects:
+        - { type: Filter, options: { type: lowpass, frequency: 700, Q: 0.5 } } # woodier cap than jazz
+      mix: { volumeDb: -10, pan: 0 } # bass upfront; dry
+      mod: # FMSynth ⇒ full override (TB7): the bass defaults map
+        # filterEnvelope.baseFrequency/filter.Q/filterEnvelope.octaves, none of
+        # which exist on FMSynth — replace with FM levers.
+        brightness:
+          - { param: modulationIndex, min: 1.2, max: 4.5, curve: exp } # softer than jazz's 1.5–6
+        attackHardness:
+          - { param: envelope.attack, min: 0.06, max: 0.004, curve: exp }
+
+  comping:
+    crunch_guitar: # §5.6: MonoSynth sawtooth + Distortion {0.3, "2x", 0.6}
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 12 }
+      base:
+        oscillator: { type: sawtooth }
+        envelope: { decay: 0.4, sustain: 0.35, release: 0.6 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.002, decay: 0.4, sustain: 0.4, release: 0.6, octaves: 2.2 }
+          # baseFrequency mapped
+      effects:
+        - { type: Distortion, options: { distortion: 0.3, oversample: "2x", wet: 0.6 } }
+      mix: { volumeDb: -13, pan: -0.3 } # reverb send mapped (space)
+    organ_drawbar: # §5.6: AMSynth sine + Tremolo + light Distortion; drawbar lever
+      engine: { type: PolySynth, voice: AMSynth, maxPolyphony: 12 }
+      base:
+        oscillator: { type: sine }
+        envelope: { decay: 0.1, sustain: 1.0, release: 0.3 } # attack mapped; organ = flat sustain
+        modulation: { type: square }
+        modulationEnvelope: { attack: 0.4, decay: 0, sustain: 1, release: 0.4 }
+      effects:
+        - { type: Tremolo, options: { frequency: 5.2, depth: 0.4, spread: 90, wet: 0.5 } }
+        - { type: Distortion, options: { distortion: 0.12, oversample: "2x", wet: 0.35 } } # light grit
+      mix: { volumeDb: -13, pan: -0.25 } # reverb send mapped (space)
+      mod:
+        brightness: # AMSynth has no filterEnvelope — the pads/comping default
+          # brightness path (filterEnvelope.baseFrequency) is illegal here (TB7);
+          # override to the drawbar-mix harmonicity lever (§5.6 / organ_soft).
+          - { param: harmonicity, min: 1.0, max: 2.0, curve: linear }
+
+  pads:
+    organ_swell: # §5.6: AMSynth swell (slow attack via the pads attackHardness
+      # default 1.2→0.005) + Tremolo. brightness override is the silent trap.
+      engine: { type: PolySynth, voice: AMSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: sine }
+        envelope: { decay: 0.2, sustain: 1.0, release: 1.2 } # attack mapped (the swell)
+        modulation: { type: square }
+        modulationEnvelope: { attack: 0.6, decay: 0, sustain: 1, release: 0.6 }
+      effects:
+        - { type: Tremolo, options: { frequency: 4.6, depth: 0.35, spread: 90, wet: 0.5 } }
+      mix: { volumeDb: -19, pan: 0 } # reverb send mapped (space)
+      mod:
+        brightness: # SAME AMSynth trap as organ_drawbar: the pads default
+          # brightness→filterEnvelope.baseFrequency is illegal on AMSynth (TB7);
+          # override to harmonicity. §5.6 documents this for drawbar only.
+          - { param: harmonicity, min: 1.0, max: 2.0, curve: linear }
+    warm_strings: # in-idiom: fat-saw strings, lowpassed + StereoWidener (width only).
+      # MonoSynth voice keeps the default brightness (filterEnvelope.baseFrequency)
+      # legal — no mod override needed.
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: fatsawtooth, count: 3, spread: 25 }
+        envelope: { decay: 0.4, sustain: 0.7, release: 2.2 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.6, release: 1.8, octaves: 2 }
+          # baseFrequency mapped
+      effects:
+        - { type: StereoWidener, options: { width: 0.6 } }
+      mix: { volumeDb: -19, pan: 0 } # reverb send mapped (space)
+
+bus:
+  reverb: { decay: [0.8, 2.5], preDelay: [0.01, 0.03], returnFilterHz: 350 }
+
+master: # pop_rock-style gentle glue (TB4: Limiter last)
+  - { type: Compressor, options: { threshold: -20, ratio: 2, attack: 0.03, release: 0.25 } }
+  - { type: Limiter, options: { threshold: -1 } }

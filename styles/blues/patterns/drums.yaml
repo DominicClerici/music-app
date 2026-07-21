@@ -1,0 +1,358 @@
+# blues drum pattern bank (PHASE_8 §5.4, under the SESSION_21 S21-2 re-map).
+# Drum events only — drums are lane-exempt (§5.2), so no retarget. Carries the
+# pack-level layeringOrder (§5.1/PT10). Velocities in the §5.4 Chicago idiom
+# (accents ~0.42–0.94, gated ghosts/dormant-rung hats down to 0.30; ceiling 0.95).
+#
+# S21-2 rung re-map (user-ratified): blues' form is all-solo and the R2 solo
+# arch puts every rendered section at energy >= 0.624 (rung 3 minimum), the
+# final chorus at rung 4. So the REAL content lives at rungs 3–4; rungs 1–2 are
+# sparser completeness variants (required by PT5 + the variety lint, dormant in
+# practice). No unreachable-content annotation: the [0.15, 0.95] envelope makes
+# all four rungs lint-reachable (the dormancy is arousal-scaling, invisible to
+# the linter — recorded in the caveat, not here).
+#
+# id scheme: the numeric suffix tracks the RUNG, with one pinned exception —
+# `bl_dr_2` is the §5.4 defining Chicago-shuffle entry (id + events preserved
+# verbatim) which the S21-2 ruling re-maps to `energyLevel: 3`. Its rung-3
+# sibling is `bl_dr_3b`; the rung-2 lighter-Chicago mains therefore use the
+# `bl_dr_lc` ("light Chicago") ids to avoid colliding with the pinned `bl_dr_2`.
+# Slow-blues 12/8 patterns are `bl_dr_3s`/`bl_dr_3sb` (triplet grid, §3.1),
+# tempo-gated to [50, 75] (do NOT count toward variety — 2 ungated rung-3 mains
+# stand beside them). cross-stick is authored as the `perc` voice (§3.6; no
+# `cross_stick` voice exists in the DrumVoice enum).
+layeringOrder: [drums, bass, comping, pads]
+patterns:
+  # rung 1 (dormant) — sparse shuffle: kick 1, cross-stick (perc) 2/4, quarter hats
+  - id: bl_dr_1
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.82 }
+      - { pos: 480, voice: perc, velocity: 0.50 }
+      - { pos: 1440, voice: perc, velocity: 0.48 }
+      - { pos: 0, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.34 }
+      - { pos: 960, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.34 }
+
+  # rung 1 (dormant, variant) — sparse shuffle with a laid-back "and of 3" kick
+  # lean; same cross-stick 2/4 + quarter-hat foundation
+  - id: bl_dr_1b
+    role: drums
+    kind: main
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.82 }
+      - { pos: 1200, voice: kick, velocity: 0.62 }
+      - { pos: 480, voice: perc, velocity: 0.50 }
+      - { pos: 1440, voice: perc, velocity: 0.48 }
+      - { pos: 0, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.34 }
+      - { pos: 960, voice: hat_closed, velocity: 0.40 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.34 }
+
+  # rung 2 (dormant) — light Chicago: kick 1 & 3, straight-8th hats (swing
+  # renders the shuffle), softer snare 2/4
+  - id: bl_dr_lc
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.84 }
+      - { pos: 960, voice: kick, velocity: 0.80 }
+      - { pos: 480, voice: snare, velocity: 0.74 }
+      - { pos: 1440, voice: snare, velocity: 0.72 }
+      - { pos: 0, voice: hat_closed, velocity: 0.50 }
+      - { pos: 240, voice: hat_closed, velocity: 0.36 }
+      - { pos: 480, voice: hat_closed, velocity: 0.44 }
+      - { pos: 720, voice: hat_closed, velocity: 0.36 }
+      - { pos: 960, voice: hat_closed, velocity: 0.48 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.36 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.44 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.38 }
+
+  # rung 2 (dormant, variant) — light Chicago with an "and of 3" kick push;
+  # same 8th-hat bed and soft 2/4 backbeat
+  - id: bl_dr_lcb
+    role: drums
+    kind: main
+    energyLevel: 2
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.84 }
+      - { pos: 1200, voice: kick, velocity: 0.70 }
+      - { pos: 480, voice: snare, velocity: 0.74 }
+      - { pos: 1440, voice: snare, velocity: 0.72 }
+      - { pos: 0, voice: hat_closed, velocity: 0.48 }
+      - { pos: 240, voice: hat_closed, velocity: 0.36 }
+      - { pos: 480, voice: hat_closed, velocity: 0.44 }
+      - { pos: 720, voice: hat_closed, velocity: 0.36 }
+      - { pos: 960, voice: hat_closed, velocity: 0.46 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.36 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.44 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.38 }
+
+  # rung 3 (WORKHORSE) — the Chicago shuffle. DEFINING ENTRY §5.4, id + event
+  # list preserved BYTE-VERBATIM; the S21-2 ruling re-maps it from the printed
+  # energyLevel 2 to energyLevel 3 (the reachable rung the rising solo arch
+  # actually renders). weight 3 anchors the 3/2 sibling pair.
+  - id: bl_dr_2
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 960, voice: kick, velocity: 0.86 }
+      - { pos: 480, voice: snare, velocity: 0.88 }
+      - { pos: 1440, voice: snare, velocity: 0.85 }
+      - { pos: 0, voice: hat_closed, velocity: 0.60 }
+      - { pos: 240, voice: hat_closed, velocity: 0.42 }
+      - { pos: 480, voice: hat_closed, velocity: 0.52 }
+      - { pos: 720, voice: hat_closed, velocity: 0.42 }
+      - { pos: 960, voice: hat_closed, velocity: 0.56 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.42 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.52 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.44 }
+
+  # rung 3 (sibling, weight 2) — Chicago variant with a stronger 2/4 crack and
+  # slightly pulled-back hats (backbeat-forward reading of bl_dr_2)
+  - id: bl_dr_3b
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 960, voice: kick, velocity: 0.86 }
+      - { pos: 480, voice: snare, velocity: 0.92 }
+      - { pos: 1440, voice: snare, velocity: 0.90 }
+      - { pos: 0, voice: hat_closed, velocity: 0.54 }
+      - { pos: 240, voice: hat_closed, velocity: 0.38 }
+      - { pos: 480, voice: hat_closed, velocity: 0.46 }
+      - { pos: 720, voice: hat_closed, velocity: 0.38 }
+      - { pos: 960, voice: hat_closed, velocity: 0.50 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.46 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.40 }
+
+  # rung 3 (slow-blues 12/8, GATED [50,75]) — triplet-grid ride (0/160/320 per
+  # beat), cross-stick (perc) 2/4, kick on 1 + a pickup into beat 3 (pos 800).
+  # BONUS candidate: does not count toward variety (2 ungated mains above).
+  - id: bl_dr_3s
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 3
+    eligibility: { tempoBpm: [50, 75] }
+    events:
+      - { pos: 0, voice: ride, velocity: 0.56 }
+      - { pos: 160, voice: ride, velocity: 0.40 }
+      - { pos: 320, voice: ride, velocity: 0.44 }
+      - { pos: 480, voice: ride, velocity: 0.52 }
+      - { pos: 640, voice: ride, velocity: 0.40 }
+      - { pos: 800, voice: ride, velocity: 0.44 }
+      - { pos: 960, voice: ride, velocity: 0.54 }
+      - { pos: 1120, voice: ride, velocity: 0.40 }
+      - { pos: 1280, voice: ride, velocity: 0.44 }
+      - { pos: 1440, voice: ride, velocity: 0.52 }
+      - { pos: 1600, voice: ride, velocity: 0.40 }
+      - { pos: 1760, voice: ride, velocity: 0.44 }
+      - { pos: 0, voice: kick, velocity: 0.86 }
+      - { pos: 800, voice: kick, velocity: 0.66 }
+      - { pos: 480, voice: perc, velocity: 0.70 }
+      - { pos: 1440, voice: perc, velocity: 0.68 }
+
+  # rung 3 (slow-blues 12/8, GATED [50,75], variant) — triplet ride, cross-stick
+  # 2/4, kick 1 with a pickup into beat 4 (pos 1280)
+  - id: bl_dr_3sb
+    role: drums
+    kind: main
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 2
+    eligibility: { tempoBpm: [50, 75] }
+    events:
+      - { pos: 0, voice: ride, velocity: 0.56 }
+      - { pos: 160, voice: ride, velocity: 0.40 }
+      - { pos: 320, voice: ride, velocity: 0.44 }
+      - { pos: 480, voice: ride, velocity: 0.52 }
+      - { pos: 640, voice: ride, velocity: 0.40 }
+      - { pos: 800, voice: ride, velocity: 0.44 }
+      - { pos: 960, voice: ride, velocity: 0.54 }
+      - { pos: 1120, voice: ride, velocity: 0.40 }
+      - { pos: 1280, voice: ride, velocity: 0.44 }
+      - { pos: 1440, voice: ride, velocity: 0.52 }
+      - { pos: 1600, voice: ride, velocity: 0.40 }
+      - { pos: 1760, voice: ride, velocity: 0.44 }
+      - { pos: 0, voice: kick, velocity: 0.86 }
+      - { pos: 1280, voice: kick, velocity: 0.66 }
+      - { pos: 480, voice: perc, velocity: 0.70 }
+      - { pos: 1440, voice: perc, velocity: 0.68 }
+
+  # rung 4 — Texas: four-on-the-floor kick, straight-quarter ride (the hat->ride
+  # switch is the rung 3->4 energy lever), hard snare 2/4, minDensity-gated
+  # shuffled-snare ghosts (gate 0.60: reachable — energetic/aggressive rung-4
+  # budgets 0.81–0.89; genuinely gated — melancholic tops out at 0.587)
+  - id: bl_dr_4
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: ride, velocity: 0.56 }
+      - { pos: 480, voice: ride, velocity: 0.52 }
+      - { pos: 960, voice: ride, velocity: 0.56 }
+      - { pos: 1440, voice: ride, velocity: 0.52 }
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 480, voice: kick, velocity: 0.86 }
+      - { pos: 960, voice: kick, velocity: 0.88 }
+      - { pos: 1440, voice: kick, velocity: 0.86 }
+      - { pos: 480, voice: snare, velocity: 0.92 }
+      - { pos: 1440, voice: snare, velocity: 0.90 }
+      - { pos: 720, voice: snare, velocity: 0.30, minDensity: 0.60 }
+      - { pos: 1680, voice: snare, velocity: 0.32, minDensity: 0.60 }
+
+  # rung 4 (sibling, weight 2) — double-shuffle: swung ride 8ths (authored on the
+  # straight-8th grid — swing renders the shuffle), four-on-floor kick, hardest
+  # 2/4 backbeat, minDensity-gated ghost layer (gate 0.62)
+  - id: bl_dr_4b
+    role: drums
+    kind: main
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: ride, velocity: 0.58 }
+      - { pos: 240, voice: ride, velocity: 0.46 }
+      - { pos: 480, voice: ride, velocity: 0.54 }
+      - { pos: 720, voice: ride, velocity: 0.46 }
+      - { pos: 960, voice: ride, velocity: 0.56 }
+      - { pos: 1200, voice: ride, velocity: 0.46 }
+      - { pos: 1440, voice: ride, velocity: 0.54 }
+      - { pos: 1680, voice: ride, velocity: 0.46 }
+      - { pos: 0, voice: kick, velocity: 0.90 }
+      - { pos: 480, voice: kick, velocity: 0.86 }
+      - { pos: 960, voice: kick, velocity: 0.90 }
+      - { pos: 1440, voice: kick, velocity: 0.86 }
+      - { pos: 480, voice: snare, velocity: 0.94 }
+      - { pos: 1440, voice: snare, velocity: 0.92 }
+      - { pos: 720, voice: snare, velocity: 0.32, minDensity: 0.62 }
+      - { pos: 1200, voice: snare, velocity: 0.30, minDensity: 0.62 }
+      - { pos: 1680, voice: snare, velocity: 0.34, minDensity: 0.62 }
+
+  # intro — thinned shuffle: single downbeat kick, cross-stick 2/4, quarter hats
+  - id: bl_dr_i
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.80 }
+      - { pos: 480, voice: perc, velocity: 0.48 }
+      - { pos: 1440, voice: perc, velocity: 0.46 }
+      - { pos: 0, voice: hat_closed, velocity: 0.38 }
+      - { pos: 480, voice: hat_closed, velocity: 0.34 }
+      - { pos: 960, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.34 }
+
+  # intro (variant) — steady 8th hats over one downbeat kick with a snare pickup
+  # on 4& leading into the first chorus
+  - id: bl_dr_ib
+    role: drums
+    kind: intro
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: kick, velocity: 0.80 }
+      - { pos: 0, voice: hat_closed, velocity: 0.38 }
+      - { pos: 240, voice: hat_closed, velocity: 0.32 }
+      - { pos: 480, voice: hat_closed, velocity: 0.36 }
+      - { pos: 720, voice: hat_closed, velocity: 0.32 }
+      - { pos: 960, voice: hat_closed, velocity: 0.38 }
+      - { pos: 1200, voice: hat_closed, velocity: 0.32 }
+      - { pos: 1440, voice: hat_closed, velocity: 0.36 }
+      - { pos: 1680, voice: hat_closed, velocity: 0.34 }
+      - { pos: 1680, voice: snare, velocity: 0.62 }
+
+  # ending — settled: kick 1 & 3, snare beat 2, sparse quarter hats
+  - id: bl_dr_e
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 3
+    events:
+      - { pos: 0, voice: kick, velocity: 0.82 }
+      - { pos: 960, voice: kick, velocity: 0.78 }
+      - { pos: 480, voice: snare, velocity: 0.72 }
+      - { pos: 0, voice: hat_closed, velocity: 0.40 }
+      - { pos: 480, voice: hat_closed, velocity: 0.36 }
+      - { pos: 960, voice: hat_closed, velocity: 0.40 }
+
+  # ending (variant) — crash on beat 1 over a full backbeat, settling the tag
+  # more emphatically than bl_dr_e (close: cold band-hit idiom)
+  - id: bl_dr_eb
+    role: drums
+    kind: ending
+    energyLevel: 1
+    lengthTicks: 1920
+    weight: 2
+    events:
+      - { pos: 0, voice: crash, velocity: 0.60, dur: 960 }
+      - { pos: 0, voice: kick, velocity: 0.82 }
+      - { pos: 960, voice: kick, velocity: 0.78 }
+      - { pos: 480, voice: snare, velocity: 0.80 }
+      - { pos: 1440, voice: snare, velocity: 0.78 }
+      - { pos: 960, voice: hat_closed, velocity: 0.40 }
+
+  # fill — straight-grid snare buildup (pos_in_beat in {0,120,240,360}), quiet-to-
+  # hard across beats 3–4. Exactly 1 bar; reaches the barline. Authored STRAIGHT,
+  # not on the triplet grid the §5.4 sample prints: fills tile into a section's
+  # existing snare Phrase, and blues' straight-grid snare mains (bl_dr_4/4b ghosts
+  # at pos 240) + the straight bl_dr_f2 tom-run snare accent would mix grids within
+  # one Phrase (W7 §3.1 one-grid-per-pattern) if this fill were triplet. Fill
+  # selection is grid-blind, so the only W7-safe blues snare fill is a straight one
+  # (T5 defect fix — lint checks per-pattern purity and cannot see post-tiling
+  # Phrase-level mixing; the triplet feel lives on the ride/kick of bl_dr_3s/3sb).
+  - id: bl_dr_f1
+    role: drums
+    kind: fill
+    energyLevel: 3
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 960, voice: snare, velocity: 0.40 }
+      - { pos: 1200, voice: snare, velocity: 0.46 }
+      - { pos: 1440, voice: snare, velocity: 0.52 }
+      - { pos: 1560, voice: snare, velocity: 0.58 }
+      - { pos: 1680, voice: snare, velocity: 0.66 }
+      - { pos: 1800, voice: snare, velocity: 0.76 }
+
+  # fill — tom-run (straight grid): quiet-to-hard descending toms into a snare
+  # accent. Exactly 1 bar; reaches the barline
+  - id: bl_dr_f2
+    role: drums
+    kind: fill
+    energyLevel: 4
+    lengthTicks: 1920
+    weight: 1
+    events:
+      - { pos: 960, voice: tom_high, velocity: 0.60 }
+      - { pos: 1200, voice: tom_mid, velocity: 0.68 }
+      - { pos: 1440, voice: tom_low, velocity: 0.76 }
+      - { pos: 1680, voice: snare, velocity: 0.86 }
