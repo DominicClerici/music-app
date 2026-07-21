@@ -252,6 +252,31 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
 - **feelTable threading:** add `feel_table` to `GenerationPlan` (additive null field) mirrors how
   `swing` flows; changes the plan-IR JSON that C4's corpus will capture natively (bless it fresh).
 
+#### Phase 8 — Chunk 8 — session 22 (`plans/sessions/SESSION_22.md`)
+
+**Status: in progress — S22-1…S22-9 ALL USER-RATIFIED as recommended (2026-07-21).**
+Baseline orchestrator-verified 2026-07-21 at `c37e5bd`: 6327 passed / 1 skipped, four gates
+green. Scoping by 2 opus agents; the two headline findings were independently reproduced by
+the orchestrator. Key facts pinned in the plan's Binding constraints:
+**S22-3 (headline)** — §3.3/PHASE_4-D6's "`turnarounds: []` makes both boundary transforms
+inert" is a wrong derived claim; PHASE_4 §5.1 step 5 / :207 normative text wins and
+`harmony/stage.py:404-415` fires a fixed deceptive substitution on every same-tag boundary
+ending tonic+T. Measured 874 substitutions / 336 renders; orchestrator reproduced a calm
+`sus_pedal` vamp rendering `I7sus4 | vi | I7sus4 | vi …` — violates DoD §14.10 "vamps loop
+without harmonic drift". **S22-4** — quartal's 15-semitone span leaves both §6.4 rung-1/2
+comping classes empty for `Bbm9`/`A7#9` at comping lane low 50, and `parts/voicing.py:95-98`
+**raises** (54/1152 explicit-key renders crash, incl. §6.1's pinned Bb-dorian Chameleon key).
+**S22-2** — §6.1's `modes` order is a hard load failure (ladder-order rule).
+**S22-1** — manifest omits required `formatVersion`/`engine` (S21-1 replay).
+**S22-5** — rung 1 dead grid-wide (proof, not sampling), rung 4 `tune`-only, breakdown
+2-layer-capped; recommended accept-as-printed, no re-map. **S22-6** — "first dorian-primary
+pack" is wrong: 6/8 moods resolve major, mixolydian unreachable, corpus triple has zero
+dorian cells. **S22-7** — 3 §6.6 recipes defective (base-XOR-mod ×2, `glass_pad` FM brightness
+trap) + `fusion_ride_kit` has no recipe at all. Corpus triple **(energetic, calm, tense)**
+verified non-colliding, 48 → **60 (C-17 closes)**; fusion is a third fully-populated plan.
+Pads and quartal comping both genuinely render (unlike chill_lofi's C-22). No C-25 repeat —
+every §6.3 pool entry fires. Fusion is C-24-safe (no triplet content; every `pos % 120 == 0`).
+
 #### Phase 8 — Chunk 7 — session 21 (`plans/sessions/SESSION_21.md`)
 
 **Status: in progress — S21-1…S21-5 ALL USER-RATIFIED as recommended (2026-07-21).**
