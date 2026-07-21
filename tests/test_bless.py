@@ -47,7 +47,7 @@ from trackgen.tooling.blessdiff import CellDiff, NoteDelta
 _CELLS = corpus.corpus_cells()
 
 # One pop_rock and one jazz cell for the synthetic half — both packs, cheapest
-# length. The committed half covers all 24.
+# length. The committed half covers all 36.
 _POP_CELL = next(c for c in _CELLS if c.pack == "pop_rock" and c.length_sec == 120)
 _JAZZ_CELL = next(c for c in _CELLS if c.pack == "jazz" and c.length_sec == 120)
 
@@ -250,7 +250,7 @@ def test_matching_baseline_is_clean(cell: corpus.Cell, tmp_path: Path) -> None:
     result = bless(cells=[cell], root=tmp_path)
     assert result.ok
     assert result.diffs[0].clean
-    # One cell of 24 is a scoped run, so the diff report is followed by the
+    # One cell of 36 is a scoped run, so the diff report is followed by the
     # scope notice; the verdict itself is still the single clean line.
     assert format_result(result).splitlines()[0] == (
         "bless report — 1 cell(s), no divergence."
@@ -538,7 +538,7 @@ def test_refusal_covers_a_mixed_batch(tmp_path: Path) -> None:
 # --- the version-stamp refresh (a bump must leave the corpus reproducible) ----
 #
 # `meta.generatorVersion` is excluded from the semantic diff (S18-8) but IS
-# written into every cell's `document.json`. A bump therefore changes all 24
+# written into every cell's `document.json`. A bump therefore changes all 36
 # cells' bytes while `bless` reports only the cells that moved musically, and
 # blessing just those leaves the corpus on mixed stamps — provably not
 # byte-reproducible while the tool says it is fine. These tests pin the

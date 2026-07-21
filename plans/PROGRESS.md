@@ -6,20 +6,71 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Session 20 IN PROGRESS (2026-07-20): Phase 8, Chunk 6 — chill_lofi. Step 0/1 done:
-> baseline gates verified green (6052/1 skipped), 2 opus scoping agents complete, session plan
-> written to `plans/sessions/SESSION_20.md`. STATUS: AWAITING USER APPROVAL (decision items
-> S20-1…S20-4). Do not dispatch implementation until approved.**
+> **Next:** **Phase 8, Chunk 7 (Session 21) — blues (PHASE_8 §5), the second new pack. FRESH
+> CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/SESSION_21.md` → USER APPROVAL
+> GATE) before dispatching.** C7 authors the full pack per §9.4, DoD §14.3 + §14.8/§14.10
+> (blues slices). **C-03 goes LIVE here** (bII7 tritone-sub turnarounds — the P8 SubV
+> admission gets its first real exerciser).
 >
-> Scoping headlines (full detail in SESSION_20.md): corpus triple (nostalgic, happy,
-> melancholic) — no `corpus_moods` collision, first capture ⇒ no generatorVersion bump; pack
-> must land ATOMICALLY (manifest triggers discovery; `test_interpreter_pack.py:114` +
-> dynamic interpreter matrix fail on a partial pack); variety lint has no escape ⇒ 2
-> candidates per slot incl. unreachable rung 4; `# expected-unreachable` marker exists
-> (file-level); C-12 safe (crash lo 0.30, energy floor 0.25); five dormant-machinery
-> first-uses concentrated here (dropout+breakdown cap, fade, laidback, swing16+ratio
-> override, single loop tag); §4.1 `modes` ordering violates loader Rule 3 → S20-1
-> arbitration item; smoke matrix stays 2-pack (C9). C6 authors the full pack per the §9.4 checklist (manifest/interpreter
+> **C6 (S20) DONE — chill_lofi, the first new pack; DoD §14.3/§14.8/§14.10 lofi slices ALL
+> MET.** Commits: `9e86b5a` plan · `51da4a0` T1–T5 pack+tests (atomic) · `be3c246` T7
+> calibration + C-22 · `151fa45` T8 listening · `d95a043` T9 bless (36 cells) · close-out
+> this commit. Four gates green (**6183 tests**, from 6052); lint 0/0; 3-lens review
+> CLEAN/COMPLIANT/PROVEN-WITH-GAPS, zero blockers.
+>
+> **What C7 must know from C6:**
+>  1. **Check mood-arousal reachability BEFORE authoring rung expectations (the C-22
+>     lesson):** chill_lofi's §4.2/§10 prose promised rung-3/pads reachability, but the
+>     supported moods' max arousal capped energy at 0.474 < the 0.55 rung-3 threshold —
+>     pads never sound (34/50 pattern ids blind). At scoping, compute per-mood max section
+>     energy for blues' mood set vs the 0.30/0.55/0.80 rungs and reconcile against §5's
+>     authored-bank expectations FIRST. Blues keeps energetic/aggressive, so rung 3/4
+>     should be genuinely live — verify, don't assume.
+>  2. **The C6 workflow held end-to-end and is the template:** atomic landing (manifest
+>     triggers discovery — `test_interpreter_pack.py` set + dynamic interpreter matrix);
+>     2 candidates/slot incl. unreachable rungs (variety lint has NO escape;
+>     `expected-unreachable` marker is file-level, silences unreachable-content only);
+>     3/2 sibling weights co-authored; timbres must cover EVERY declared flavor id (TB1);
+>     §9.4 order calibrate→listening→goldens; corpus extension = `_CORPUS_PACKS` + literal
+>     updates (test_corpus/test_bless counts 36→48, "12 of 36"→"12 of 48", scoped-other
+>     24→36) + unscoped `bless --approve` (first capture, NO version bump unless engine
+>     changes — escalate those). Verify blues' `corpus_moods` default-vs-extremes at
+>     scoping (raises on collision).
+>  3. **Blues-specific first-uses to pin (C6's constraint-11 analogue):** swing8 from the
+>     tempo table (NO ratio override — first pack on the table path at slow tempos);
+>     explicit triplet-grid authoring + the one-grid-per-pattern lint (§3.1 — first
+>     triplet content anywhere); `stop` device ENABLED (first pack; TR2 wants odds
+>     present); tempo-gated eligibility bands (slow-blues 12/8-feel patterns; check
+>     dangling-gates lint vs the mood tempo tiers); `close` variants incl. ritard
+>     (calibrate labels ritard tails separately, 82679f8); C-03's SubV P8 path. The §5
+>     printed YAML may carry doc bugs like §4.1's modes-order (S20-1) — scoping should
+>     scrub §5 against loader rules before the approval gate.
+>  4. **Plan-null collateral:** chill_lofi is the first fully-populated GenerationPlan
+>     (swing + feelTable both set) — `test_corpus.py`'s null-retention test is now
+>     conditional per pack. Blues (no feelTable? §5 says feelTable straight — CHECK: §3.4
+>     says blues → straight explicitly, so its plan may also be fully populated or carry
+>     nulls depending on schema) — extend the test's expectation knowingly, not by luck.
+>  5. **Chunk 6 landed ZERO engine changes** (only the corpus tuple). If a blues first-use
+>     forces an engine fix, the full bless collateral applies (generatorVersion bump,
+>     serialize/milestone literals, reference re-bless) — escalate before applying.
+>
+> **OPEN items carried forward:** formal reference-pack listening (C5 debt → C9's rubric
+> pass; chill_lofi's is DONE and is the template). C-18 (no CI). C-20 (+ C-22 postscript:
+> lens C's G-1 dormant-content dry-render idea — weigh at C9). C-19 §8.2 annotation at C9.
+> L2-2 jazz crossings (72/400, warn-only, C-21 structural). C-12 stays latent (blues crash
+> lo? — check §5.5's crash range at scoping). C-03 LIVE at C7.
+>
+> **Env / gates:** `uv` / Python 3.12; four gates (`uv run pytest -n auto` · `ruff check` ·
+> `ruff format --check` · `mypy`); suite **6183 tests / ~43 s**. `_GENERATOR_VERSION`
+> **0.1.3** (unchanged — C6 was pure data). Pack versions: pop_rock/jazz 0.2.0,
+> chill_lofi 0.1.0. Corpus **36/60** (C-17; completes at C8). Determinism TID251. Never
+> `git push`. Note: commit `ca67d3d` ("push override DON'T UNDO THIS CLAUDE") is the
+> user's own commit of session status text — leave it alone.
+>
+> **CAVEATS (open):** **C-22 (NEW** — chill_lofi rung-3/pads dormancy accepted + 34/50
+> blind set; read postscript before C9 coverage decisions**)**, C-21, C-20, C-18, C-17
+> (36/60), C-15, C-14, C-12 (**check blues crash.velocity lo at scoping**), C-11, C-10,
+> C-08, C-07, C-06, C-03 (**goes live at C7**). C6 authors the full pack per the §9.4 checklist (manifest/interpreter
 > → forms → progressions → banks rung-by-rung with audition → transitions → timbres → full-grid →
 > calibrate → error-spotting → goldens+bands+version), DoD §14.3 + §14.8/§14.10 (lofi slices).
 >
@@ -94,7 +145,7 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 | 5 | Rhythm-section part generators | done | 06, 07, 08, 09 | All §13 DoD 1–11 PROVEN; 990 tests, four gates. 4 chunks: loaders/foundations [06, DoD 1+2] → arrangement+selection [07, DoD 3+4] → generators/walker/voicing [08, DoD 5+6+7, C-04 resolved, C-09 arbitration] → orchestrator+Serializer+milestone [09, DoD 8+9+10, whole-phase review CLEAN/COMPLIANT/PROVEN/GOOD, C-10 latent logged]. §9.5 listening checklist CLOSED (user-confirmed 2026-07-17) |
 | 6 | Transitions, variation & humanization | done | 10, 11, 12 | 3-chunk split (D1 seam). C1 stage-6 Transitions (10: DoD 1+3+4+8; C-11) → C2 stage-7 Humanizer (11: DoD 2+5+6) → C3 wiring+milestone+whole-phase (12: DoD 9+10+11). All §11 DoD 1–11 proven; 4-lens whole-phase review no blocker/major; **4315 tests**, four gates. Caveats C-11, C-12 (both latent/open). §11.10 listening checklist CLOSED (user-confirmed 2026-07-18) |
 | 7 | Sound design | done | 13, 14 | **2-chunk split** (flip seam). C1 (13): new `sound/` package — engine data + evaluation + real `timbres.yaml` schema/TB1–TB9, unwired; DoD 2/3 + DoD 1(C1). C2 (14): the atomic flip — real `sound_design → SoundDesign` stage wired end to end, both `styles/*/timbres.yaml` authored, stubs deleted, goldens re-blessed (notes byte-identical), §9 field-for-field, 344-doc property matrix, zero-draw. Whole-phase 4-lens review **CLEAN/COMPLIANT/PROVEN/GOOD-WITH-NITS**; full §13 DoD 1–9 PROVEN; **4725 tests**. Caveats C-13 (§9.2 sample, resolved), C-14/C-15 (open, latent/prose). DoD 8 listening checklist CLOSED (user-confirmed 2026-07-18) |
-| 8 | Quality, evaluation & pack expansion | in progress | 15, 16, 17… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; no caveats. **C2 (S16) DONE** — 3-layer validator suite (`quality/` W1–W8 hard / L2-1 fail + L2-2 warn / L3 metrics+bands), warn/fail suite split; DoD §14.4 PROVEN; 2-lens review CLEAN/PROVEN; C-16 (L2-2 co-attack grain, user-ratified). **C3 (S17) DONE** — authoring tooling (audition CLI, pack linter+5 warnings, `--explain` selection log, `calibrate`→`calibration.yaml` + L2-reader reconciliation); DoD §14.7 PROVEN; 3-lens review found+fixed one blocker (audition drum sub-track filter); no new caveats. **C4 (S18) DONE** — golden corpus (24/60 cells at every IR boundary) + `trackgen bless` semantic diff + generatorVersion refusal + smoke matrix (315 cells) + 300-seed sweep (600 cells); 3-lens review APPROVE-WITH-NITS/COMPLIANT-WITH-DEVIATIONS/GOOD-WITH-NITS, no blockers; **5983 tests**. DoD §14.5 mechanism PROVEN but corpus **24/60 → completes at C8**; **§14.6 "in CI" NOT MET** (no CI substrate exists). Four new caveats **C-17** (2/5 packs), **C-18** (no CI), **C-19** (pop_rock cannot reach the 480 s bucket), **C-20** (corpus never selects 18/49 patterns — a 37 % blind spot that does NOT heal at five packs). **C5 (S19) DONE** — reference-pack refinement: zero abridged entries remained (already discharged); 38 second-candidate patterns cleared all 38 variety warnings (lint 0/0 both packs); calibrate tempo-band fix (ritard tails); first THREE production bless cycles (0.1.1 content / 0.1.2 stamps / 0.1.3 review fixes), pack versions 0.2.0; first blessed `calibration.yaml` ×2; 3-lens review CLEAN/COMPLIANT-WITH-DEVIATIONS/PROVEN, zero blockers. **DoD §14.2 met, listening clause PARTIAL (informal user pass, honest).** New caveat **C-21** (retarget window inert for chord voicings); **C-19 resolved** (ceiling accepted). 6052 tests. **Next: C6 (S20) chill_lofi.** |
+| 8 | Quality, evaluation & pack expansion | in progress | 15, 16, 17… | Multi-session (~9-chunk plan below). Hard order: foundations → validators → tooling → golden/bless → reference refinement → chill_lofi → blues → fusion_jazz → close-out. **C1 (S15) DONE** — trace orchestrator + machinery amendments; DoD §14.1 PROVEN; 2-lens review CLEAN/PROVEN; no caveats. **C2 (S16) DONE** — 3-layer validator suite (`quality/` W1–W8 hard / L2-1 fail + L2-2 warn / L3 metrics+bands), warn/fail suite split; DoD §14.4 PROVEN; 2-lens review CLEAN/PROVEN; C-16 (L2-2 co-attack grain, user-ratified). **C3 (S17) DONE** — authoring tooling (audition CLI, pack linter+5 warnings, `--explain` selection log, `calibrate`→`calibration.yaml` + L2-reader reconciliation); DoD §14.7 PROVEN; 3-lens review found+fixed one blocker (audition drum sub-track filter); no new caveats. **C4 (S18) DONE** — golden corpus (24/60 cells at every IR boundary) + `trackgen bless` semantic diff + generatorVersion refusal + smoke matrix (315 cells) + 300-seed sweep (600 cells); 3-lens review APPROVE-WITH-NITS/COMPLIANT-WITH-DEVIATIONS/GOOD-WITH-NITS, no blockers; **5983 tests**. DoD §14.5 mechanism PROVEN but corpus **24/60 → completes at C8**; **§14.6 "in CI" NOT MET** (no CI substrate exists). Four new caveats **C-17** (2/5 packs), **C-18** (no CI), **C-19** (pop_rock cannot reach the 480 s bucket), **C-20** (corpus never selects 18/49 patterns — a 37 % blind spot that does NOT heal at five packs). **C5 (S19) DONE** — reference-pack refinement: zero abridged entries remained (already discharged); 38 second-candidate patterns cleared all 38 variety warnings (lint 0/0 both packs); calibrate tempo-band fix (ritard tails); first THREE production bless cycles (0.1.1 content / 0.1.2 stamps / 0.1.3 review fixes), pack versions 0.2.0; first blessed `calibration.yaml` ×2; 3-lens review CLEAN/COMPLIANT-WITH-DEVIATIONS/PROVEN, zero blockers. **DoD §14.2 met, listening clause PARTIAL (informal user pass, honest).** New caveat **C-21** (retarget window inert for chord voicings); **C-19 resolved** (ceiling accepted). 6052 tests. **C6 (S20) DONE** — chill_lofi authored full (52 pattern entries, 8 timbre flavors) + 86 tests; lint 0/0; first blessed calibration.yaml; formal listening pass (`listening/log.jsonl` created — the §8.4 collector now exists); corpus 24→36 (first capture, no version bump); five machinery first-uses verified end-to-end (dropout/breakdown cap, fade-HOLD, laidback, swing16+ratio override, single loop tag); 3-lens review CLEAN/COMPLIANT/PROVEN-WITH-GAPS, zero blockers; DoD §14.3/§14.8/§14.10 lofi slices MET. New caveat **C-22** (rung 3 + pads dormant grid-wide — arousal ceiling, accepted S20-5; blind set 34/50 ids). 6183 tests. **Next: C7 (S21) blues.** |
 
 ## Session log
 
@@ -102,6 +153,7 @@ One row per implementation session, appended at close-out. Session plan files li
 
 | Session | Date | Phase / chunk | Outcome | Key commits |
 | --- | --- | --- | --- | --- |
+| 20 | 2026-07-20/21 | Phase 8 chunk 6 (chill_lofi, §4) — first NEW pack | 2 opus scoping agents (corpus triple computed safe; atomic-landing constraint; variety-lint no-escape; five first-use risks mapped; §4.1 modes-order doc bug found by orchestrator) → USER APPROVAL GATE (S20-1…S20-4 ratified as recommended) → T1 config (29/29 checks; review APPROVE zero findings) → T2 ‖ T3 ‖ T4 banks+timbres (reviews APPROVE-WITH-NITS ×2 / APPROVE; batched fix: 3/2 weights pack-wide, pad ladder widened to perceptible 0.05 deltas with non-overlapping bands, dead rung-3 ornament gates 0.55–0.65 → 0.42/0.44 per reviewer's density-budget proof) → T5 integration (lint 0/0 on FIRST full load; 86 tests incl. five first-use pins + 48 selection locks; atomic commit; review APPROVE, mutation-verified) → T6 full-grid (64+ renders + 1200-render sweep clean; §10 arithmetic 12/12 exact; **A1 ESCALATED: rung 3 unreachable grid-wide → pads never sound; user ruled S20-5 accept+amend → C-22**) → T7 first blessed calibration.yaml (artifact check PASS ×6, byte-identical; §4.2/§10 amendments + C-22 same commit) → T8 **formal listening pass** (user-confirmed clean, all 8 moods; `listening/log.jsonl` CREATED) → T9 corpus 24→36 (12 first-capture cells 3.4 MB; 24 reference cells zero-divergence; NO version bump; chill_lofi = first fully-populated plan → null-retention test made conditional) → T10 3-lens review **CLEAN / COMPLIANT / PROVEN-WITH-GAPS** (15/15 mutation kills; zero blockers; blind set measured 34/50 → C-22 postscript). Suite 6052 → **6183**; four gates green throughout. DoD §14.3/§14.8/§14.10 lofi slices **MET**. | 9e86b5a plan · 51da4a0 T1–T5 · be3c246 T7 · 151fa45 T8 · d95a043 T9 · (close-out this commit) |
 | 19 | 2026-07-20 | Phase 8 chunk 5 (reference-pack refinement, §7) | 2 opus scoping agents (headline: ZERO abridged entries remain — the real surface was the 38 variety-coverage warnings) → USER APPROVAL GATE (S19-1…5 all ratified as recommended: enumeration=verify-only · pads authored real · C-19 ceiling accepted · T3 diagnose-first · L2-2 in T2 scope) → T0 blast-radius (worktree probe; singleton pools consume ZERO draws, M1–M5 collateral map; caveat: its snapshot predated C4) ‖ T3 (ritard-tail hypothesis CONFIRMED — all 7 jazz sub-60 "violations" were 0.65×base tails, pop_rock clean because all forms author `close: cold`; calibrate band check now reads steady tempo, tails labeled; review APPROVE-WITH-NITS) → T1 ‖ T2 bank thickening (38 second candidates `*b`, additive-only, weight-1 50/50; reviews APPROVE / APPROVE-WITH-NITS; **S19-5 ESCALATED+CONFIRMED: `retarget.registerLow` inert for chord-degree voicings → user ruled accept+caveat → C-21**) → T4a first production re-bless (0.1.1; 22/24 cells first-divergent `phrases_stage5`; 15 pinned tests recomputed from engine — draw totals pop 10277→10561 / jazz 5304→5315; PHASE_5 §9.1/§9.4/§7.4/§12 + PHASE_2 §6.5 recompute+annotate per user rulings) → T5 informal user listening (playground used, "sounds good"; formal §8.4/T1-verdict OPEN, not rounded up) → T6 calibration.yaml ×2 + pack stamps 0.2.0 (second bless cycle 0.1.2, 24 cells first-divergent `plan`, zero notes; artifact check PASS ×5) → T7 3-lens whole-chunk review (CLEAN / COMPLIANT-WITH-DEVIATIONS / PROVEN, zero blockers; pads NOT dormant at high arousal — both packs' b-pad ladders made monotone; jazz tests brought to pop parity; third bless cycle 0.1.3, 8 pads-only cells; fix re-review APPROVE). Suite 5983 → **6052**; four gates green throughout; lint 0/0 both packs. **DoD §14.2: 3 clauses MET, listening clause PARTIAL (honest).** New caveat C-21; C-19 RESOLVED (accepted ceiling); C-20 postscript (blind set narrowed). | 5552b1a plan · 82679f8 T3 · 2125b75 T1+T2+T4a · ef9f410 T6 · 9661d06 T7 · (close-out this commit) |
 | 18 | 2026-07-20 | Phase 8 chunk 4 (golden corpus + bless + smoke matrix) | 2 opus scoping agents → USER APPROVAL GATE (4 decisions ratified: S18-1 pytest-module-not-CI · S18-2 compact IR separators · S18-3 diagonal (V,A) mood triple · S18-4 300 seeds × 2 packs) → 4 opus implementer tasks (**T1 corpus ‖ T4 smoke matrix** → T2 diff → T3 CLI+capture) + per-task opus reviews + **T5 orchestrator-run rehearsal** + **T6 3-lens whole-chunk review**. New `src/trackgen/tooling/{corpus,blessdiff,bless}.py` + `trackgen bless [--approve] [--pack]` + **`fixtures/goldens/**` (240 files, 17 MB)**. Suite 4858 → **5983**. **Golden-value arbitration applied once**: the session plan printed the smoke matrix as `2×(11+10)×3×5 = 630`, double-counting the pack dimension; the T4 agent followed §8.2's dimension text over the printed total and built **315** — orchestrator confirmed independently and corrected the plan (ROADMAP §3, subagent-initiated). **Per-task reviews:** T1 APPROVE-WITH-NITS (the tie-break claim was **overstated** — determinism rests on `sorted(set(moods))`, over which the explicit rank is provably equivalent to `max()`; corrected + degenerate-triple guard added), T4 APPROVE-WITH-NITS (8 non-vacuity mutants all killed), T2 **CHANGES-REQUIRED** (elision unranked — a 69-note bucket elided while a 2-note one showed; a pure section rename reported "350 notes implicated" on a **byte-identical document**; L3 deltas silently omitted — all fixed), T3 APPROVE-WITH-NITS (**three degrade-open gaps**: a partial baseline masqueraded as a first capture and bypassed the version check entirely; the empty `SelectionResult` made **W4 pass vacuously**; a baseline missing `generatorVersion` was approvable — all now fail closed). **T5 rehearsal earned its DoD slot** — found (a) the version-stamp refresh gap (`--approve` left the corpus on mixed stamps while reporting "no divergence" — the tool asserting the corpus was fine when it was provably not byte-reproducible) and (b) **C-20**, discovered because the rehearsal's first attempt edited a pattern the corpus never reaches. **T6 3-lens** (correctness **APPROVE-WITH-NITS** — all 24 cells × 10 stages verified byte-reproducible under `PYTHONHASHSEED=random`; contract **COMPLIANT-WITH-DEVIATIONS** — V1–V8 and the milestone fixtures byte-untouched; test-quality **GOOD-WITH-NITS** — 36 mutations, 28 killed) → 2 fail-open edges + the **unprotected `note_affecting` conjunct** (orchestrator reproduced independently: mutate it and all 67 tests still pass) + untested metric elision + the 480 s bucket never asserting the engine responded to it. All fixed. **Four caveats C-17…C-20.** **DoD recorded honestly, not rounded up:** §14.5 mechanism PROVEN / corpus 24-of-60; §14.6 **"in CI" NOT MET**. Four gates green. | 38ebf7b plan · 1ae12f6 T1 corpus · 31e1575 T4 smoke · 4ed99d2 T2 diff · 4e13da8 T3 CLI+corpus · 9865079 T5 rehearsal fix · 40481c6 T6 review fixes |
 | 17 | 2026-07-20 | Phase 8 chunk 3 (authoring tooling) | 4 opus implementer tasks (T1 audition → T2 linter → T3 --explain → T4 calibrate, serial) + T5 3-lens whole-chunk review + review-fix + close-out. New `src/trackgen/tooling/{audition,lint,calibrate}.py` + `packs/lint.py` + `pipeline/explain.py`; CLI `audition`/`lint`/`calibrate` + `--explain` on `generate`/`audition`. **DoD §14.7 PROVEN.** Everything additive — `--explain` threads an opt-in `explain=None` collector through the §9.3 draw sites (byte-identical default path, zero fixture edits); calibrate's L2-reader reconciliation is off the `generate` path. **3-lens whole-chunk review** (correctness/determinism · contract/DoD · test/code-quality): **one BLOCKER** — audition `--solo`/`--mute` on a drum sub-track filtered by note voice-tags and missed the untagged §6 fill/crash/hold notes (empirical repro: mute tom_low no-op, solo tom_low silence, mute snare 181→29) → **fixed** to filter by `phrase.track_id` (drum gen partitions per voice) + 3 discriminating tests; three minor fixes (calibrate report smoke test, dead `lint_pack` removed, keyword-only `explain`). **NO new CAVEATS** (L2 reconciliation is a fix *toward* §8.1, both lenses agreed). Process note: `REFERENCE.md` auto-committed by the T1 subagent unprompted (`0217217`) — kept + refreshed, flagged to user. Four gates green (**4858 tests**). | fb4f5d9 audition · 86e9e35 linter · d47d305 explain · 1d1fa59 calibrate · 1954de9 review-fix |
@@ -144,7 +196,7 @@ Phases 1–7 contracts and validates the whole, then triples the pack count. Har
 | C3 | 17 | **Authoring tooling:** audition CLI (`--section`/`--solo`/`--mute`/`--play`), pack linter (errors + 5 warning classes), `--explain` selection log, `trackgen calibrate → calibration.yaml` | 7 |
 | C4 | 18 ✅ | **Golden corpus + bless + smoke matrix:** matrix at every IR boundary (**24/60 cells — 2 packs; fills out C6–C8, C-17**), `bless` semantic-diff report + generatorVersion-bump check, smoke matrix **as a pytest module — NOT in CI, no substrate exists (C-18)**, 300-seed reference sweep | 5 (partial), 6 (partial) |
 | C5 | 19 | **Reference-pack refinement (shakedown, §7):** enumerate abridged pop_rock/jazz banks; lint clean; calibrate (T1 level pass); capture goldens + `calibration.yaml`; error-spotting pass | 2 |
-| C6 | 20 | **chill_lofi** (§4) — full pack per checklist §9.4; lint/calibrate/goldens/listening | 3/8/9/10 (lofi) |
+| C6 | 20 ✅ | **chill_lofi** (§4) — full pack per checklist §9.4; lint 0/0; calibrated; 12 corpus cells (36/60); formal listening pass (log.jsonl created); C-22 dormancy accepted | 3/8/9/10 (lofi) **MET** |
 | C7 | 21 | **blues** (§5) — full pack per checklist | 3/8/9/10 (blues) |
 | C8 | 22 | **fusion_jazz** (§6) — full pack per checklist | 3/8/9/10 (fusion) |
 | C9 | 23 | **Close-out:** five-pack property tests, milestone rubric pass, A/B harness demo, final DoD sweep, §13 amendment audit, whole-phase 4-lens review | 9, 11 |
@@ -173,10 +225,13 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
 
 #### Phase 8 — Chunk 6 — session 20 (`plans/sessions/SESSION_20.md`)
 
-**Status: in progress — USER APPROVED 2026-07-20, all four decisions as recommended (S20-1
-modes-order amendment ratified · S20-2 formal listening + log.jsonl · S20-3 smoke matrix
-deferred to C9 · S20-4 version 0.1.0). §4.1 amendment applied at approval (lands with
-commit 1).**
+**Status: CHUNK 6 COMPLETE (2026-07-21).** All decisions user-ratified: S20-1 modes-order
+amendment · S20-2 formal listening + log.jsonl · S20-3 smoke matrix → C9 · S20-4 version
+0.1.0 · **S20-5 rung-3/pads dormancy accepted (T6 escalation → C-22)**. DoD §14.3/§14.8/
+§14.10 lofi slices **all MET** (ledger in SESSION_20.md); corpus 36/60; 3-lens review
+CLEAN / COMPLIANT / PROVEN-WITH-GAPS, zero blockers. Commits: 9e86b5a plan · 51da4a0 T1–T5
+pack+tests · be3c246 T7 calibration+C-22 · 151fa45 T8 listening · d95a043 T9 bless ·
+close-out this commit.
 
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
@@ -189,7 +244,7 @@ commit 1).**
 | T7 | Calibrate → first blessed `styles/chill_lofi/calibration.yaml` (442 lines; 8/8 moods; NO pads entries per C-22; L2 thresholds = engine defaults 0.95/0.98 §8.1-bootstrap; 34/120 zero-width L3 bands, known-latent C5 pattern) — independent artifact check **PASS ×6** incl. byte-identical determinism + exact band recompute; bootstrap test flipped to `test_calibration_yaml_blessed`; S20-5 doc amendments (§4.2/§10) + C-22 in same commit | orchestrator+opus | done | (this commit) |
 | T8 | USER listening gate — **FORMAL CLEAN PASS, user-confirmed 2026-07-21** (all 8 moods; breakdown/ending/happy-kick focus checks; ZERO §8.4 error entries; A2 acceptable under master glue). `listening/log.jsonl` CREATED with the structured pass record — the §8.4 evidence collector now exists. DoD §14.8 lofi slice: error-spotting pass executed, nothing to fix or file | user | done | (T9 commit) |
 | T9 | Corpus 24→36 + bless first capture — `_CORPUS_PACKS` += chill_lofi; triple (nostalgic, happy, melancholic) as scoped; unscoped `bless --approve`: **24 reference cells CLEAN (zero divergence), 12 chill_lofi first-capture cells written (3.4 MB)**; NO generatorVersion bump (first capture, no engine change). Literal updates: test_corpus.py (triples/counts/_PACKS/docstrings), test_bless.py (12-of-36, 36-cell counts, scoped-run 24). One real finding: chill_lofi is the FIRST fully-populated plan (swing+feelTable set, zero nulls) — null-retention test made conditional, chill_lofi's zero-null shape asserted explicitly. Gates 6183/1 | orchestrator | done | (this commit) |
-| T10 | Whole-chunk 3-lens review + close-out | opus ×3 | not started | — |
+| T10 | Whole-chunk 3-lens review + close-out — lens B (contract/DoD) **COMPLIANT, zero findings** (gates/lint/§14.10 cells/engine-probe independently reproduced; §9.4 order + §8.2 bless discipline verified; §14.3/§14.8/§14.10 ledgers all MET with honest partials; 3 close-out bookkeeping observations). Lens C (tests) **PROVEN-WITH-GAPS**: 15/15 mutation kills (incl. engine-side breakdown-cap + corpus-cell-drop); no flakiness; null-retention edit proven discriminating; C-1 three stale "24" comments fixed inline by orchestrator; G-1..G-3 = the accepted C-20/C-22 blind class, measured precisely: **34/50 chill_lofi pattern ids never render** (also rung-1 mains, both fills, comping intro — broader than C-22's prose; postscript at close-out). Lens A (content) **CLEAN**: §4 byte-fidelity sweep verbatim; 5 ROADMAP invariants held (comping max midi exactly 71; 2 corpus cells byte-identical re-render); first-uses re-verified on a 400-render sweep; C-22 dormancy confirmed (max energy 0.474, max rung 2, pads never active); NITs only (rim→perc documented; stale-pyc environment artifact — cleared, final gates run from clean compile). **ZERO blockers/majors across all three lenses — no fix loop.** Close-out: C-22 postscript (blind set 34/50), SESSION_20 DoD ledger closed all-MET, handoff rewritten | opus ×3 | done | (close-out commit) |
 
 #### Phase 8 — Chunk 5 — session 19 (`plans/sessions/SESSION_19.md`)
 

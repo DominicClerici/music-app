@@ -223,12 +223,22 @@ deviation, final commit.
 
 ---
 
-## DoD ledger to fill at close-out (§14, lofi slices)
+## DoD ledger (closed out 2026-07-21; verdicts from T10 lens B, independently reproduced)
 
-- [ ] §14.3 (lofi): full banks per §4 conventions; every defining entry verbatim; PT5/PT12/P6
-      + all loader rules; lint clean incl. warning tier, no unannotated warnings.
-- [ ] §14.8 (lofi slice): one full error-spotting pass, every entry fixed or filed
-      (`listening/log.jsonl` exists with real entries).
-- [ ] §14.10 (lofi): default + two mood extremes serialize, validate (Layers 1–2), pass the
-      lofi playground checklist.
-- [ ] Corpus 36/60 (C-17 progresses; closes at C8).
+- [x] **§14.3 (lofi): MET.** Full banks per §4 conventions (52 entries, 2 candidates/slot, 3/2
+      weights); `lf_dr_2` + all 4 defining timbres byte-verbatim (lens A); PT5/PT12/P6 + all
+      loader rules enforced at load; lint **0 errors / 0 warnings** (the one warning-class hit,
+      rung-4 unreachable, is annotated via `expected-unreachable` markers).
+- [x] **§14.8 (lofi slice): MET.** Formal §8.4 error-spotting pass, user-confirmed 2026-07-21:
+      all 8 moods, zero entries → nothing to fix or file. `listening/log.jsonl` created with
+      the structured pass record (the evidence collector now exists).
+- [x] **§14.10 (lofi): MET.** nostalgic/happy/melancholic × 2 lengths × 5 seeds validate
+      Layers 1–2 clean (30 cells, in-suite); §14.10 checklist confirmed by ear (laid-back
+      groove, breakdown strips, fade rings, nothing exuberant). Note: "dropout sections
+      audibly strip" is delivered by the arrangement 2-layer cap; the dropout *device* is a
+      structural no-op on bar-quantized banks (T5/T6, honest).
+- [x] **Corpus 36/60** (C-17 progresses; closes at C8). 12 first-capture cells, 24 reference
+      cells zero-divergence, no generatorVersion bump.
+- **New caveat: C-22** (rung 3/pads dormancy, accepted S20-5, + blind-set postscript 34/50).
+- **Review: lens A CLEAN / lens B COMPLIANT / lens C PROVEN-WITH-GAPS** (gaps = the accepted
+  C-20/C-22 class; zero blockers/majors; only inline doc-hygiene fixes).
