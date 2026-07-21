@@ -11,7 +11,8 @@ tonics:
   minor: [A, E, D]
 
 feel: swing8                     # NO swingRatio override: the PHASE_2 §6.4 tempo table
-                                 # matches measured blues shuffle as-is (0.722 slow → ~0.58 fast)
+                                 # matches measured blues shuffle as-is (0.722 flat <=90 BPM,
+                                 # narrowing to ~0.655 at the 150 ceiling — S21-4)
 feelTable: straight              # §3.4: electric-blues comping sits on the beat
 
 expressionRanges:

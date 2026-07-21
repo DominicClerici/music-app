@@ -292,12 +292,28 @@ final commit.
 
 ---
 
-## DoD ledger (to be closed at T10)
+## DoD ledger (closed out 2026-07-21; verdicts from T10 lens B, independently reproduced)
 
-- [ ] **§14.3 (blues):** full banks per §5-as-amended; defining entries verbatim;
-      PT5/PT12/P6 + all loader rules; lint 0 errors / 0 unannotated warnings.
-- [ ] **§14.8 (blues slice):** formal §8.4 error-spotting pass, entries appended to
-      `listening/log.jsonl`, every entry fixed or filed.
-- [ ] **§14.10 (blues):** default + two mood extremes serialize, validate Layers 1–2, and
-      pass the blues playground checklist by ear.
-- [ ] **Corpus 48/60** (C-17 progresses; closes at C8).
+- [x] **§14.3 (blues): MET.** Full banks per §5-as-amended (55 pattern entries — drums 16 /
+      bass 14 / comping 13 / pads 12 — + 8 timbre
+      flavors; ≥2 ungated candidates/slot; 3/2 weights with the two documented pinned-weight
+      exceptions); `bl_dr_2` + `bl_bs_3` + all §5.6 defining values byte-verbatim (lenses
+      A+B independently); PT5/PT12/P6 + all loader rules proven enforced (break-a-copy);
+      lint **0 errors / 0 warnings**, zero `expected-unreachable` markers (none needed —
+      all rungs envelope-reachable; the S21-2 dormancy is caveat-recorded, C-23).
+- [x] **§14.8 (blues slice): MET.** Formal §8.4 error-spotting pass, user-confirmed
+      2026-07-21 (explicitly confirmed as a real listen): all 8 moods, zero entries →
+      nothing to fix or file. Session-21 pass record appended to `listening/log.jsonl`.
+- [x] **§14.10 (blues): MET.** energetic/aggressive/romantic × 2 lengths validate Layers
+      1–2 clean (lens B re-ran); three tempo tiers reachable and confirmed by ear (the
+      slow tier renders 12/8 under the S21-2 re-map); boogie bass outlines changes;
+      turnarounds relaunch every chorus (both pool paths); stop lands when drawn (T6:
+      303 firings / 1340 eligible boundaries).
+- [x] **Corpus 48/60** (C-17 progresses; closes at C8). 12 first-capture cells, 36
+      pre-existing cells zero-divergence + spot-verified byte-identical vs `7500f24`,
+      no generatorVersion bump.
+- **New caveats: C-23** (rung-1/2 dormancy re-map, S21-2), **C-24** (triplet fill vs W7,
+  resolved with signed-off §5.4 amendment), **C-25** (hendrix auto-dormancy, S21-6).
+- **Review: lens A CLEAN / lens B COMPLIANT / lens C PROVEN-WITH-GAPS** (gaps = the
+  accepted C-20-class blind-entry validity + calibration-artifact zero regression
+  coverage, both cross-pack latents → C9; **zero blockers/majors; no fix loop**).
