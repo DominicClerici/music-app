@@ -343,17 +343,52 @@ independently reproduced by the orchestrator)
   on rung-4 bass, authored as `{pos: 1680, dur: 240, degree: approach, push: true}`. The
   composition is broken: `push` advances the frame to the chord *after* the first boundary in
   span, so `_place_degree` resolves `approach` against `_next_chord(effective)` — the chord
-  **two changes ahead**. Orchestrator-measured over 48 renders: **0 of 399** approach events
+  **two changes ahead**. ~~Orchestrator-measured over 48 renders: **0 of 399** approach events
   land a half-step below the chord arriving at the next barline. **The reviewer's claimed
   remedy was overstated** — it reported push-removal restoring 100%; two independent
   measurements (orchestrator 72/408 = 18%; fix agent 59/744-with-change = 16.5%) put it near
   **18%**, because the pattern tiles every bar while fusion's chords span 2–4 bars, so ~half
-  of firings have no change to approach at all. **User ruled: drop `push: true` from those two
-  events, accept the residual, caveat it** — the off-change firings are mostly benign
-  (measured 56.5% land on the governing chord's root, 28.0% a perfect 5th). Rejected:
+  of firings have no change to approach at all.~~ **User ruled: drop `push: true` from those two
+  events, accept the residual, caveat it** ~~— the off-change firings are mostly benign
+  (measured 56.5% land on the governing chord's root, 28.0% a perfect 5th)~~. Rejected:
   replacing `approach` with the blues chord-tone idiom on one or both siblings (a larger
   deviation from pinned §6.4 than the defect warrants). §6.4 annotated; flagged for the T8
   listening pass.
+  **[CORRECTED 2026-07-21, T10 lens A — the ruling stands, the numbers and the rationale do
+  not. Read this before citing anything struck above.**
+  **(1) The retraction.** This block's sentence "**the reviewer's claimed remedy was
+  overstated**" is **withdrawn**. The T2 reviewer was **right**: removing `push` restores
+  approach correctness to **100 %**. It was the orchestrator's contradicting measurement that
+  was **contaminated**, so the accusation of overstatement was itself the overstatement. The
+  contamination: approach events were identified **positionally** as
+  `ticks % 1920 == 1680 and duration_ticks == 240`, but **four** rung-4 bass events share that
+  shape — `fifth` (vel 0.66, `fu_bs_2`), `root` (0.72, `fu_bs_3`), and the two genuine
+  `approach` events (0.80 `fu_bs_4`, 0.82 `fu_bs_4b`). The `fifth` and `root` notes are
+  essentially never a half-step below the arriving chord root, so they sat in the denominator
+  and diluted the numerator; the "0 %", "18 %" and "16.5 %" figures are all artifacts of that
+  bucket, not measurements of the device.
+  **(2) The real numbers.** Isolating true approach notes **by velocity**: un-pushed on-change
+  correctness is **16/16 = 100.0 %** (orchestrator re-measurement) and **580/580 = 100.0 %**
+  (lens A, instrumented at the production `retarget_event` call site, larger sweep). Two
+  independent methods, same answer.
+  **(3) `push` is still correctly dropped — but not for the recorded reason.** The recorded
+  mechanism (frame advanced two changes ahead) is not what usually happens:
+  `apply_articulation` clamps the authored `dur: 240` to the gap (typically ~194 ticks), so the
+  note generally ends *before* the barline, `_boundaries_in_span` comes back empty, and `push`
+  silently falls through to the governing chord. `push` is thus **inert on the large majority
+  of firings and actively wrong on the remainder** (lens A: wrong on 116 of 1328). Dropping it
+  remains right; the "0 of 399" framing that justified it was not.
+  **(4) The residual is real but differently shaped.** ~50 % of approach firings (orchestrator
+  16/32; lens A 56.3 %) have **no chord change at the next barline**. In those bars the degree
+  does **not** "fall back to the governing chord" — `resolve_degree_pc` returns
+  `(root(next timeline chord) − 1) % 12`, i.e. a **leading tone to a chord that has not arrived
+  yet**. Measured against the *sounding* chord: orchestrator found 12 of 16 off-change notes
+  inside chord tones ∪ scale and **4 outside — 12.5 % of all approach firings**; lens A
+  measured 25 % of off-change notes outside, i.e. **14.1 % of all firings**. The honest
+  statement is **~12–14 % of approach firings are a short chromatic bass note against the
+  sounding chord**. That is defensible for a ~194-tick bar-end pickup, but it is **not**
+  "mostly benign / musically inert", and nothing about it lands on "56.5 % root / 28.0 % P5".
+  The acceptance is unchanged; the grounds for it are now stated accurately.]**
 
 - **S22-15 (RAISED AT THE S22-13 IMPLEMENTATION, RULED 2026-07-21):** the S22-13 widening did
   the bulk of the work but did **not** fully clear L2-1. Quartal `[0, 5, 10, 15]` carries
@@ -371,6 +406,11 @@ independently reproduced by the orchestrator)
   in the original ruling. T6's corrected 1.82 % was restated to the user BEFORE the T8
   listening gate, so the acceptance is informed — see the `listening/log.jsonl` session-22
   entry. The accepted residual is caveated at **C-30**.]**
+  **[SUPERSEDED 2026-07-21, T10 lens A — a **fifth** independent seed set measured 12/384
+  (**3.12 %**), above all four figures above, so "~1–2 %" is now "**~1–3 %**". C-30 carries all
+  five measurements (0.50 / 1.04 / 1.82 / 2.60 / 3.12 %) and is the authoritative record; the
+  6× spread means the rate is seed-set sensitive and should be planned against at the top of
+  the range. The ruling and the informed-acceptance argument above are unaffected.]**
   **All 12 actual fusion_jazz corpus cells validate
   clean** (verified: energetic/calm/tense × 120/240 s × both pinned seeds → 0/12), so T9 is
   unaffected. A clean A/B on the current pack: quartal at comping r1–2 → 2/400; quartal

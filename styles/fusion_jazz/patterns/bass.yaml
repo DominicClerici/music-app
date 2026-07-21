@@ -131,19 +131,37 @@ patterns:
   # 16ths, and a bar-end `approach` note driving into the change.
   #
   # The `approach` is authored UN-PUSHED even though §6.4's rung-4 prose names
-  # both devices. Composing them is broken: `retarget_event` with `push=True`
-  # first advances the effective frame to the chord AFTER the first in-span
-  # boundary, and `_place_degree` then resolves `approach` against
-  # `_next_chord(effective)` — i.e. the chord TWO changes ahead, not the one
-  # arriving at the barline. Measured over 48 renders: pushed, 3 of 736 firings
-  # land a half-step below the arriving chord; un-pushed, 59 of 744 — and 59 of
-  # the 358 firings that actually have a change to approach (16.5%).
+  # both devices.
   #
-  # Accepted residual: the pattern tiles every bar while fusion's chords span
-  # 2-4 bars, so ~52% of firings have no change to approach at all and the
-  # degree falls back to the governing chord — measured 56% land on its root
-  # and 28% a perfect 5th above. Musically inert rather than wrong, so the
-  # bar-end drive is kept rather than replaced.
+  # [corrected 2026-07-21, S22-14 / T10 lens A — the authoring is unchanged;
+  # the numbers previously recorded in this comment were contaminated and are
+  # withdrawn. They identified approach events POSITIONALLY (pos 1680, dur 240),
+  # but four rung-4 bass events share that shape: `fifth` (vel 0.66, fu_bs_2),
+  # `root` (0.72, fu_bs_3), and the two genuine `approach` events (0.80 here,
+  # 0.82 in fu_bs_4b). Isolating true approach notes by velocity, un-pushed
+  # on-change correctness is 16/16 = 100.0% (orchestrator) and 580/580 = 100.0%
+  # (lens A, instrumented at the production `retarget_event` call site). The
+  # struck "16.5%" was an artifact of the mixed bucket.
+  #
+  # `push` is still correctly omitted, for a different reason than first
+  # recorded: `apply_articulation` clamps the authored dur 240 to the gap
+  # (typically ~194 ticks), so the note usually ends BEFORE the barline,
+  # `_boundaries_in_span` is empty, and `push` falls through to the governing
+  # chord — inert on the large majority of firings and actively wrong on the
+  # remainder (lens A: wrong on 116 of 1328).
+  #
+  # Accepted residual (corrected shape): the pattern tiles every bar while
+  # fusion's chords span 2-4 bars, so ~50% of firings have no chord change at
+  # the next barline (orchestrator 16/32; lens A 56.3%). In those bars the
+  # degree does NOT fall back to the governing chord — `resolve_degree_pc`
+  # returns (root(next timeline chord) - 1) % 12, a leading tone to a chord
+  # that has not arrived yet. Against the sounding chord: 12 of 16 off-change
+  # notes sit inside chord tones u scale, 4 outside (12.5% of all approach
+  # firings); lens A measured 25% of off-change notes outside (14.1% of all
+  # firings). So ~12-14% of approach firings are a short chromatic bass note
+  # against the sounding chord — defensible for a ~194-tick bar-end pickup, and
+  # kept on those grounds, but NOT "musically inert" as this comment used to
+  # claim.
   - id: fu_bs_4
     role: bass
     kind: main
