@@ -6,6 +6,38 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
+> **CURRENT — Session 23 is at the PROMPT step-1 USER APPROVAL GATE (2026-07-21).** Scoping
+> complete (3 opus agents); `plans/sessions/SESSION_23.md` written; **no implementation agent
+> dispatched.** Session-start baseline re-verified at `e849aa8`: four gates green, 6513 passed
+> / 1 skipped. **Suite baseline corrected: ~45 s, not the ~34 s recorded below.**
+>
+> **Scoping found three previously-unknown defects, each orchestrator-verified independently:**
+> **(F1)** `quality/layer2.py:141-158`'s L2-1 reads the **post-humanizer document** on exact
+> tick equality, so it measures only 5–18 % of its intended population and is **vacuously
+> silent for jazz and chill_lofi comping** (0 of 1740 / 0 of 2846 stage-6 strong-beat notes
+> survive; check skipped in 12/12 renders). W7 reads stage-6 correctly; L2-1 never got the same
+> treatment. **DoD §14.4b must not be recorded PROVEN until fixed.** → new caveat C-31.
+> **(F2)** `tests/test_smoke_matrix.py:62` still reads `_PACKS = ("pop_rock", "jazz")` — the
+> C6/C7/C8 widening its own comment promised **never happened**, and `:312`'s
+> `assert len(_PACKS) == 2` froze it. **DoD §14.6 fails on content, not just venue**, and
+> **CAVEATS C-18's "the matrix's content is fully pinned-compliant" (CAVEATS.md:126) is false.**
+> **(F3)** pop_rock's and jazz's `calibration.yaml` **no longer reproduce** — 20 and 18 drifted
+> leaves, all `pads` `noteDensity`/`meanIoi` bands, stale since `9661d06` (gv 0.1.3) changed
+> pads content without regenerating them. **GAP-2 already happened and shipped.**
+>
+> **Proposed at the gate: split C9 → C9 + C10** (decision S23-0). C9 = the machine-verifiable
+> close-out (repair F1–F3, DoD §14.6 + §14.9, C-29 closure, C-30 ruling, doc debt). C10 =
+> GAP-1 dry-render, reachability lint, A/B harness + rubric tooling, the 3.5–5 h user listening
+> block, whole-phase 4-lens review, final DoD sweep. Rationale: ~18–20 tasks otherwise, and
+> §14.8's A/B harness **does not exist** (zero matches for `a/b`/`pairwise`/`blinded`/
+> `binomial` in `src/` and `tests/`) so the listening block is gated on unbuilt tooling.
+> **Ten decisions S23-0…S23-10 await ratification — see SESSION_23.md §3.**
+>
+> **§13 amendment audit (DoD §14.11) RAN and PASSED: 8 of 8 applied**, verified against the
+> target documents. One §13 summary wording nit (item 4's "Q2 closed"). §14.11 is MET.
+>
+> *(Original C9 handoff text follows, still binding for scope not yet addressed.)*
+>
 > **Next:** **Phase 8, Chunk 9 (Session 23) — THE PHASE 8 CLOSE-OUT, and the last chunk in
 > the plan. FRESH CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/
 > SESSION_23.md` → USER APPROVAL GATE) before dispatching.** Scope per the chunk table:
