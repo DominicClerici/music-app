@@ -423,6 +423,12 @@ pools:
         b: [[IV7], [~], [I7], [~]]
         c: [[V7], [IV7], [I7], [~]]
     - id: hendrix                  # aggressive corner: authored #9 (§3.5)
+                                   # [amended 2026-07-21, S21-6 (user-ratified), C-25: the
+                                   # modes:[major] + valence:[-1.0,-0.3] gates are mutually
+                                   # exclusive under auto mood-resolution (major-resolving
+                                   # moods all have V >= +0.30) — reachable only via an
+                                   # explicit key.mode: major override; auto renders get #9
+                                   # from the dressing ladder. Accepted dormancy.]
       weight: 15
       modes: [major]
       valence: [-1.0, -0.3]
@@ -489,7 +495,7 @@ Note the P4 discipline: because `solo` serves 12-, 8-, and 16-bar options, each 
 - Rung 2: **Chicago** — kick 1 & 3, straight-8th hats (swing renders the shuffle), hard snare 2/4.
 - Rung 3: **Texas** — four-on-the-floor kick, straight-quarter ride, shuffled snare with `minDensity`-gated ghosts. The hat→ride switch (the genre's #1 energy lever) is the rung 2→3 content change.
 - Rung 4: double-shuffle — ride 8ths (swung) both hands implied, four-on-floor, hardest 2/4, gated ghost layer.
-- Fills: triplet-grid snare/tom figures; rung-4 tom runs.
+- Fills: triplet-grid snare/tom figures; rung-4 tom runs. *[Amended 2026-07-21, S21 T5 (user-ratified), C-24: blues fills author on the straight grid — triplet fills require an all-triplet role context, because W7 enforces grid homogeneity per (section, track) Phrase and grid-blind fill tiling mixes a triplet fill into straight-grid snare content. The 12/8 feel lives on the gated slow-blues mains' ride/kick.]*
 
 ```yaml
 - { id: bl_dr_2, kind: main, energyLevel: 2, lengthTicks: 1920, weight: 3, events: [
