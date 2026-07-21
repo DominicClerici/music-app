@@ -97,12 +97,18 @@ _DOCUMENT_STAGE = "document"
 _COMPACT_SEPARATORS = (",", ":")
 _DOCUMENT_INDENT = 2
 
-# --- the pinned cell matrix (§8.2, 24 cells) ---------------------------------
+# --- the pinned cell matrix (§8.2, 60 cells) ---------------------------------
 #
-# The two *reference* packs only. §8.2's five-pack / 60-cell matrix fills out as
-# C6-C8 author chill_lofi/blues/fusion_jazz; the coordinates below are a strict
-# prefix of it, so the fill-out is additive.
-_CORPUS_PACKS: tuple[str, ...] = ("pop_rock", "jazz", "chill_lofi", "blues")
+# All five packs: the two reference packs plus the three authored across C6-C8
+# (chill_lofi, blues, fusion_jazz). §8.2's five-pack / 60-cell matrix is now
+# complete (C-17 closed at SESSION_22 T9).
+_CORPUS_PACKS: tuple[str, ...] = (
+    "pop_rock",
+    "jazz",
+    "chill_lofi",
+    "blues",
+    "fusion_jazz",
+)
 
 _CORPUS_LENGTHS_SEC: tuple[int, ...] = (120, 240)
 
@@ -198,7 +204,7 @@ def corpus_moods(pack_id: str) -> tuple[str, str, str]:
 
 
 def corpus_cells() -> list[Cell]:
-    """The pinned 24-cell matrix: 2 packs × 3 moods × 2 lengths × 2 seeds (§8.2)."""
+    """The pinned 60-cell matrix: 5 packs × 3 moods × 2 lengths × 2 seeds (§8.2)."""
     return [
         Cell(pack=pack, mood=mood, length_sec=length_sec, seed=seed)
         for pack in _CORPUS_PACKS
