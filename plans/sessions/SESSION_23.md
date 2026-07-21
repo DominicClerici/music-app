@@ -13,22 +13,32 @@
 | T1 L2-1 grain | **done** | `5c28790` | APPROVE-WITH-NITS + 1 fix cycle; 2 memo mutants killed |
 | T5+T6 §14.9 + suppression | **done** | `f0e…` | APPROVE-WITH-NITS + 1 fix cycle; 3/3 mutants killed |
 | **T2 quartal widening** | **done** | `899a0b9` | **S23-2 resolved as option D — see §3a-FINAL.** APPROVE-WITH-NITS, **0 mutation survivors**; C-30 RESOLVED, C-32 added |
-| T7 smoke matrix ×5 | in progress | — | unblocked by T2 |
-| T9 doc debt | not started | — | last (T7 also writes CAVEATS) |
-| T10 chunk review | not started | — | 3 lenses |
+| T7 smoke matrix ×5 | **done** | `b99a61b` | **§14.6 MET both clauses**; 3 green runs, no flakiness; **C-33 NEW** |
+| T9 doc debt | **done** | (this commit) | **C-31 created** (the reserved gap); C-19/C-30/C-33 resolved; §8.1 + §13 fixed |
+| T10 chunk review | pending | — | 3 lenses |
 
-Gates green at every commit; suite **6513 → 10631**.
+Gates green at every commit; suite **6513 → 11018**.
 
-**Doc-debt queue for T9** (raised by T2's review; deferred only because T7 is concurrently
-editing `CAVEATS.md`):
-- **C-30's "class (b) … ALL at length 120"** — falsified by an independent sweep (a class-(b)
-  failure at length 180). Soften to "densest at 120", as already corrected in §3a-FINAL above.
-- **PHASE_8 §8.1's C-32 note: "exactly one pitch class is ever unioned in"** → **"at most one"**.
-  `{root+5}` is frequently already in the narrow set (net zero); the test correctly asserts the
-  weaker `wide − narrow ⊆ {root+5}`, and C-32 already says "at most one". Only §8.1 overstates.
-- **PHASE_8 §8.1 omits the over-approximation.** C-32 states it prominently ("the fourth is
-  *admitted*, not *required*"); the binding §8.1 note lists only the three narrowing axes, so
-  §8.1 alone reads tighter than the mechanism is.
+**S23-12 (orchestrator ruling, user-authorized 2026-07-21): ACCEPT chill_lofi's length ceiling.**
+Same question S19-3 answered for pop_rock (C-19): lo-fi is loop music, a ~3-minute ceiling is
+in-genre, and raising `forms.yaml` repeat bounds to force 8-minute lo-fi tracks would amend
+pinned data against the pack's character — the reasoning C-22 used when accepting the pads
+dormancy rather than raising the energy ceiling. C-33 resolved.
+
+**Three orchestrator errors corrected at T9 — recorded, not tidied away:**
+1. **C-31 was reserved and never written.** The number was verbally assigned to T1's grain fix,
+   then two later agents were told "do not create C-31" — so the sequence ran C-29, C-30, C-32,
+   C-33 with a hole, and **the F1 deviation had no caveat at all**. Concretely harmful:
+   `measure_l2_1`'s docstring already cited "S23-1, C-31", i.e. **code referencing a caveat that
+   did not exist**. A reserved number with no entry is exactly as lost as an unlogged deviation.
+2. **The 8.11 % exposure figure did not reproduce.** It came from T2's review, was passed on by
+   the orchestrator unverified, and reached a binding doc. Three sweeps now disagree: **6.01 %**
+   (orchestrator, 118 123 measured notes — the largest sample), 8.11 % (T2 review), 12.74 % (T9,
+   10 270 notes). §8.1 now states the spread and instructs re-measurement rather than citing a
+   number. **The 0 % on the other four packs is exact, structural, and reproduced in all three**
+   — that is the load-bearing claim.
+3. **"0 differing rows in 1750" was a transcription slip** in this plan's S23-8; the commit and
+   `tests/test_quality_layer2.py:387` both say **1740**. Corrected throughout.
 
 **Pre-existing, recorded so it is not rediscovered as new** (T2 review, no action): a pushed hit
 sounds the *next* chord's voicing while `governing_chord(note.ticks)` returns the current one, so
@@ -179,7 +189,7 @@ Ratify individually. Each states the recommendation and the rejected alternative
 | **S23-5** | **F2: widen smoke matrix to 5 packs** + correct C-18's false content claim | **Widen.** Must land **after** S23-1/S23-2 — its `_gate` asserts `validate_pipeline == []` hard, so widening before the L2-1 question is settled yields an intermittently red gate (fusion's residual is seed-set sensitive, 0.5–3.1 %). | Widen first and tune later (ships a flaky gate on `main`) |
 | **S23-6** | **Crash-suppression branch** (`test_phase6_property.py:116`) | Replace `== set()` with a **per-pack pinned dict** (`chill_lofi`/`fusion_jazz` → `{"breakdown"}`, other three → `∅`), asserted for **equality**, and make the suppression branch assert for real. Widening makes the current assertion fail **by its own design** — this is the one genuine work item inside §14.9. | `⊇` assertions (vacuous in one direction); deleting the test (loses §11.9 check 3 entirely) |
 | **S23-7** | **F3: GAP-2 coverage shape** | **Byte-reproduction test** per pack: `calibrate → tmp`, assert bytes equal the committed artifact. Not brittle — a legitimate re-bless regenerates the file, so the test follows automatically. **Plus regenerate pop_rock's and jazz's artifacts** (a real content change → own commit). | Exact value pins (brittle, duplicate the artifact); tolerance pins (**unpinnable** — band scales differ by 4 orders of magnitude across roles and several are negative at n=3); content hashing (same power, unreadable failure) |
-| **S23-8** | **C-29 closure** | **Resolved-and-verified.** Measured 5 packs × all moods × 12 seeds × 2 lengths: the four pre-existing packs sit at ratio **1.0000 under both readers**, with **0 differing rows in 1750** — the widening is provably inert on them, so no margin can erode. Record that this was only answerable at the corrected grain. | Leave open (the assignment is discharged; leaving it open misrepresents the evidence) |
+| **S23-8** | **C-29 closure** | **Resolved-and-verified.** Measured 5 packs × all moods × 12 seeds × 2 lengths: the four pre-existing packs sit at ratio **1.0000 under both readers**, with **0 differing rows in 1740** — the widening is provably inert on them, so no margin can erode. Record that this was only answerable at the corrected grain. | Leave open (the assignment is discharged; leaving it open misrepresents the evidence) |
 | **S23-9** | **C-18: add CI** | **Add `.github/workflows/gates.yml`** running the four gates on push+PR with `uv sync --locked`. ~2–3 min/run. Keep the 300-seed sweep inline (stricter than §8.2's pinned "periodically"); record that as C-18's resolution note. | Defer again (cheapest DoD item on the list — ~15 lines of YAML closes §14.6's venue clause) |
 | **S23-10** | **C-19's §8.2 annotation** | Insert the drafted line at `PHASE_8.md:833`; flip C-19 to fully resolved. | — (trivial, owed since C5) |
 | **S23-11** | **`calibrate()` must PRESERVE a committed artifact's `l2Thresholds`** — ruled by the orchestrator 2026-07-21, raised by T3 | **Preserve.** See rationale below. Expands **T2's scope** to carry the `tooling/calibrate.py` change. | Regenerate thresholds from engine defaults (the status quo — structurally incompatible with both S23-2 and S23-7, and a silent-drift bug in its own right) |
