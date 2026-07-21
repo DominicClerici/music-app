@@ -37,6 +37,29 @@ Derived, not literal: a new pack joins every property suite by being registered.
 """
 
 
+MOOD_COUNTS: dict[str, int] = {
+    "blues": 8,
+    "chill_lofi": 8,
+    "fusion_jazz": 8,
+    "jazz": 10,
+    "pop_rock": 11,
+}
+"""How many moods each registered pack declares, pinned.
+
+The mood dimension would otherwise be self-checked: a non-vacuity test that
+computes its expected cell count from `supported_moods()` and then compares it
+against cells *also* built from `supported_moods()` reads the same source on
+both sides, so `pop_rock` could silently fall from 11 moods to 2 and every such
+test would still pass. These literals are the independent side of that
+comparison — `supported_moods()` asserts against them, so a truncated mood list
+fails loudly the way a dropped pack already does.
+
+Kept here rather than in the six property modules so `_packmatrix` stays the one
+file a sixth pack has to touch: registering it and adding its count here is the
+whole edit.
+"""
+
+
 @cache
 def cached_pack(pack_id: str) -> StylePack:
     """`resolve_pack` memoized per process, so a 20k-cell matrix does not
@@ -56,11 +79,40 @@ def supported_moods(pack_id: str) -> tuple[str, ...]:
     """The pack's declared supported moods, sorted for a stable matrix order.
 
     Read off the pack rather than hardcoded, so a pack that gains a mood gains
-    matrix cells automatically.
+    matrix cells automatically — but checked against `MOOD_COUNTS`, so a pack
+    that *loses* one cannot shrink the matrix silently.
     """
     pack = cached_pack(pack_id)
     assert pack.interpreter is not None, pack_id
-    return tuple(sorted(pack.interpreter.supported_moods))
+    moods = tuple(sorted(pack.interpreter.supported_moods))
+    pinned = MOOD_COUNTS.get(pack_id)
+    assert pinned is not None, (
+        f"pack {pack_id!r} has no pinned mood count — add it to "
+        "`_packmatrix.MOOD_COUNTS`"
+    )
+    assert len(moods) == len(set(moods)) == pinned, (pack_id, pinned, moods)
+    assert pinned >= 2, (pack_id, pinned)
+    return moods
+
+
+def assert_mood_dimension_pinned() -> None:
+    """The mood dimension matches `MOOD_COUNTS` in both directions.
+
+    Called by every property suite's `test_matrix_non_vacuous`: it pairs the
+    pinned counts with the registry (no pack unpinned, no pin without a pack)
+    and forces the per-pack check inside `supported_moods` to run for all of
+    them. Expected cell counts are then summed from `MOOD_COUNTS` rather than
+    from `supported_moods`, so the comparison has two independent sides.
+    """
+    assert set(MOOD_COUNTS) == set(PACKS), (sorted(MOOD_COUNTS), PACKS)
+    for pack_id in PACKS:
+        supported_moods(pack_id)
+
+
+def total_moods() -> int:
+    """The pinned total mood count across every registered pack."""
+    assert_mood_dimension_pinned()
+    return sum(MOOD_COUNTS[pack_id] for pack_id in PACKS)
 
 
 def pack_mood_pairs() -> tuple[tuple[str, str], ...]:

@@ -2,13 +2,18 @@
 
 Drives the **fully-wired** pipeline — stage-6 Transitions **and** stage-7
 Humanizer, then serialize -> `TrackDocument` — across the pinned §11.9 matrix
-(both packs x every supported mood x lengths `[None, 180, 240]` x 25 seeds =
-1575 documents) and asserts every §11.9 invariant on every produced document:
+(**every registered pack** x every supported mood x lengths `[None, 180, 240]` x
+25 seeds = 3375 documents; PHASE_8 §14.9 widened the pack dimension from the two
+reference packs to all five) and asserts every §11.9 invariant on every produced
+document:
 
 1. Fills appear only in legal fill bars.
 2. No drum groove event survives inside a rendered fill window.
-3. Crash suppression honored for `postchorus`/`breakdown` entries (and a crash
-   IS present at every other section entry — the non-vacuous placement path).
+3. The §3.2 device policy honored at `postchorus`/`breakdown` entries — no entry
+   crash, no fill in the boundary's fill bar, and (for `breakdown`) the §3.5
+   dropout truncation — and a crash IS present at every other section entry (the
+   non-vacuous placement path). Both branches now run for real: `chill_lofi` and
+   `fusion_jazz` enter `breakdown`, which the two v1 reference packs never did.
 4. No note before tick 0 or past song end (doc level, V8-adjacent).
 5. Non-drum `midi` untouched by both stages (C5 ceiling: no non-drum note is
    re-pitched or `> 71`; the emitted pitched-midi multiset is a sub-multiset of
@@ -42,6 +47,7 @@ from typing import Any
 
 import pytest
 
+from _packmatrix import LENGTHS_RENDER, PACKS, SEEDS_25
 from _stage6_driver import (
     JAZZ,
     POP,
@@ -52,8 +58,6 @@ from _stage6_driver import (
 )
 from test_transitions_determinism import (
     _GROOVE_EXCLUDE,
-    _LENGTHS,
-    _SEEDS,
     _legal_fill_bars,
     _matrix,
 )
@@ -73,11 +77,12 @@ from trackgen.transitions.ending import find_t_last
 
 # Bind the shared matrix knobs so a drift in the stage-6 subset test surfaces
 # here rather than silently diverging (§11.9 pins 25 seeds x 3 lengths).
-assert len(_SEEDS) == 25
-assert _LENGTHS == [None, 180, 240]
-# Both reference packs present with a non-empty mood set — guards against a
-# silent matrix shrink (§11.9 pins "every pack x every supported mood").
-assert {p["styleFamily"] for p in _matrix()} == {"pop_rock", "jazz"}
+assert len(SEEDS_25) == 25
+assert LENGTHS_RENDER == (None, 180, 240)
+# Every registered pack present with a non-empty mood set — guards against a
+# silent matrix shrink (§11.9 pins "every pack x every supported mood", widened
+# from the two reference packs to all five by PHASE_8 §14.9).
+assert {p["styleFamily"] for p in _matrix()} == set(PACKS)
 
 _PITCHED_ROLES = ("bass", "comping", "pads")
 _C5_CEILING = 71  # PHASE_1 D14 / ROADMAP invariant 4: soloist owns above ~C5.
@@ -113,33 +118,156 @@ def test_wired_matches_generate_track(params: dict[str, object]) -> None:
     assert doc.model_dump() == generate_track(params).model_dump()
 
 
-def test_crash_suppression_class_absent_in_v1_forms() -> None:
-    """§11.9 check 3 reachability, made explicit (non-vacuous N/A).
+# --- §3.2 crash-suppression reachability, pinned per pack ---------------------
 
-    The crash-suppression classes (`postchorus`/`breakdown`) never appear as an
-    entered section in either v1 reference pack across the whole matrix, so the
-    suppression branch of `test_phase6_property_matrix` is N/A — its crash
-    coverage rides entirely on the *crash-present-at-every-other-entry* branch.
-    This scan asserts that fact loudly: if a future form ever introduces one of
-    those entered types, this fails and forces the suppression path to be
-    exercised for real rather than silently skipped.
-    """
-    entered_suppress_types: set[str] = set()
-    for params in _matrix():
-        plan = generate_plan(params)
-        style_family = params["styleFamily"]
-        assert isinstance(style_family, str)
-        pack = resolve_pack(style_family)
-        assert pack is not None and pack.forms is not None
-        sf = form(plan, pack.forms)
-        for idx, sec in enumerate(sf.sections):
-            if idx > 0 and sec.type in ("postchorus", "breakdown"):
-                entered_suppress_types.add(sec.type)
-    assert entered_suppress_types == set(), (
-        "postchorus/breakdown appeared as an entered section — crash suppression "
-        "is now reachable and must be asserted, not treated as N/A: "
-        f"{sorted(entered_suppress_types)}"
+_SUPPRESS_TYPES = ("postchorus", "breakdown")
+
+_ENTERED_SUPPRESS_TYPES: dict[str, frozenset[str]] = {
+    "pop_rock": frozenset(),
+    "jazz": frozenset(),
+    "blues": frozenset(),
+    "chill_lofi": frozenset({"breakdown"}),
+    "fusion_jazz": frozenset({"breakdown"}),
+}
+"""Which §3.2 suppression classes each pack actually *enters*, measured.
+
+Pinned per pack and asserted for **equality**, never `>=`/`<=` — the set is
+load-bearing in both directions. A pack gaining an entered suppression type must
+route through the suppression branch below (and be recorded here); a pack losing
+one means its coverage of that branch silently evaporated.
+
+Three of the five packs reach no suppression class at all, so their §11.9 check-3
+coverage rides entirely on the *crash-present-at-every-other-entry* branch (the
+original v1 situation). `chill_lofi` and `fusion_jazz` both enter `breakdown` —
+`postchorus` remains entered by no registered form, so the §3.5 dropout path is
+the only suppression device v1 exercises for real. Per-pack sets rather than a
+universal, per CAVEATS C-22/C-23/C-25/C-28: structural unreachability is normal
+and legitimate here, so a universal ("every pack enters a suppression class")
+would fail on three packs by design.
+"""
+
+
+def test_entered_suppression_pins_cover_exactly_the_registry() -> None:
+    """The per-pack pin table and the pack registry name the same packs.
+
+    The scan below is parameterized per pack, so a pack missing from the table
+    would `KeyError` — but a *stale* entry for a de-registered pack would go
+    unnoticed. This closes that direction; the two together are the dict
+    equality the single-body version used to assert."""
+    assert set(_ENTERED_SUPPRESS_TYPES) == set(PACKS), (
+        sorted(_ENTERED_SUPPRESS_TYPES),
+        PACKS,
     )
+
+
+@pytest.mark.parametrize("pack_id", PACKS)
+def test_entered_suppression_classes_are_pinned_per_pack(pack_id: str) -> None:
+    """§11.9 check 3 reachability, measured per pack and pinned.
+
+    Until PHASE_8's pack expansion no registered form entered a `postchorus` or
+    `breakdown`, so the suppression branch of `test_phase6_property_matrix` was
+    genuinely N/A and this scan asserted the empty set. `chill_lofi` and
+    `fusion_jazz` changed that: both enter `breakdown`, so the branch is live and
+    asserts for real (see `_assert_suppressed_entry`). Equality here keeps the
+    fact honest in both directions — a new entered type fails loudly and forces
+    the same treatment, and a vanished one fails rather than quietly dropping the
+    only coverage the suppression branch has.
+
+    Parameterized per pack rather than scanning all 3375 cells in one body: the
+    single-body version was the slowest test in the suite, and under `pytest
+    -n auto` the gate's wall time can never fall below its longest single test.
+    Splitting is semantics-preserving — each pack's entered set is derived only
+    from that pack's own cells, and equality per pack over a key set proved
+    exhaustive above is the same assertion as equality over the whole dict.
+    """
+    entered: set[str] = set()
+    for params in _matrix():
+        if params["styleFamily"] != pack_id:
+            continue
+        pack = resolve_pack(pack_id)
+        assert pack is not None and pack.forms is not None
+        sf = form(generate_plan(params), pack.forms)
+        for idx, sec in enumerate(sf.sections):
+            if idx > 0 and sec.type in _SUPPRESS_TYPES:
+                entered.add(sec.type)
+
+    assert frozenset(entered) == _ENTERED_SUPPRESS_TYPES[pack_id], (
+        pack_id,
+        sorted(entered),
+        sorted(_ENTERED_SUPPRESS_TYPES[pack_id]),
+        "entered suppression classes diverged from the pinned per-pack set — a "
+        "class newly entered must be asserted through the suppression branch, "
+        "and one no longer entered means that branch lost its only coverage",
+    )
+
+
+def _assert_suppressed_entry(
+    params: dict[str, object],
+    final: list[Phrase],
+    outgoing: Any,
+    entered: Any,
+) -> None:
+    """The §3.2 device policy for an entered suppression class, asserted in full.
+
+    §3.2's table gives `breakdown` the `dropout` device and `postchorus` no
+    device at all — both with "crash+kick on entered downbeat: no". So the
+    boundary must show *three* things, not just the missing crash the pre-C9
+    version of this test checked:
+
+    1. no entry crash on the entered downbeat (§3.2, both classes);
+    2. no fill in the boundary's fill bar — the last bar of the outgoing section
+       (§3.1). The device is `dropout`/none, so the `fill`-or-`stop` row of the
+       table does not apply and nothing may be rendered there. This is the
+       direction Layer-1's W2 cannot cover: W2 asserts a fill only lands in *a*
+       fill bar (an only-if), never that *this* fill bar stays empty;
+    3. for `breakdown` only, the §3.5 dropout truncation — no note of any role
+       sustains across the entered downbeat ("clean cut into the thinned
+       texture"). `postchorus` is explicitly a *smooth continuation*, so notes
+       sustaining across it are correct and must not be asserted away.
+
+       Unlike (2), this one *is* logically the same assertion as Layer-1 W2's
+       third clause — same predicate, and the same grain: W2 reads
+       `trace.phrases_stage6` and `final` here is the stage-6 output too (the
+       humanizer runs after `_wired` returns it). The duplication is deliberate
+       and is about venue, not strength: W2 fires only where a quality trace is
+       produced, whereas this runs on the §11.9 matrix in the default pytest
+       gate, over every registered pack × mood × length × seed. Keep both; do not
+       "de-duplicate" this one by deferring to W2.
+
+    Non-vacuity is measured, not assumed: across `chill_lofi` + `fusion_jazz` the
+    non-suppressed boundaries carry a fill-bar fill in 781 of 781 cases and a
+    note sustaining across the entered downbeat in 90 of 781, so both (2) and (3)
+    discriminate rather than passing on an empty population.
+    """
+    tick = entered.start_bar * BAR
+    ctx = (params, entered.type, entered.id)
+
+    # (1) no entry crash.
+    assert track_window(final, "crash", tick, tick + 1) == [], ("crash-suppress", ctx)
+
+    # (2) no fill rendered in the boundary's fill bar.
+    fill_bar = outgoing.start_bar + outgoing.length_bars - 1
+    for phrase in final:
+        if phrase.role != "drums":
+            continue
+        for note in phrase.notes:
+            assert not ("fill" in note.tags and note.ticks // BAR == fill_bar), (
+                "suppressed-boundary-fill",
+                ctx,
+                note.ticks,
+            )
+
+    # (3) §3.5 dropout: nothing sustains into a breakdown.
+    if entered.type == "breakdown":
+        for phrase in final:
+            for note in phrase.notes:
+                assert not (note.ticks < tick < note.ticks + note.duration_ticks), (
+                    "dropout-not-truncated",
+                    ctx,
+                    phrase.track_id,
+                    note.ticks,
+                    note.duration_ticks,
+                )
 
 
 def _section_of_bar(sf: Any, bar: int) -> Any:
@@ -202,10 +330,12 @@ def test_phase6_property_matrix(params: dict[str, object]) -> None:
     for i in range(len(secs) - 1):
         entered = secs[i + 1]
         tick = entered.start_bar * BAR
-        crash_here = track_window(final, "crash", tick, tick + 1)
-        if entered.type in ("postchorus", "breakdown"):
-            assert crash_here == [], (params, "crash-suppress", entered.id)
+        if entered.type in _SUPPRESS_TYPES:
+            # Live on chill_lofi + fusion_jazz (both enter `breakdown`); N/A on
+            # the other three packs, per `_ENTERED_SUPPRESS_TYPES`.
+            _assert_suppressed_entry(params, final, secs[i], entered)
         elif entered.start_bar < t_last_bar:
+            crash_here = track_window(final, "crash", tick, tick + 1)
             assert len(crash_here) == 1, (params, "crash-present", entered.id)
 
     # ---- (P1 latent, §3.2) Every rendered fill/crash sits where drums active. --

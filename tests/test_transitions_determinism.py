@@ -11,10 +11,11 @@ Two proofs plus a property matrix over the **real** stage-6 pipeline:
    dispatched (the PHASE_5 walker per-bar-seed precedent). The devices stream is
    a single timeline-ordered RNG (§3.8), so its reproducibility is the run-to-run
    identity of (1) plus the re-derivable devices seed asserted here.
-3. **Property subset** (DoD 9, stage-6 slice) across pop_rock+jazz × supported
-   moods × lengths × seeds: fills only in legal fill bars; no groove drum event
-   inside a rendered fill window; crash suppression for postchorus/breakdown (and
-   a crash present at every other section entry); non-drum `midi` untouched
+3. **Property subset** (DoD 9, stage-6 slice) across **every registered pack** ×
+   supported moods × lengths × seeds (PHASE_8 §14.9): fills only in legal fill
+   bars; no groove drum event inside a rendered fill window; crash suppression
+   for postchorus/breakdown (and a crash present at every other section entry);
+   non-drum `midi` untouched
    (sub-multiset, ≤ 71 ceiling); backbeat-class snares never removed/moved by
    mutation.
 """
@@ -26,6 +27,13 @@ from typing import Any
 
 import pytest
 
+from _packmatrix import (
+    LENGTHS_RENDER,
+    PACKS,
+    SEEDS_25,
+    supported_moods,
+    total_moods,
+)
 from _stage6_driver import (
     JAZZ,
     POP,
@@ -35,12 +43,10 @@ from _stage6_driver import (
     stage6_passes,
     track_window,
 )
-from trackgen.packs import resolve_pack
 from trackgen.seeds import (
     Rng,
     derive,
     stream_seed,
-    to_base36,
     weighted_choice,
 )
 from trackgen.transitions import mutation as mutation_mod
@@ -189,18 +195,18 @@ def test_devices_seed_is_rederivable() -> None:
 # 3 — property subset (DoD 9, stage-6 slice)
 # =============================================================================
 
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
-_LENGTHS: list[int | None] = [None, 180, 240]
-
 
 def _matrix() -> list[dict[str, object]]:
+    """Every registered pack × supported moods × PHASE_6 §11.9's 3 lengths ×
+    25 seeds (PHASE_8 §14.9). Dimensions come from `_packmatrix`, the single
+    place the pack dimension is defined; §14.9's "× lengths" is each phase's own
+    pinned dimension (S23-3), so the render-level suites keep `LENGTHS_RENDER`
+    rather than the 39-value plan grid."""
     out: list[dict[str, object]] = []
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods:
-            for length in _LENGTHS:
-                for seed in _SEEDS:
+    for style in PACKS:
+        for mood in supported_moods(style):
+            for length in LENGTHS_RENDER:
+                for seed in SEEDS_25:
                     params: dict[str, object] = {
                         "styleFamily": style,
                         "mood": mood,
@@ -306,3 +312,25 @@ def test_stage6_property_subset(params: dict[str, object]) -> None:
         }
 
     assert backbeats(post_6b) <= backbeats(final), params
+
+
+def test_matrix_non_vacuous() -> None:
+    """The stage-6 subset matrix is the exact expected size and covers every
+    pack.
+
+    Dimensions are recomputed from pack data (not restated), so a silent shrink
+    — a pack dropped from the registry, a mood lost, a length bucket or seed
+    truncated — fails loudly rather than quietly narrowing coverage (ROADMAP §3).
+    `test_phase6_property.py` parameterizes off this same `_matrix()`, so this
+    guards both Phase-6 suites."""
+    assert len(PACKS) >= 5, PACKS
+    assert LENGTHS_RENDER == (None, 180, 240), LENGTHS_RENDER
+    assert len(SEEDS_25) == len(set(SEEDS_25)) == 25, SEEDS_25
+
+    expected = total_moods() * len(LENGTHS_RENDER) * len(SEEDS_25)
+
+    matrix = _matrix()
+    assert len(matrix) == expected, (len(matrix), expected)
+    assert {p["styleFamily"] for p in matrix} == set(PACKS)
+    keys = {tuple(sorted(p.items(), key=str)) for p in matrix}
+    assert len(keys) == len(matrix), "duplicate matrix cell"

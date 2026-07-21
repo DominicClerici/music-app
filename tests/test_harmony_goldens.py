@@ -16,15 +16,22 @@ over by tuning the expected value.
 from __future__ import annotations
 
 import random
-from functools import cache
 from typing import Any, get_args
 
 import pytest
 
+from _packmatrix import (
+    LENGTHS_PLAN,
+    PACKS,
+    SEEDS_25,
+    build_plan,
+    cached_pack,
+    pack_mood_pairs,
+    total_moods,
+)
 from trackgen.form.stage import form
 from trackgen.harmony.stage import harmony
-from trackgen.interpreter.params import Params
-from trackgen.interpreter.stage import generate_plan, interpret
+from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.packs.models import ProgressionsConfig
 from trackgen.schema.ir import (
@@ -45,7 +52,7 @@ from trackgen.schema.ir import (
     TimbreDirectives,
     TimeSignature,
 )
-from trackgen.seeds import derive, from_base36, stream_rng, to_base36
+from trackgen.seeds import derive, stream_rng
 from trackgen.theory import extensions_legal
 
 _TPB = 1920
@@ -733,47 +740,27 @@ def test_draw_sequence_is_append_only_under_budget_change() -> None:
 # DoD 7 — property matrix
 # =============================================================================
 
-# The full grid: 2 packs × supported moods × 39 lengths × 25 seeds, matching the
-# Phase-3 form property test (test_form.py) seed count and generation formula
-# (§14.7 pins "× 25 seeds"). ~21 (pack×mood) × 39 lengths × 25 seeds ≈ 20k runs.
-_LENGTHS = list(range(30, 601, 15))
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
+# The full grid: every registered pack × supported moods × 39 lengths × 25
+# seeds, matching the Phase-3 form property test (test_form.py) seed set (§14.7
+# pins "× 25 seeds"). PHASE_8 §14.9 widened the pack dimension to all five packs;
+# `_packmatrix` is the single place it is defined.
 _QUALITIES = frozenset(get_args(ChordQuality))
 
 
-@cache
-def _cached_pack(style: str) -> Any:
-    return resolve_pack(style)
-
-
-def _build_plan(style: str, mood: str, max_len_sec: int, seed: str) -> GenerationPlan:
-    pack = _cached_pack(style)
-    params = Params.model_validate(
-        {"styleFamily": style, "mood": mood, "maxLengthSec": max_len_sec, "seed": seed}
-    )
-    return interpret(params, pack, from_base36(seed), {})
-
-
 def _property_params() -> list[Any]:
-    params: list[Any] = []
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods:
-            params.append(pytest.param(style, mood))
-    return params
+    return [pytest.param(style, mood) for style, mood in pack_mood_pairs()]
 
 
 @pytest.mark.parametrize(("style", "mood"), _property_params())
 def test_property_valid_harmonic_plan(style: str, mood: str) -> None:
     """PHASE_4 §14 DoD 7 — every pack × supported mood × length grid × 25 seeds
     yields a HarmonicPlan validating every §5/§7 structural invariant."""
-    pack = _cached_pack(style)
+    pack = cached_pack(style)
     assert pack.forms is not None and pack.progressions is not None
 
-    for max_len_sec in _LENGTHS:
-        for seed in _SEEDS:
-            plan = _build_plan(style, mood, max_len_sec, seed)
+    for max_len_sec in LENGTHS_PLAN:
+        for seed in SEEDS_25:
+            plan = build_plan(style, mood, max_len_sec, seed)
             sf = form(plan, pack.forms)
             rng = stream_rng(plan.seed.master, plan.seed.overrides, "harmony")
             hp = harmony(plan, sf, pack.progressions, rng)
@@ -854,6 +841,28 @@ def test_property_valid_harmonic_plan(style: str, mood: str) -> None:
                 if "turnaround" in e.tags
             }
             assert set(hp.pool_selections) == tags | {"finals"} | turnaround_keys, ctx
+
+
+def test_matrix_non_vacuous() -> None:
+    """The DoD-7 matrix is the exact expected size and covers every pack.
+
+    Dimensions are recomputed from pack data (not restated), so a silent shrink
+    — a pack dropped from the registry, a mood lost, a truncated seed list —
+    fails loudly rather than quietly narrowing coverage (ROADMAP §3)."""
+    assert len(PACKS) >= 5, PACKS
+    assert len(LENGTHS_PLAN) == 39, LENGTHS_PLAN
+    assert len(SEEDS_25) == len(set(SEEDS_25)) == 25, SEEDS_25
+
+    expected = total_moods()
+    for style in PACKS:
+        # the matrix body dereferences both configs on every cell.
+        pack = cached_pack(style)
+        assert pack.forms is not None and pack.progressions is not None, style
+
+    cells = pack_mood_pairs()
+    assert len(_property_params()) == len(cells) == expected
+    assert {style for style, _ in cells} == set(PACKS)
+    assert len(cells) == len(set(cells)), "duplicate (pack, mood) cell"
 
 
 # =============================================================================

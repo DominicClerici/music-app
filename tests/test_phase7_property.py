@@ -1,8 +1,9 @@
 """PHASE_7 §13.6 whole-stage property matrix (DoD 6).
 
-Drives the sound-design stage across **both reference packs × every supported
-mood × every declared flavor combination** and asserts the full §13.6 invariant
-set on every produced `SoundDesign`:
+Drives the sound-design stage across **every registered pack × every supported
+mood × every declared flavor combination** (PHASE_8 §14.9 widened the pack
+dimension from the two reference packs to all five) and asserts the full §13.6
+invariant set on every produced `SoundDesign`:
 
 - every `instrument.type` is in the PHASE_1 instrument whitelist; every insert /
   bus / master effect `type` is in the effect whitelist;
@@ -20,9 +21,16 @@ set on every produced `SoundDesign`:
 The matrix is **fully exhausted** — the entire flavor cross-product and every
 supported mood, no sampling or capping (ROADMAP §3 no-silent-caps). Dimensions:
 
-  pop_rock : 11 moods × (2 drums · 2 bass · 3 comping · 2 pads = 24 combos) = 264
-  jazz     : 10 moods × (2 drums · 1 bass · 2 comping · 2 pads =  8 combos) =  80
-  total    : 344 documents
+  pop_rock    : 11 moods × (2 drums · 2 bass · 3 comping · 2 pads = 24 combos) = 264
+  jazz        : 10 moods × (2 drums · 1 bass · 2 comping · 2 pads =  8 combos) =  80
+  blues       :  8 moods × (2 drums · 2 bass · 2 comping · 2 pads = 16 combos) = 128
+  chill_lofi  :  8 moods × (2 drums · 2 bass · 2 comping · 2 pads = 16 combos) = 128
+  fusion_jazz :  8 moods × (2 drums · 2 bass · 2 comping · 2 pads = 16 combos) = 128
+  total       : 728 documents
+
+Those figures are the gate, not just documentation: `test_matrix_non_vacuous`
+recomputes the flavor dimension from pack data, takes the mood dimension from
+`_packmatrix.MOOD_COUNTS`, and asserts the product equals 728 exactly.
 
 Per (pack, mood) the plan is built once via the real `generate_plan` (so the
 mood's brightness/attackHardness/space directives are the genuine interpreter
@@ -41,6 +49,12 @@ from typing import get_args
 
 import pytest
 
+from _packmatrix import (
+    MOOD_COUNTS,
+    PACKS,
+    assert_mood_dimension_pinned,
+    supported_moods,
+)
 from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.schema.document import (
@@ -57,7 +71,6 @@ from trackgen.sound.evaluate import round3
 from trackgen.sound.stage import SoundDesign, sound_design
 from trackgen.sound.timbres import TimbresConfig
 
-_PACKS = ("pop_rock", "jazz")
 # The four sound-design roles, in a fixed order for the cross-product (§7).
 _ROLES = ("drums", "bass", "comping", "pads")
 _SEED = "1ps9wxb"  # any fixed seed: the plan's seed never touches sound-design.
@@ -87,12 +100,10 @@ def _combos(flavors: dict[str, list[str]]) -> list[dict[str, str]]:
 
 def _build_matrix() -> list[tuple[str, str, dict[str, str]]]:
     out: list[tuple[str, str, dict[str, str]]] = []
-    for pack in _PACKS:
+    for pack in PACKS:
         _, flavors = _pack_ctx(pack)
         combos = _combos(flavors)
-        interp = resolve_pack(pack).interpreter  # type: ignore[union-attr]
-        assert interp is not None
-        for mood in interp.supported_moods:
+        for mood in supported_moods(pack):
             for combo in combos:
                 out.append((pack, mood, combo))
     return out
@@ -220,25 +231,30 @@ def test_matrix_non_vacuous() -> None:
     """The matrix is the exact expected size and non-degenerate — so the per-doc
     invariant asserts are not passing vacuously on an empty/single-class set.
 
-    Size is recomputed from the dimensions (fully exhausted: moods × the whole
-    flavor cross-product, nothing sampled) and asserted against `len(_MATRIX)`."""
+    Size is recomputed from the dimensions (fully exhausted: every registered
+    pack × moods × the whole flavor cross-product, nothing sampled) and asserted
+    against `len(_MATRIX)`."""
+    assert len(PACKS) >= 5, PACKS
+    assert_mood_dimension_pinned()
     expected = 0
     dims: list[tuple[str, int, int, int]] = []
-    for pack in _PACKS:
+    for pack in PACKS:
         _, flavors = _pack_ctx(pack)
-        interp = resolve_pack(pack).interpreter  # type: ignore[union-attr]
-        assert interp is not None
         n_combo = 1
         for role in _ROLES:
             n_combo *= len(flavors[role])
-        n_mood = len(interp.supported_moods)
-        expected += n_mood * n_combo
-        dims.append((pack, n_mood, n_combo, n_mood * n_combo))
+        n_moods = MOOD_COUNTS[pack]
+        expected += n_moods * n_combo
+        dims.append((pack, n_moods, n_combo, n_moods * n_combo))
 
     assert len(_MATRIX) == expected, (len(_MATRIX), expected)
-    # A computed floor: the two packs alone exhaust to 344 docs; a silent shrink
-    # of either dimension would drop below this.
-    assert expected >= 300, expected
+    # Equality, not a floor: the five registered packs exhaust to exactly 728
+    # docs (264 + 80 + 128 × 3), the figure this module's docstring commits to.
+    # A floor of >= 700 tolerated a 28-doc shrink — blues or chill_lofi losing a
+    # mood is 16 docs and would have passed. `MOOD_COUNTS` now catches that case
+    # too; this stays because it is cheap and also pins the flavor dimension. A
+    # sixth pack changes the matrix and this number is re-pinned deliberately.
+    assert expected == 728, expected
 
     classes: set[str] = set()
     polysynths = 0

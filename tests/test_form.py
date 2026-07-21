@@ -9,14 +9,22 @@ implementation bug.
 from __future__ import annotations
 
 import random
-from collections.abc import Callable, Iterator
-from functools import cache
+from collections.abc import Callable
 
 import pytest
 
+from _packmatrix import (
+    LENGTHS_PLAN,
+    PACKS,
+    SEEDS_25,
+    build_plan,
+    cached_pack,
+    pack_mood_pairs,
+    supported_moods,
+    total_moods,
+)
 from trackgen.form.stage import _fit_and_degrade, form, section_label
-from trackgen.interpreter.params import Params
-from trackgen.interpreter.stage import generate_plan, interpret
+from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.packs.models import (
     DegradeOp,
@@ -27,8 +35,8 @@ from trackgen.packs.models import (
     SectionDef,
     TemplateSlot,
 )
-from trackgen.schema.ir import GenerationPlan, SectionEnding, SongForm
-from trackgen.seeds import derive, from_base36, stream_rng, to_base36
+from trackgen.schema.ir import SectionEnding, SongForm
+from trackgen.seeds import derive, stream_rng
 
 # --- helpers -----------------------------------------------------------------
 
@@ -328,38 +336,6 @@ def test_draws_only_when_two_feasible_budget_shift(
 # --- §11.6 property matrix ---------------------------------------------------
 
 
-@cache
-def _cached_pack(style: str) -> object:
-    return resolve_pack(style)
-
-
-def _build_plan(style: str, mood: str, max_len_sec: int, seed: str) -> GenerationPlan:
-    """A real Phase-2 chain, but with the pack cached so the 20k-cell matrix does
-    not re-parse YAML on every cell."""
-    pack = _cached_pack(style)
-    params = Params.model_validate(
-        {
-            "styleFamily": style,
-            "mood": mood,
-            "maxLengthSec": max_len_sec,
-            "seed": seed,
-        }
-    )
-    return interpret(params, pack, from_base36(seed), {})  # type: ignore[arg-type]
-
-
-_LENGTHS = list(range(30, 601, 15))  # 30,45,...,600 (39 values)
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
-
-
-def _pack_mood_params() -> Iterator[tuple[str, str]]:
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods:
-            yield style, mood
-
-
 def _expected_label(type_name: str, index: int, total: int, variant: str | None) -> str:
     """PHASE_3 §3.3, reimplemented independently of `stage.section_label` (the
     stage's single source of truth) so the property test cross-checks the
@@ -387,17 +363,17 @@ def _expected_label(type_name: str, index: int, total: int, variant: str | None)
     return f"{base} {index}" if total > 1 else base
 
 
-@pytest.mark.parametrize(("style", "mood"), list(_pack_mood_params()))
+@pytest.mark.parametrize(("style", "mood"), list(pack_mood_pairs()))
 def test_property_valid_songform(style: str, mood: str) -> None:
     """PHASE_3 §11.6 — every pack × supported mood × length grid × 25 seeds
     yields a SongForm that validates every structural invariant."""
-    pack = _cached_pack(style)
-    forms = pack.forms  # type: ignore[attr-defined]
+    pack = cached_pack(style)
+    forms = pack.forms
     assert forms is not None
 
-    for max_len_sec in _LENGTHS:
-        for seed in _SEEDS:
-            plan = _build_plan(style, mood, max_len_sec, seed)
+    for max_len_sec in LENGTHS_PLAN:
+        for seed in SEEDS_25:
+            plan = build_plan(style, mood, max_len_sec, seed)
             sf = form(plan, forms)
             tpb = plan.time_signature.numerator * (
                 480 * 4 // plan.time_signature.denominator
@@ -448,6 +424,24 @@ def test_property_valid_songform(style: str, mood: str) -> None:
             assert final.ending is not None
             assert final.ending.tag_bars in (0, 4, 8)
             assert final.ending.tag_bars <= final.length_bars
+
+
+def test_matrix_non_vacuous() -> None:
+    """The §11.6 matrix is the exact expected size and covers every pack.
+
+    Dimensions are recomputed from pack data (not restated), so a silent shrink
+    — a pack dropped from the registry, a mood lost, a truncated seed list —
+    fails loudly rather than quietly narrowing coverage (ROADMAP §3)."""
+    assert len(PACKS) >= 5, PACKS
+    assert len(LENGTHS_PLAN) == 39, LENGTHS_PLAN
+    assert len(SEEDS_25) == len(set(SEEDS_25)) == 25, SEEDS_25
+
+    expected = total_moods()
+
+    cells = list(pack_mood_pairs())
+    assert len(cells) == expected, (len(cells), expected)
+    assert {style for style, _ in cells} == set(PACKS)
+    assert len(cells) == len(set(cells)), "duplicate (pack, mood) cell"
 
 
 # --- §11.7 fallback & degrade ------------------------------------------------
@@ -595,14 +589,13 @@ def test_degrade_ladder_is_unreachable() -> None:
     exceeds its budget (which would be the only trigger for a ladder op), and
     every too-small case is a single-section fallback.
     """
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.forms is not None
-        assert pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods[:3]:
+    for style in PACKS:
+        pack = cached_pack(style)
+        assert pack.forms is not None
+        for mood in supported_moods(style)[:3]:
             for max_len_sec in (30, 45, 60, 120):
-                for seed in _SEEDS[:5]:
-                    plan = _build_plan(style, mood, max_len_sec, seed)
+                for seed in SEEDS_25[:5]:
+                    plan = build_plan(style, mood, max_len_sec, seed)
                     sf = form(plan, pack.forms)
                     tpb = plan.time_signature.numerator * (
                         480 * 4 // plan.time_signature.denominator

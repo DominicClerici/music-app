@@ -13,11 +13,18 @@ pure helpers (`_provisional_count`, `_register_for`) white-box.
 from __future__ import annotations
 
 import random
-from collections.abc import Iterator
-from functools import cache
 
 import pytest
 
+from _packmatrix import (
+    LENGTHS_PLAN,
+    PACKS,
+    SEEDS_25,
+    build_plan,
+    cached_pack,
+    pack_mood_pairs,
+    total_moods,
+)
 from trackgen.arrangement.arrange import (
     _BASE_COUNT,
     _provisional_count,
@@ -27,8 +34,7 @@ from trackgen.arrangement.arrange import (
 )
 from trackgen.arrangement.intensity import intensity
 from trackgen.form.stage import form
-from trackgen.interpreter.params import Params
-from trackgen.interpreter.stage import generate_plan, interpret
+from trackgen.interpreter.stage import generate_plan
 from trackgen.packs import resolve_pack
 from trackgen.schema.document import Role
 from trackgen.schema.ir import (
@@ -39,7 +45,7 @@ from trackgen.schema.ir import (
     SectionPhrase,
     SongForm,
 )
-from trackgen.seeds import from_base36, stream_rng, to_base36
+from trackgen.seeds import stream_rng
 
 _ORDER: tuple[Role, ...] = ("drums", "bass", "comping", "pads")
 
@@ -427,56 +433,29 @@ def test_lanes_yaml_loads_and_validates() -> None:
 
 
 # =============================================================================
-# Property matrix (mirrors tests/test_form.py: pop_rock+jazz × moods × lengths ×
-# 25 seeds)
+# Property matrix (mirrors tests/test_form.py: every registered pack × moods ×
+# lengths × 25 seeds)
 # =============================================================================
 
 
-@cache
-def _cached_pack(style: str) -> object:
-    return resolve_pack(style)
-
-
-def _build_plan(style: str, mood: str, max_len_sec: int, seed: str) -> GenerationPlan:
-    pack = _cached_pack(style)
-    params = Params.model_validate(
-        {
-            "styleFamily": style,
-            "mood": mood,
-            "maxLengthSec": max_len_sec,
-            "seed": seed,
-        }
-    )
-    return interpret(params, pack, from_base36(seed), {})  # type: ignore[arg-type]
-
-
-_LENGTHS = list(range(30, 601, 15))
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(25)]
-
-
-def _pack_mood_params() -> Iterator[tuple[str, str]]:
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods:
-            yield style, mood
-
-
-@pytest.mark.parametrize(("style", "mood"), list(_pack_mood_params()))
+@pytest.mark.parametrize(("style", "mood"), list(pack_mood_pairs()))
 def test_property_valid_arrangement(style: str, mood: str) -> None:
     """PHASE_5 §13.3 — every pack × supported mood × length grid × 25 seeds
     yields an ArrangementPlan satisfying every structural invariant."""
-    pack = _cached_pack(style)
-    forms = pack.forms  # type: ignore[attr-defined]
-    order: tuple[Role, ...] = pack.layering_order  # type: ignore[attr-defined]
-    assert forms is not None and order == _ORDER
+    pack = cached_pack(style)
+    forms = pack.forms
+    order = pack.layering_order
+    # `order` is the pack's own layering order (§5.1 role permutation), used
+    # as-is everywhere below — a pack with a different permutation is legal.
+    # The pinned `_ORDER` equality lives in `test_matrix_non_vacuous`.
+    assert forms is not None and order is not None
 
-    for max_len_sec in _LENGTHS:
-        for seed in _SEEDS:
-            plan = _build_plan(style, mood, max_len_sec, seed)
+    for max_len_sec in LENGTHS_PLAN:
+        for seed in SEEDS_25:
+            plan = build_plan(style, mood, max_len_sec, seed)
             layers_max = plan.budgets.layers_max
             sf = form(plan, forms)
-            ap = arrange(plan, sf, pack, _arrange_rng(plan))  # type: ignore[arg-type]
+            ap = arrange(plan, sf, pack, _arrange_rng(plan))
             by_pair = _by_pair(ap.entries)
 
             # full section×role coverage: one entry per pair, nothing extra.
@@ -510,3 +489,24 @@ def test_property_valid_arrangement(style: str, mood: str) -> None:
                 if section.type == "intro" and i + 1 < len(sf.sections):
                     succ = sf.sections[i + 1]
                     assert active_count[section.id] < active_count[succ.id]
+
+
+def test_matrix_non_vacuous() -> None:
+    """The §13.3 matrix is the exact expected size and covers every pack.
+
+    Dimensions are recomputed from pack data (not restated), so a silent shrink
+    — a pack dropped from the registry, a mood lost, a truncated seed list —
+    fails loudly rather than quietly narrowing coverage (ROADMAP §3)."""
+    assert len(PACKS) >= 5, PACKS
+    assert len(LENGTHS_PLAN) == 39, LENGTHS_PLAN
+    assert len(SEEDS_25) == len(set(SEEDS_25)) == 25, SEEDS_25
+
+    expected = total_moods()
+    for style in PACKS:
+        # every pack shares the pinned layering order the matrix asserts on.
+        assert cached_pack(style).layering_order == _ORDER, style
+
+    cells = list(pack_mood_pairs())
+    assert len(cells) == expected, (len(cells), expected)
+    assert {style for style, _ in cells} == set(PACKS)
+    assert len(cells) == len(set(cells)), "duplicate (pack, mood) cell"
