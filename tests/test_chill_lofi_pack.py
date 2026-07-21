@@ -17,6 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 from trackgen.humanize.stage import _run, _ZeroJitter
 from trackgen.interpreter.stage import generate_plan
@@ -340,10 +341,17 @@ def test_dropout_device_truncates_a_crossing_note() -> None:
 # --- (e) end-to-end validation slice (Layer 1 + L2 at engine defaults) --------
 
 
-def test_no_calibration_yaml_yet() -> None:
-    """§8.1 bootstrap: the pack has no calibration.yaml yet, so the L2 reader
-    must fall back to engine defaults (asserted clean by the slice below)."""
-    assert not (_PACK_DIR / "calibration.yaml").exists()
+def test_calibration_yaml_blessed() -> None:
+    """§8.1 bootstrap completed at S20 T7: the first blessed calibration.yaml
+    exists and covers every supported mood (first-batch L2 thresholds are the
+    engine defaults by design; the slice below asserts renders stay clean
+    under the pack's own thresholds)."""
+    path = _PACK_DIR / "calibration.yaml"
+    assert path.exists()
+    data = yaml.safe_load(path.read_text())
+    interp = _pack().interpreter
+    assert interp is not None
+    assert set(data["moods"]) == set(interp.supported_moods)
 
 
 @pytest.mark.parametrize("mood", ["nostalgic", "happy", "melancholic"])

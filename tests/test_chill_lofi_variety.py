@@ -78,7 +78,8 @@ def test_every_slot_has_two_eligible_candidates() -> None:
 # The draw is a `weighted_choice` over the authored `[primary, sibling]` pair with
 # weights `[3, 2]` on the role's `select` sub-stream. The winning seed therefore
 # depends only on `(role, winner-slot)`, not the (kind, rung) — but every id is
-# pinned individually so any future bank reorder / weight flip trips the suite.
+# pinned individually so any future bank reorder / id rename trips the suite
+# (weight flips are guarded separately by test_sibling_weights_are_3_2_every_slot).
 # Discovered by fixed enumeration (0..399).
 _WINNER_SEED: dict[tuple[str, str], int] = {
     ("drums", "primary"): 0,
