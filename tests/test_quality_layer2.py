@@ -163,14 +163,31 @@ def test_load_l2_thresholds_returns_none_for_absent_artifact() -> None:
     assert load_l2_thresholds("no_such_pack") is None
 
 
-@pytest.mark.parametrize("pack", ["pop_rock", "jazz"])
+# The blessed L2-1 thresholds every pack commits today, per pack. Exact-equality
+# pinned (M16): the byte-reproduction test in `test_calibration_artifacts.py`
+# covers the Layer-3 *bands* but is structurally blind to `l2Thresholds` — since
+# `trackgen calibrate` now *preserves* committed thresholds rather than
+# regenerating them, a corrupted committed value would reproduce itself and pass.
+# This dict is the only backstop that a threshold has drifted. A *legitimate*
+# future re-bless that changes a threshold is therefore a deliberate one-line edit
+# here, never a silent change: e.g. flipping fusion_jazz comping to 0.5 must fail.
+_BLESSED_L2_THRESHOLDS: dict[str, tuple[float, float]] = {
+    "pop_rock": (0.95, 0.98),
+    "jazz": (0.95, 0.98),
+    "chill_lofi": (0.95, 0.98),
+    "blues": (0.95, 0.98),
+    "fusion_jazz": (0.95, 0.98),
+}
+
+
+@pytest.mark.parametrize("pack", sorted(_BLESSED_L2_THRESHOLDS))
 def test_load_l2_thresholds_reads_blessed_artifact(pack: str) -> None:
-    """C5 (session 19) committed the first blessed `calibration.yaml` per
-    reference pack; the read-hook now returns pack-specific thresholds."""
-    thresholds = load_l2_thresholds(pack)
-    assert thresholds is not None
-    bass, comping = thresholds
-    assert 0.0 < bass <= 1.0 and 0.0 < comping <= 1.0
+    """C5 (session 19) blessed the first `calibration.yaml` per pack; the read-hook
+    returns pack-specific thresholds. Pinned to **exact equality** on the committed
+    `(bass, comping)` for all five packs, not a loose `0 < x <= 1` bound — the
+    latter passes even a 0.5 corruption, and nothing else in the suite catches a
+    mutated committed threshold (see `_BLESSED_L2_THRESHOLDS`)."""
+    assert load_l2_thresholds(pack) == _BLESSED_L2_THRESHOLDS[pack]
 
 
 # ---------------------------------------------------------------------------
