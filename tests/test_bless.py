@@ -701,9 +701,9 @@ def test_refusal_still_blocks_the_version_refresh(tmp_path: Path) -> None:
 # --- scoped runs (`--pack`) ---------------------------------------------------
 #
 # The refresh above only iterates the *selected* runs, so after a bump
-# `bless --approve --pack pop_rock` restamps 12 cells and leaves the other 12
+# `bless --approve --pack pop_rock` restamps 12 cells and leaves the other 24
 # byte-non-reproducible — while `bless --pack pop_rock` keeps reporting "no
-# divergence" about the half it looked at. `--pack` exists for exactly the
+# divergence" about the slice it looked at. `--pack` exists for exactly the
 # pack-at-a-time workflow that hits this, so the report has to say so.
 
 
@@ -760,8 +760,8 @@ def test_cli_pack_scoped_run_says_it_was_scoped() -> None:
     result = CliRunner().invoke(app, ["bless", "--pack", "pop_rock"])
 
     assert result.exit_code == 0, result.stdout
-    assert "SCOPED RUN — 12 of 24 corpus cell(s) selected" in result.stdout
-    assert "the other 12 were NOT re-rendered" in result.stdout
+    assert "SCOPED RUN — 12 of 36 corpus cell(s) selected" in result.stdout
+    assert "the other 24 were NOT re-rendered" in result.stdout
 
 
 # --- the `_VERSION_SOURCE` reference (must not rot) ---------------------------
@@ -890,9 +890,9 @@ def test_committed_cell_round_trips(cell: corpus.Cell) -> None:
 
 
 def test_committed_corpus_is_complete() -> None:
-    """Non-vacuity: 24 cells × 10 stages actually on disk (ROADMAP §3)."""
-    assert len(_CELLS) == 24
-    assert len({cell_id(c) for c in _CELLS}) == 24
+    """Non-vacuity: 36 cells × 10 stages actually on disk (ROADMAP §3)."""
+    assert len(_CELLS) == 36
+    assert len({cell_id(c) for c in _CELLS}) == 36
     for cell in _CELLS:
         directory = corpus.cell_dir(cell)
         assert directory.is_dir(), directory
@@ -910,7 +910,7 @@ def test_bless_on_the_committed_corpus_is_clean() -> None:
     # and the whole report really is the one clean line.
     assert not result.scoped
     assert result.selected_count == result.corpus_count == len(_CELLS)
-    assert format_result(result) == "bless report — 24 cell(s), no divergence."
+    assert format_result(result) == "bless report — 36 cell(s), no divergence."
 
 
 def test_cli_bless_exits_zero_on_the_committed_corpus() -> None:

@@ -28,7 +28,7 @@ from trackgen.tooling.corpus import (
     write_cell,
 )
 
-_PACKS = ("pop_rock", "jazz")
+_PACKS = ("pop_rock", "jazz", "chill_lofi")
 
 # The stage-name -> trace-attribute mapping, restated independently of the module
 # under test so a typo there is caught rather than mirrored.
@@ -168,14 +168,16 @@ def test_extreme_pair_needs_two_moods() -> None:
     [
         ("pop_rock", ("happy", "aggressive", "calm")),
         ("jazz", ("nostalgic", "energetic", "melancholic")),
+        ("chill_lofi", ("nostalgic", "happy", "melancholic")),
     ],
 )
 def test_corpus_moods_pinned_triples(pack: str, expected: tuple[str, str, str]) -> None:
-    """The derived triples for the two reference packs, pinned.
+    """The derived triples for the corpus packs, pinned.
 
     pop_rock: aggressive (-0.60, 0.70) <-> calm (0.55, -0.65); jazz: energetic
-    (0.45, 0.80) <-> melancholic (-0.50, -0.45). A change to `moods.yaml` or to a
-    pack's `supportedMoods` repoints the corpus and must be a deliberate re-bless.
+    (0.45, 0.80) <-> melancholic (-0.50, -0.45); chill_lofi: happy (0.75, 0.40)
+    <-> melancholic (-0.50, -0.45). A change to `moods.yaml` or to a pack's
+    `supportedMoods` repoints the corpus and must be a deliberate re-bless.
     """
     assert corpus_moods(pack) == expected
 
@@ -191,7 +193,8 @@ def test_corpus_moods_rejects_a_degenerate_triple(
     """A pack whose `default_mood` is also a (V, A) extreme must fail loudly.
 
     Otherwise the triple carries a duplicate — `('happy', 'calm', 'happy')` — and
-    `corpus_cells()` silently yields 20 cells instead of 24, with `bless`
+    `corpus_cells()` silently yields fewer cells than the pinned matrix (e.g.
+    32 instead of 36), with `bless`
     rendering and double-reporting the repeats. Neither reference pack hits this
     today, so the guard is exercised by repointing the *mood table* (pop_rock's
     real `defaultMood` is `happy`) rather than by editing any `styles/` data.
@@ -214,12 +217,12 @@ def test_corpus_moods_rejects_a_degenerate_triple(
 # --- cell matrix --------------------------------------------------------------
 
 
-def test_corpus_cells_is_the_pinned_24_cell_matrix() -> None:
+def test_corpus_cells_is_the_pinned_36_cell_matrix() -> None:
     cells = corpus_cells()
-    assert len(cells) == 24
-    assert len(set(cells)) == 24
+    assert len(cells) == 36
+    assert len(set(cells)) == 36
 
-    assert {c.pack for c in cells} == {"pop_rock", "jazz"}
+    assert {c.pack for c in cells} == {"pop_rock", "jazz", "chill_lofi"}
     assert {c.length_sec for c in cells} == {120, 240}
     assert len({c.seed for c in cells}) == 2
 
@@ -234,7 +237,7 @@ def test_corpus_cells_is_the_pinned_24_cell_matrix() -> None:
 def test_cell_dirs_are_all_distinct_and_shaped_per_8_2(tmp_path: Path) -> None:
     cells = corpus_cells()
     dirs = [cell_dir(c, root=tmp_path) for c in cells]
-    assert len(set(dirs)) == 24
+    assert len(set(dirs)) == 36
 
     cell = Cell(pack="pop_rock", mood="calm", length_sec=240, seed="1ps9wxb")
     assert cell_dir(cell, root=tmp_path) == (
@@ -291,8 +294,14 @@ def test_ir_stages_are_compact_snake_case_with_nulls_kept(
     # `exclude_none` must NOT be applied to IR stages: an explicit null is
     # informative (S18-2). pop_rock's plan nulls `swing` + `feel_table`, jazz's
     # (swing8) nulls only `feel_table`, so the keys are looked up, not hardcoded.
+    # chill_lofi is the first pack with a fully populated plan (swing AND
+    # feelTable both set) — zero nulls is its expected shape, so the retention
+    # property is asserted only where a null exists to observe.
     null_keys = [k for k, v in traces[pack].plan.model_dump().items() if v is None]
-    assert null_keys, "expected the plan to carry at least one null field"
+    if pack == "chill_lofi":
+        assert not null_keys, "chill_lofi's plan is expected fully populated"
+    else:
+        assert null_keys, "expected the plan to carry at least one null field"
     for key in null_keys:
         assert f'"{key}":null' in text
 
