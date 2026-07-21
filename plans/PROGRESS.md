@@ -6,10 +6,20 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **CURRENT — Session 23 is at the PROMPT step-1 USER APPROVAL GATE (2026-07-21).** Scoping
-> complete (3 opus agents); `plans/sessions/SESSION_23.md` written; **no implementation agent
-> dispatched.** Session-start baseline re-verified at `e849aa8`: four gates green, 6513 passed
-> / 1 skipped. **Suite baseline corrected: ~45 s, not the ~34 s recorded below.**
+> **CURRENT — Session 23 APPROVED and IN PROGRESS (2026-07-21).** User ratified **S23-0…S23-10
+> as recommended** ("looks good, and the split is fine, complete c9 now") at commit `811ec5e`.
+> **The C9→C9+C10 split is RATIFIED** — the chunk table below is superseded: C9 (S23) is the
+> machine-verifiable close-out; **C10 (S24) is now the final chunk** (GAP-1 dry-render,
+> reachability lint, A/B harness + rubric tooling, the 3.5–5 h user listening block,
+> whole-phase 4-lens review, final §14 DoD sweep). See SESSION_23.md §5 for the C10 carry-over.
+>
+> **Wave 1 dispatched:** T1 (L2-1 grain fix, opus) · T3 (calibration byte-repro + regenerate
+> pop_rock/jazz, opus) · T4 (`tests/_packmatrix.py` helper, opus) · T8 (CI workflow, sonnet).
+> Disjoint file scopes. **Hard ordering still to honor: T1 → T2 → T7.** T5 depends on T4.
+>
+> Scoping complete (3 opus agents); `plans/sessions/SESSION_23.md` written. Session-start
+> baseline re-verified at `e849aa8`: four gates green, 6513 passed / 1 skipped. **Suite
+> baseline corrected: ~45 s, not the ~34 s recorded below.**
 >
 > **Scoping found three previously-unknown defects, each orchestrator-verified independently:**
 > **(F1)** `quality/layer2.py:141-158`'s L2-1 reads the **post-humanizer document** on exact

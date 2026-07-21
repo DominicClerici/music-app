@@ -1,6 +1,25 @@
 # SESSION_23 — Phase 8, Chunk 9: validator & coverage close-out
 
-**Status:** awaiting user approval (PROMPT step 1 gate).
+**Status:** APPROVED (S23-0…S23-10 ratified 2026-07-21) — IN PROGRESS.
+
+### Task ledger
+
+| Task | Status | Commit | Note |
+|---|---|---|---|
+| T8 CI | **done** | `33eb3fd` | real CI run unverified until the user pushes |
+| T3 Part B artifacts | **done** | `a1fcdd0` | pop_rock 20 / jazz 18 leaves regenerated |
+| T3 Part A byte-repro | **done** | `7a59a9d` | all 5 packs reproduce |
+| T4 `_packmatrix` | **done** | `2835e4b` | drop-in proven over 1890 plan cells |
+| T1 L2-1 grain | **done** | `5c28790` | APPROVE-WITH-NITS + 1 fix cycle; 2 memo mutants killed |
+| **T2 C-30 threshold** | **BLOCKED** | — | **S23-2 re-ratification pending — see §3a** |
+| T5 §14.9 widening | not started | — | depends on T4 (done) |
+| T6 crash suppression | not started | — | independent |
+| T7 smoke matrix ×5 | **blocked** | — | hard-ordered behind T2 |
+| T9 doc debt | not started | — | last (T2/T7 also write CAVEATS) |
+| T10 chunk review | not started | — | 3 lenses |
+
+Gates green at every commit; suite **6513 → 6558**.
+
 **Phase:** 8 (Quality, evaluation & pack expansion). **Chunk:** 9 of a proposed 10.
 **Baseline at session start:** `e849aa8`, four gates green — **6513 passed, 1 skipped**;
 ruff check clean; 151 files formatted; mypy clean on 151 source files.
@@ -147,6 +166,75 @@ Ratify individually. Each states the recommendation and the rejected alternative
 | **S23-8** | **C-29 closure** | **Resolved-and-verified.** Measured 5 packs × all moods × 12 seeds × 2 lengths: the four pre-existing packs sit at ratio **1.0000 under both readers**, with **0 differing rows in 1750** — the widening is provably inert on them, so no margin can erode. Record that this was only answerable at the corrected grain. | Leave open (the assignment is discharged; leaving it open misrepresents the evidence) |
 | **S23-9** | **C-18: add CI** | **Add `.github/workflows/gates.yml`** running the four gates on push+PR with `uv sync --locked`. ~2–3 min/run. Keep the 300-seed sweep inline (stricter than §8.2's pinned "periodically"); record that as C-18's resolution note. | Defer again (cheapest DoD item on the list — ~15 lines of YAML closes §14.6's venue clause) |
 | **S23-10** | **C-19's §8.2 annotation** | Insert the drafted line at `PHASE_8.md:833`; flip C-19 to fully resolved. | — (trivial, owed since C5) |
+| **S23-11** | **`calibrate()` must PRESERVE a committed artifact's `l2Thresholds`** — ruled by the orchestrator 2026-07-21, raised by T3 | **Preserve.** See rationale below. Expands **T2's scope** to carry the `tooling/calibrate.py` change. | Regenerate thresholds from engine defaults (the status quo — structurally incompatible with both S23-2 and S23-7, and a silent-drift bug in its own right) |
+
+## 3a. S23-2 IS SUSPENDED — ratified on a number that did not survive depth
+
+**The premise was wrong.** S23-2 was ratified on "fusion's stage-6 min ratio is **0.9760**, so a
+0.97 per-pack threshold clears it with margin" — scoping's figure from a 192-render sweep.
+Orchestrator re-measured at depth after T1 landed (480 comping rows: 8 moods × 30 seeds × 2
+lengths): **the true floor is 0.9375**, and 0.97 would NOT clear fusion. This is the exact
+failure mode C-30 itself warns about ("the rate is seed-set sensitive … plan against the top of
+the range, not the mean") — the orchestrator under-sampled and reported the result as firmer
+than it was. Recorded here rather than quietly re-tuned, per the C8 lesson.
+
+**What depth actually revealed — the structure matters more than the number:**
+
+- **60 of 480 comping rows (12.5 %) carry ≥ 1 out-of-set strong-beat note.** The musical fact is
+  widespread, not rare.
+- **Only 4 rows fail.** Median denominator is **N = 232**, where one bad note gives 0.9957 and
+  passes 0.98 comfortably. **All four failures have N = 16**, where one bad note gives exactly
+  0.9375.
+- Therefore the gate is not measuring *how much* out-of-set content a render has. It is
+  measuring **how small the denominator happened to be when a bad note occurred.** Two renders
+  with identical musical content — one quartal 11th on a strong beat — pass or fail on
+  denominator size alone.
+
+**Threshold sweep (of 480 rows):** 0.98 → 4 fail · 0.97 → 4 · 0.95 → 4 · 0.94 → 4 · **0.9375 → 0**
+· 0.93 → 0. There is **no discrimination anywhere between 0.94 and 0.98** — the gate is a cliff at
+the N=16 boundary. Setting 0.93 does not make it "slightly more permissive"; it relocates the
+cliff, and a future cell with N=8 fails at 0.875.
+
+**Options put to the user (awaiting ruling; T2 and T7 held):**
+
+| | Option | Assessment |
+|---|---|---|
+| **A** | Accept permanently (C-30 option b) — no threshold edit, §6.4/§8.1 note + CAVEATS | Zero risk, fully honest. But leaves 4-in-480 renders failing a **hard** gate, so T7's five-pack smoke matrix goes intermittently red — precisely what S23-5's ordering exists to prevent. Forces T7 to exclude fusion or de-harden the gate. |
+| **B** | Set fusion comping to 0.93 | Clears today's sweep. Arbitrary, fragile, addresses no mechanism. **Not recommended.** |
+| **C** | **Minimum-denominator guard** (orchestrator's recommendation) | Don't evaluate L2-1 below an N floor; route sub-floor groups to the `L2-1-SKIP:` channel **T1 just built**, so it cannot go silently vacuous the way F1 did. Keeps 0.98 where the measurement is meaningful. A ratio from 16 samples is not a meaningful rate — the same reasoning that makes the n=3 calibration bands untrustworthy. **This is an §8.1 amendment** (the doc pins L2-1 as a ratio against a threshold, with no denominator condition) → needs sign-off + a CAVEATS entry, and the floor should be derived from the observed N distribution, not picked. |
+
+**Measured N distribution (fusion comping, 480 rows), for deriving a floor under option C:**
+min **12** · p10 **122** · median **232** · max **715**. Bad-note counts among the 60 affected
+rows: 48 rows with exactly 1, 6 with 4, 4 with 3, 2 with 2.
+
+### S23-11 — ruling detail (raised by T3, ruled by orchestrator, no PHASE-doc deviation)
+
+**The conflict.** `calibrate()` has no `l2_thresholds` parameter; `compute_bands` falls back to
+`DEFAULT_L2_THRESHOLDS` (`quality/calibration.py:174`), so a regenerated artifact **always**
+writes `{bass: 0.95, comping: 0.98}`. That is why fusion reproduces today. The moment S23-2/T2
+hand-sets fusion's comping to **0.97**, S23-7/T3's byte-reproduction test goes red — the
+regenerated file would say 0.98. Byte-reproduction and hand-tuned per-pack thresholds are
+structurally incompatible as the tool stands.
+
+**Ruling: `calibrate()` preserves the existing committed artifact's `l2Thresholds` when one is
+present**, passing them through to `compute_bands`; bands stay fully derived.
+
+**Why this is a fix within pinned intent, not a deviation.** §8.1's bootstrap note and **D10**
+distinguish the two kinds of data living in `calibration.yaml`: bands are *derived* from the
+blessed batch ("regenerate-on-bless keeps them honest"), while L2 thresholds are *tunable style
+data* (§12 Q4 pins them as "data (`calibration.yaml`), tunable without design change").
+Regenerating a deliberate threshold edit away is therefore contrary to D10's own division —
+clobbering authored data with an engine default. No PHASE doc says thresholds are derived; C-30
+already records that `calibrate` "never derives L2 thresholds from data".
+
+**It also fixes a latent second drift bug.** Today, anyone re-running `calibrate` on a pack whose
+threshold had been hand-tuned would silently revert it — the same class of silent drift as GAP-2
+(F3), which this session exists partly to close. Leaving it would mean shipping the fix for one
+instance of a bug while leaving its twin armed.
+
+**Scope consequence:** T2 carries the `src/trackgen/tooling/calibrate.py` + `quality/calibration.py`
+change, plus a test proving a hand-set threshold **survives** a re-calibrate. T3's Part A test is
+the thing that would have caught this, which is the argument for it.
 
 ---
 
@@ -184,6 +272,33 @@ scopes are disjoint. T5 depends on T4; T6 is independent.
 | **Milestone rubric tooling** | No anchor text, no schema, no capture format. §8.4 pins 5-point scales × 4 axes (musicality, groove, style-fit, soloist space); the anchor descriptions have never been written. | 1 task |
 | **User listening block** | Human-only; orchestrator cannot self-certify. C5 reference-pack pass **60–90 min** · T1 levels **45–90 min** · T2 FM-piano **20–30 min** · A/B demo **25–40 min** · rubric **60–90 min**. **Total 3.5–5 h**, best split across sittings. | user |
 | **Whole-phase 4-lens review + final §14 DoD 1–11 sweep + close-out** | Must run last, over all nine chunks together (PROMPT §3). | 4 + orchestrator |
+
+### Findings raised mid-session, carried to C10's DoD sweep (not blockers now)
+
+- **Nothing consumes the Layer-3 bands.** T3 measured it: `load_calibration` is called from
+  exactly one site (`quality/layer2.py:80`) and reads only `l2Thresholds`. `layer3.py` computes
+  metrics, but **no code compares them against the bands** — §8.1's "batch-only, warn-only" L3
+  warner has never been built. DoD §14.4c's literal text ("L3 metrics + band computation") is
+  satisfied, so this is not a §14.4 failure; but the bands are currently a written-and-never-read
+  artifact, and C10's sweep should record that honestly rather than implying L3 is live.
+- **The n=3 calibration batch produces under-dispersed bands.** `calibrate` batches 3 seeds
+  (`calibrate.py:45`) and `compute_bands` takes `pstdev` over them, so several bands are tight
+  enough that a fair share of unseen seeds fall outside. Concrete: after T3's regeneration,
+  pop_rock happy `noteDensity` puts **5 of 15** probe seeds outside its band (0 of 15 under the
+  stale band); jazz happy `scaleConsistency` was **already** outside on 6 of 15 before any change.
+  Pre-existing property of §8.1's pinned batch size, not introduced by T3 — but it means an L3
+  warner wired up naively would fire constantly. Relevant to §12 Q4.
+- **T3 found a third drifted metric beyond the scoping brief:** jazz's stale bands also covered
+  `scaleConsistency`, not just `noteDensity`/`meanIoi`. The F3 table in §1 undercounted the
+  affected metrics (not the leaf counts, which were right).
+
+**Note for T5 (from T4):** `cached_pack()` returns a real `StylePack`, so the existing
+`# type: ignore[arg-type]` at `test_form.py:352` / `test_arrange.py:455` and
+`# type: ignore[attr-defined]` at `test_form.py:394` become **unused** — mypy runs strict with
+`warn_unused_ignores`, so they must be deleted as part of the swap. Keep the
+`assert forms is not None` narrowing (`pack.forms` is still `Forms | None`). Also expect existing
+form/arrange/harmony **test ids to be reordered** (the helper sorts moods; the local versions used
+pack-declared order) — the cell *set* is identical, nothing added or lost.
 
 **Listening-record note for C10:** `listening/log.jsonl` holds 3 `session_pass` records (sessions
 20/21/22, all `entries: 0`). **Zero individual error-spotting entries have ever been logged** —
