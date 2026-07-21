@@ -47,7 +47,7 @@ from trackgen.tooling.blessdiff import CellDiff, NoteDelta
 _CELLS = corpus.corpus_cells()
 
 # One pop_rock and one jazz cell for the synthetic half — both packs, cheapest
-# length. The committed half covers all 36.
+# length. The committed half covers all 48.
 _POP_CELL = next(c for c in _CELLS if c.pack == "pop_rock" and c.length_sec == 120)
 _JAZZ_CELL = next(c for c in _CELLS if c.pack == "jazz" and c.length_sec == 120)
 
@@ -250,7 +250,7 @@ def test_matching_baseline_is_clean(cell: corpus.Cell, tmp_path: Path) -> None:
     result = bless(cells=[cell], root=tmp_path)
     assert result.ok
     assert result.diffs[0].clean
-    # One cell of 36 is a scoped run, so the diff report is followed by the
+    # One cell of 48 is a scoped run, so the diff report is followed by the
     # scope notice; the verdict itself is still the single clean line.
     assert format_result(result).splitlines()[0] == (
         "bless report — 1 cell(s), no divergence."
@@ -538,7 +538,7 @@ def test_refusal_covers_a_mixed_batch(tmp_path: Path) -> None:
 # --- the version-stamp refresh (a bump must leave the corpus reproducible) ----
 #
 # `meta.generatorVersion` is excluded from the semantic diff (S18-8) but IS
-# written into every cell's `document.json`. A bump therefore changes all 36
+# written into every cell's `document.json`. A bump therefore changes all 48
 # cells' bytes while `bless` reports only the cells that moved musically, and
 # blessing just those leaves the corpus on mixed stamps — provably not
 # byte-reproducible while the tool says it is fine. These tests pin the
@@ -701,7 +701,7 @@ def test_refusal_still_blocks_the_version_refresh(tmp_path: Path) -> None:
 # --- scoped runs (`--pack`) ---------------------------------------------------
 #
 # The refresh above only iterates the *selected* runs, so after a bump
-# `bless --approve --pack pop_rock` restamps 12 cells and leaves the other 24
+# `bless --approve --pack pop_rock` restamps 12 cells and leaves the other 36
 # byte-non-reproducible — while `bless --pack pop_rock` keeps reporting "no
 # divergence" about the slice it looked at. `--pack` exists for exactly the
 # pack-at-a-time workflow that hits this, so the report has to say so.
@@ -760,8 +760,8 @@ def test_cli_pack_scoped_run_says_it_was_scoped() -> None:
     result = CliRunner().invoke(app, ["bless", "--pack", "pop_rock"])
 
     assert result.exit_code == 0, result.stdout
-    assert "SCOPED RUN — 12 of 36 corpus cell(s) selected" in result.stdout
-    assert "the other 24 were NOT re-rendered" in result.stdout
+    assert "SCOPED RUN — 12 of 48 corpus cell(s) selected" in result.stdout
+    assert "the other 36 were NOT re-rendered" in result.stdout
 
 
 # --- the `_VERSION_SOURCE` reference (must not rot) ---------------------------
@@ -890,9 +890,9 @@ def test_committed_cell_round_trips(cell: corpus.Cell) -> None:
 
 
 def test_committed_corpus_is_complete() -> None:
-    """Non-vacuity: 36 cells × 10 stages actually on disk (ROADMAP §3)."""
-    assert len(_CELLS) == 36
-    assert len({cell_id(c) for c in _CELLS}) == 36
+    """Non-vacuity: 48 cells × 10 stages actually on disk (ROADMAP §3)."""
+    assert len(_CELLS) == 48
+    assert len({cell_id(c) for c in _CELLS}) == 48
     for cell in _CELLS:
         directory = corpus.cell_dir(cell)
         assert directory.is_dir(), directory
@@ -910,7 +910,7 @@ def test_bless_on_the_committed_corpus_is_clean() -> None:
     # and the whole report really is the one clean line.
     assert not result.scoped
     assert result.selected_count == result.corpus_count == len(_CELLS)
-    assert format_result(result) == "bless report — 36 cell(s), no divergence."
+    assert format_result(result) == "bless report — 48 cell(s), no divergence."
 
 
 def test_cli_bless_exits_zero_on_the_committed_corpus() -> None:

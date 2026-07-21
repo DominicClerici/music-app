@@ -102,7 +102,7 @@ _DOCUMENT_INDENT = 2
 # The two *reference* packs only. §8.2's five-pack / 60-cell matrix fills out as
 # C6-C8 author chill_lofi/blues/fusion_jazz; the coordinates below are a strict
 # prefix of it, so the fill-out is additive.
-_CORPUS_PACKS: tuple[str, ...] = ("pop_rock", "jazz", "chill_lofi")
+_CORPUS_PACKS: tuple[str, ...] = ("pop_rock", "jazz", "chill_lofi", "blues")
 
 _CORPUS_LENGTHS_SEC: tuple[int, ...] = (120, 240)
 
