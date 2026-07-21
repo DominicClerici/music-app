@@ -232,6 +232,91 @@ def test_report_tempo_labels_ritard_tail_separately() -> None:
     assert not any("tempo (ritard tail)" in line for line in pop_lines)
 
 
+def _committed_artifact(
+    root: Path, pack: str, mood: str, thresholds: dict[str, float]
+) -> None:
+    """Plant a minimal committed `calibration.yaml` for `(pack, mood)` under `root`."""
+    pack_dir = root / pack
+    pack_dir.mkdir(parents=True, exist_ok=True)
+    (pack_dir / "calibration.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "pack": pack,
+                "moods": {mood: {"l2Thresholds": thresholds, "bands": {}}},
+            },
+            sort_keys=False,
+        )
+    )
+
+
+def test_calibrate_preserves_a_hand_set_l2_threshold(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A deliberately hand-set L2 threshold SURVIVES a re-calibrate (S23-11).
+
+    L2 thresholds are *authored* style data (D10, §12 Q4); only the L3 bands are
+    derived from the blessed batch. Before this, `compute_bands` fell back to
+    `DEFAULT_L2_THRESHOLDS` on every run, so regenerating an artifact silently
+    reverted any per-pack tuning — the same silent-drift class as GAP-2. The
+    sentinel value is one no default or computation would ever produce."""
+    committed_root = tmp_path / "committed"
+    _committed_artifact(
+        committed_root, _PACK, _MOOD, {"bass": 0.9125, "comping": 0.9375}
+    )
+    monkeypatch.setattr(calibration, "STYLES_ROOT", committed_root)
+
+    cal = calibrate(_PACK, out_path=_out(tmp_path), moods=[_MOOD], seeds=_SEEDS)
+
+    assert cal.moods[_MOOD].l2_thresholds == {"bass": 0.9125, "comping": 0.9375}
+    written = yaml.safe_load(_out(tmp_path).read_text())
+    assert written["moods"][_MOOD]["l2Thresholds"] == {
+        "bass": 0.9125,
+        "comping": 0.9375,
+    }
+    # ...and the bands are still fully DERIVED, not carried over: the planted
+    # artifact had none at all, yet the regenerated cell is fully banded.
+    assert cal.moods[_MOOD].note_density
+    assert written["moods"][_MOOD]["bands"]["noteDensity"]
+
+
+def test_calibrate_preserved_thresholds_do_not_disturb_the_bands(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Preserving thresholds changes the thresholds and nothing else — the bands
+    are byte-identical to a run with no committed artifact at all."""
+    plain = tmp_path / "plain.yaml"
+    calibrate(_PACK, out_path=plain, moods=[_MOOD], seeds=_SEEDS)
+
+    committed_root = tmp_path / "committed"
+    _committed_artifact(committed_root, _PACK, _MOOD, {"bass": 0.5, "comping": 0.6})
+    monkeypatch.setattr(calibration, "STYLES_ROOT", committed_root)
+    preserved = tmp_path / "preserved.yaml"
+    calibrate(_PACK, out_path=preserved, moods=[_MOOD], seeds=_SEEDS)
+
+    a = yaml.safe_load(plain.read_text())
+    b = yaml.safe_load(preserved.read_text())
+    assert a["moods"][_MOOD]["l2Thresholds"] == {"bass": 0.95, "comping": 0.98}
+    assert b["moods"][_MOOD]["l2Thresholds"] == {"bass": 0.5, "comping": 0.6}
+    assert a["moods"][_MOOD]["bands"] == b["moods"][_MOOD]["bands"]
+
+
+def test_calibrate_falls_back_to_defaults_without_a_committed_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The bootstrap path is unchanged: a pack being calibrated for the FIRST
+    time (no committed artifact, or no cell for this mood) still gets the engine
+    defaults, so preservation cannot become a requirement to already exist."""
+    monkeypatch.setattr(calibration, "STYLES_ROOT", tmp_path / "empty")
+    cal = calibrate(_PACK, out_path=_out(tmp_path), moods=[_MOOD], seeds=_SEEDS)
+    assert cal.moods[_MOOD].l2_thresholds == {"bass": 0.95, "comping": 0.98}
+
+    other_root = tmp_path / "other"
+    _committed_artifact(other_root, _PACK, "energetic", {"bass": 0.1, "comping": 0.2})
+    monkeypatch.setattr(calibration, "STYLES_ROOT", other_root)
+    cal2 = calibrate(_PACK, out_path=_out(tmp_path), moods=[_MOOD], seeds=_SEEDS)
+    assert cal2.moods[_MOOD].l2_thresholds == {"bass": 0.95, "comping": 0.98}
+
+
 def test_calibrate_unused_layer2_styles_root_removed() -> None:
     """Guard: layer2 no longer carries a `STYLES_ROOT` global (it delegates the
     read to `calibration.load_calibration`), so the reconciliation cannot silently

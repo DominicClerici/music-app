@@ -26,10 +26,12 @@ from pathlib import Path
 import pytest
 import yaml
 
+from _packmatrix import PACKS, cached_pack, supported_moods
 from trackgen.pipeline.trace import GenerationTrace, generate_trace
 from trackgen.quality import calibration
 from trackgen.quality._common import governing_chord
 from trackgen.quality.layer2 import (
+    _AllowedKey,
     _check_l2_1_unmeasurable,
     _check_l2_2_voice_crossing,
     _memoized_allowed_pitch_classes,
@@ -39,6 +41,7 @@ from trackgen.quality.layer2 import (
     layer2_warnings,
     load_l2_thresholds,
     measure_l2_1,
+    quartal_voiced_groups,
 )
 from trackgen.quality.suite import pipeline_warnings, validate_pipeline
 from trackgen.schema.ir import ChordEvent, ChordQuality, ChordSpec, EventScale
@@ -702,6 +705,246 @@ def test_allowed_pitch_classes_is_strictly_additive() -> None:
 
 
 # ---------------------------------------------------------------------------
+# L2-1 — the quartal natural-11 widening (C-32, S23-2 option D)
+# ---------------------------------------------------------------------------
+
+# §6.4 pins `quartal` as fusion's signature low-rung comping voicing;
+# `theory/voicing.py:185` resolves it to `[[0, 5, 10, 15]]`, so offset 5 — the
+# perfect fourth above the root, the natural 11 — is a *structural voice* of
+# every quartal voicing. §6.4's tension table withholds `11` from a dominant 7th
+# (the avoid note), so the pack's own pinned voicing table produced notes its own
+# validator counted as wrong. C-32 admits that one pitch class, and only where
+# the pack data puts quartal in play. These tests pin both halves: that it is
+# admitted there, and that it is admitted *nowhere else*.
+
+_FUSION: dict[str, object] = {
+    "styleFamily": "fusion_jazz",
+    "maxLengthSec": 180,
+    "seed": "1ps9wxb",
+}
+_PERFECT_FOURTH = 5
+
+
+def _comping_rungs(trace: GenerationTrace) -> dict[str, int]:
+    return {
+        e.section_id: e.intensity
+        for e in trace.arrangement.entries
+        if e.role == "comping"
+    }
+
+
+def _narrow_measure(trace: GenerationTrace) -> dict[str, tuple[int, int]]:
+    """`{track_id: (total, in_set)}` under the **pre-C-32** allowed set.
+
+    An independent second implementation of L2-1's population, deliberately not
+    routed through `measure_l2_1`: it is the "before" side of every
+    before/after comparison here, so it must not move when the widening does."""
+    stats: dict[str, list[int]] = {}
+    for phrase in trace.phrases_stage6:
+        residues = (
+            _BEAT_1
+            if phrase.role == "bass"
+            else (_BEAT_1 | _BEAT_3)
+            if phrase.role == "comping"
+            else None
+        )
+        if residues is None:
+            continue
+        acc = stats.setdefault(phrase.track_id, [0, 0])
+        for note in phrase.notes:
+            if note.midi is None or note.ticks % _TICKS_PER_BAR not in residues:
+                continue
+            chord = governing_chord(trace, note.ticks)
+            if chord is None:
+                continue
+            acc[0] += 1
+            if note.midi % 12 in allowed_pitch_classes(chord):
+                acc[1] += 1
+    return {track_id: (t, i) for track_id, (t, i) in stats.items()}
+
+
+def _flip_comping_to_fourth(
+    trace: GenerationTrace, section_ids: set[str]
+) -> tuple[GenerationTrace, int]:
+    """Retune every comping strong-beat note governed by a chord in `section_ids`
+    onto the perfect fourth above that chord's root, keeping its octave.
+
+    The single note C-32 is about, planted deliberately so the widening's scope
+    can be read off L2-1's verdict rather than inferred from real content.
+
+    Returns `(trace, n_newly_out_of_set)` — counting only the flips the
+    **pre-C-32** set rejects. The fourth is already in-set over half the
+    repertoire (it is a chord tone of a sus chord and sits in dorian, aeolian and
+    mixolydian alike); C-32 bites only where the parent scale and the §6.4
+    tension table both withhold it, canonically a dom7 in an altered/diminished
+    scale. Counting every flip instead would compare the readers on notes they
+    already agree about."""
+    newly_out = 0
+    new_phrases = []
+    for phrase in trace.phrases_stage6:
+        if phrase.role != "comping":
+            new_phrases.append(phrase)
+            continue
+        notes = []
+        for note in phrase.notes:
+            chord = (
+                governing_chord(trace, note.ticks)
+                if note.midi is not None
+                and note.ticks % _TICKS_PER_BAR in (_BEAT_1 | _BEAT_3)
+                else None
+            )
+            if chord is None or chord.section_id not in section_ids:
+                notes.append(note)
+                continue
+            assert note.midi is not None
+            target = _pc(chord.chord.root_pc, _PERFECT_FOURTH)
+            notes.append(
+                note.model_copy(update={"midi": note.midi - (note.midi % 12) + target})
+            )
+            if target not in allowed_pitch_classes(chord):
+                newly_out += 1
+        new_phrases.append(phrase.model_copy(update={"notes": notes}))
+    return replace(trace, phrases_stage6=new_phrases), newly_out
+
+
+def test_quartal_widening_admits_the_fourth_where_the_pack_declares_quartal() -> None:
+    """Planting the natural 11 on every comping strong beat of a **quartal rung**
+    leaves L2-1 at ratio 1.0000 — the widening does its job.
+
+    Discriminating by construction: the independent narrow reader below rejects
+    exactly those planted notes, so the two readers disagree by the full number
+    of newly-out-of-set flips. If C-32 were reverted, `measure_l2_1` would return
+    the narrow numbers and this fails."""
+    base = generate_trace(_FUSION)
+    widened = {s for role, s in quartal_voiced_groups(base) if role == "comping"}
+    assert widened, "fixture has no quartal-declaring comping section"
+
+    trace, newly_out = _flip_comping_to_fourth(base, widened)
+    assert newly_out > 0, "fixture planted no fourth the narrow set rejects"
+
+    comping = [m for m in measure_l2_1(trace) if m.role == "comping"]
+    assert comping
+    for m in comping:
+        assert m.in_set == m.total, (
+            f"{m.track_id}: {m.in_set}/{m.total} — a planted natural 11 on a "
+            f"quartal rung was NOT admitted"
+        )
+
+    narrow = _narrow_measure(trace)
+    narrow_missing = sum(t - i for t, i in narrow.values())
+    assert narrow_missing == newly_out, (
+        f"narrow reader rejected {narrow_missing}, expected {newly_out} — the "
+        "fixture is not exercising the widening cleanly"
+    )
+    assert not _comping_failed(trace)
+
+
+def test_quartal_widening_does_not_reach_a_non_quartal_rung() -> None:
+    """The same planted natural 11, in a comping section whose rung declares only
+    `rootless_a`/`rootless_b`, is still counted out-of-set and still fails L2-1.
+
+    This is the assertion that makes the widening *narrow* rather than global:
+    it is switched on by `pack.voicing[role].classes[rung]`, so fusion's own
+    rungs 3–4 are untouched by it."""
+    base = generate_trace(_FUSION)
+    widened = {s for role, s in quartal_voiced_groups(base) if role == "comping"}
+    plain = set(_comping_rungs(base)) - widened
+    assert plain, "fixture has no non-quartal comping section"
+
+    trace, newly_out = _flip_comping_to_fourth(base, plain)
+    assert newly_out > 0, "fixture planted no fourth the narrow set rejects"
+
+    comping = [m for m in measure_l2_1(trace) if m.role == "comping"]
+    assert comping
+    assert sum(m.total - m.in_set for m in comping) == newly_out, (
+        "a planted natural 11 on a NON-quartal rung was admitted — the widening "
+        "is leaking across rungs"
+    )
+    assert _comping_failed(trace)
+
+
+def test_quartal_voiced_groups_is_empty_on_the_four_other_packs() -> None:
+    """No pack but fusion_jazz can be widened at all, over every mood it declares.
+
+    Two independent sides, so neither can drift silently: the pack **data** (no
+    other comping ladder names `quartal` at any rung) and the **trace** (no
+    measured `(role, section)` pair comes back widened). jazz does declare
+    quartal — for `pads`, a role L2-1 does not measure — which is exactly the
+    leak this test would catch if the role filter were dropped."""
+    for pack_id in ("pop_rock", "jazz", "chill_lofi", "blues"):
+        pack = cached_pack(pack_id)
+        for role in ("bass", "comping"):
+            classes = pack.voicing[role].classes if role in pack.voicing else {}
+            for rung, names in classes.items():
+                assert "quartal" not in names, (pack_id, role, rung, names)
+
+        for mood in supported_moods(pack_id):
+            trace = generate_trace(
+                {
+                    "styleFamily": pack_id,
+                    "mood": mood,
+                    "maxLengthSec": 180,
+                    "seed": "1ps9wxb",
+                }
+            )
+            measured = {
+                (role, section)
+                for role, section in quartal_voiced_groups(trace)
+                if role in ("bass", "comping")
+            }
+            assert measured == set(), (pack_id, mood, sorted(measured))
+
+    # ...and jazz's quartal really is present, on pads — so the assertion above
+    # is discriminating rather than vacuously true of a pack with no quartal.
+    assert "quartal" in cached_pack("jazz").voicing["pads"].classes[2]
+
+
+def test_quartal_widening_never_reaches_bass() -> None:
+    """`bass` has no `voicing:` block on any pack — it is not a voiced role — so
+    a bass group is structurally unwidenable, whatever the rung."""
+    for pack_id in PACKS:
+        assert "bass" not in cached_pack(pack_id).voicing, pack_id
+    trace = generate_trace(_FUSION)
+    assert not any(role == "bass" for role, _s in quartal_voiced_groups(trace))
+
+
+def test_allowed_pitch_classes_quartal_flag_is_strictly_additive() -> None:
+    """Over every (quality, scale, root) the theory module defines: the widened
+    set is a superset of the un-widened one, and adds **at most the perfect
+    fourth above the chord root** — nothing else, ever.
+
+    The upper bound matters as much as the lower one. A widening that admitted
+    the whole quartal stack (`0, 5, 10, 15`) would also pass a minor 7th over a
+    maj7, blinding the gate on content C-32 says nothing about."""
+    from trackgen.theory.chords import QUALITY_INTERVALS, SCALE_INTERVALS
+
+    base = generate_trace(_POP)
+    event = base.harmony.chords[0]
+    grew = 0
+    for quality in QUALITY_INTERVALS:
+        for scale_name in SCALE_INTERVALS:
+            for root in range(12):
+                probe = event.model_copy(
+                    update={
+                        "chord": ChordSpec(
+                            root_pc=root, quality=quality, extensions=[], symbol="X"
+                        ),
+                        "scale": EventScale(root_pc=root, name=scale_name),
+                    }
+                )
+                narrow = allowed_pitch_classes(probe)
+                wide = allowed_pitch_classes(probe, quartal=True)
+                assert narrow <= wide
+                assert wide - narrow <= {_pc(root, _PERFECT_FOURTH)}
+                if wide != narrow:
+                    grew += 1
+
+    # Non-vacuity: on plenty of (quality, scale) pairs the fourth is genuinely
+    # absent from the narrow set, so the flag is not a no-op everywhere.
+    assert grew > 0
+
+
+# ---------------------------------------------------------------------------
 # L2-1 — the allowed-set memo is equivalent to the uncached lookup
 # ---------------------------------------------------------------------------
 
@@ -749,7 +992,7 @@ def test_allowed_pitch_class_memo_matches_uncached_lookup() -> None:
 
     base = generate_trace(_POP)
     event = base.harmony.chords[0]
-    cache: dict[tuple[int, str, tuple[str, ...], int, str], set[int]] = {}
+    cache: dict[_AllowedKey, set[int]] = {}
 
     checked = 0
     for root in range(12):
@@ -757,18 +1000,20 @@ def test_allowed_pitch_class_memo_matches_uncached_lookup() -> None:
             for scale_name in SCALE_INTERVALS:
                 for exts in ([], ["b9"], ["#11"], ["b13"]):
                     probe = _probe(event, root, quality, scale_name, exts)
-                    assert _memoized_allowed_pitch_classes(
-                        cache, probe
-                    ) == allowed_pitch_classes(probe), (
-                        f"memo served a wrong allowed set for root={root} "
-                        f"quality={quality} scale={scale_name} extensions={exts}"
-                    )
-                    checked += 1
+                    for quartal in (False, True):
+                        assert _memoized_allowed_pitch_classes(
+                            cache, probe, quartal
+                        ) == allowed_pitch_classes(probe, quartal=quartal), (
+                            f"memo served a wrong allowed set for root={root} "
+                            f"quality={quality} scale={scale_name} "
+                            f"extensions={exts} quartal={quartal}"
+                        )
+                        checked += 1
 
     # Non-vacuity: the sweep really did exercise every key field, and the cache
     # really was reused (far fewer distinct keys than probes would mean the memo
     # never fired; as many keys as probes would mean it never collided-by-design).
-    assert checked == 12 * len(QUALITY_INTERVALS) * len(SCALE_INTERVALS) * 4
+    assert checked == 12 * len(QUALITY_INTERVALS) * len(SCALE_INTERVALS) * 4 * 2
     assert len(cache) == checked, "every probe is a distinct chord identity"
 
 
@@ -784,7 +1029,7 @@ def test_allowed_pitch_class_memo_matches_uncached_lookup_on_real_traces(
     trace = generate_trace(
         {"styleFamily": pack, "maxLengthSec": 180, "seed": "1ps9wxb"}
     )
-    cache: dict[tuple[int, str, tuple[str, ...], int, str], set[int]] = {}
+    cache: dict[_AllowedKey, set[int]] = {}
 
     for chord in trace.harmony.chords:
         assert _memoized_allowed_pitch_classes(cache, chord) == allowed_pitch_classes(
@@ -812,7 +1057,7 @@ def test_allowed_pitch_class_memo_distinguishes_illegal_extensions() -> None:
     assert "b9" not in legal_extensions("maj7")
     assert allowed_pitch_classes(plain) != allowed_pitch_classes(with_b9)
 
-    cache: dict[tuple[int, str, tuple[str, ...], int, str], set[int]] = {}
+    cache: dict[_AllowedKey, set[int]] = {}
     assert _memoized_allowed_pitch_classes(cache, plain) == allowed_pitch_classes(plain)
     assert _memoized_allowed_pitch_classes(cache, with_b9) == allowed_pitch_classes(
         with_b9

@@ -35,6 +35,7 @@ from trackgen.quality.calibration import (
     Calibration,
     calibration_to_yaml_dict,
     compute_bands,
+    load_calibration,
     pack_and_mood,
 )
 
@@ -60,6 +61,10 @@ def calibrate(
     `compute_bands`, and writes the assembled `Calibration` to `out_path`
     (default `styles/<pack_id>/calibration.yaml`). When `report` is set the §9.3
     human report is printed to stdout (report-only, no gating).
+
+    The bands are fully re-derived from this batch, but a **committed** artifact's
+    `l2Thresholds` are *preserved* per mood rather than regenerated (S23-11) —
+    see `preserved_thresholds` for why the two halves are treated differently.
     """
     pack = resolve_pack(pack_id)
     if pack is None or pack.interpreter is None:
@@ -77,9 +82,37 @@ def calibrate(
             trace = generate_trace({"styleFamily": pack_id, "mood": mood, "seed": seed})
             grouped[pack_and_mood(trace)].append(trace)
 
+    committed = load_calibration(pack_id)
+
+    def preserved_thresholds(mood: str) -> dict[str, float] | None:
+        """The committed artifact's L2 thresholds for `mood`, if it has any.
+
+        **Bands are derived; L2 thresholds are authored (S23-11).** D10 and §12
+        Q4 pin the two kinds of data that share `calibration.yaml` differently:
+        the Layer-3 bands are *computed from the blessed batch* (regenerating
+        them on bless is what keeps them honest), while the Layer-2 thresholds
+        are *tunable style data* a human may deliberately set per pack. Deriving
+        the bands but rewriting an authored threshold back to the engine default
+        would clobber the authored half — the same silent-drift class as GAP-2,
+        which this artifact's byte-reproduction test exists to close.
+
+        Read from the **committed** `styles/<pack>/calibration.yaml`, not from
+        `out_path`: the threshold belongs to the pack, so a calibration written
+        to a scratch path (every test, and the byte-reproduction check) must
+        still carry it. `None` — no artifact yet, or no cell for this mood —
+        falls back to `compute_bands`' engine defaults, which is the correct
+        bootstrap behaviour for a pack being calibrated for the first time."""
+        if committed is None:
+            return None
+        pmc = committed.moods.get(mood)
+        return dict(pmc.l2_thresholds) if pmc is not None else None
+
     cal = Calibration(
         pack=pack_id,
-        moods={mood: compute_bands(traces) for (_pk, mood), traces in grouped.items()},
+        moods={
+            mood: compute_bands(traces, preserved_thresholds(mood))
+            for (_pk, mood), traces in grouped.items()
+        },
     )
 
     target = (

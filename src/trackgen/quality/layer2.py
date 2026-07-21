@@ -16,6 +16,9 @@ that split by calling `layer2_failures` (L2-1) into its gating result and
   L2-1 measures **`trace.phrases_stage6`** — the pre-humanizer snapshot — not
   `doc.tracks`; see `_check_l2_1_chord_tone_ratio` for why, and
   `layer2_skip_diagnostics` for the loud unmeasurable-role signal.
+  Where the pack's own voicing table puts the **quartal** class in play for a
+  `(role, section)`, the allowed set additionally admits the perfect fourth above
+  the chord root (C-32) — see `quartal_voiced_groups`.
 - **L2-2** voice crossing (**WARN**) — `layer2_warnings`. At every
   *voiced-sonority* instant — a tick where a bass note AND a comping note are both
   struck (a shared onset) — `max(sounding bass midi) < min(sounding comping midi)`
@@ -62,6 +65,14 @@ _BEAT_3 = 2 * _TICKS_PER_BEAT
 _BASS_THRESHOLD = 0.95
 _COMPING_THRESHOLD = 0.98
 
+# C-32: the quartal voicing class and the offset of its second voice. The class
+# is `[[0, 5, 10, 15]]` (`theory/voicing.py:185`) — offset 5 is the perfect
+# fourth above the root, i.e. the natural 11 §6.4's tension table withholds from
+# a dominant 7th. Named here so the widening reads against the shape it comes
+# from rather than a bare literal.
+_QUARTAL_CLASS = "quartal"
+_QUARTAL_FOURTH = 5
+
 # Strong-beat set per role, as bar-relative onset residues.
 _STRONG_BEATS: dict[str, frozenset[int]] = {
     "bass": frozenset({_BEAT_1}),
@@ -99,8 +110,8 @@ def load_l2_thresholds(
     return float(bass), float(comping)
 
 
-def allowed_pitch_classes(chord: ChordEvent) -> set[int]:
-    """The L2-1 in-set pitch classes for a governing chord (S22-13).
+def allowed_pitch_classes(chord: ChordEvent, *, quartal: bool = False) -> set[int]:
+    """The L2-1 in-set pitch classes for a governing chord (S22-13, C-32).
 
     `chord tones ∪ chord-scale ∪ legal altered tensions`. The third term reuses
     PHASE_4 §6.4's own legality table (`theory.chords.legal_extensions`) — the
@@ -111,47 +122,123 @@ def allowed_pitch_classes(chord: ChordEvent) -> set[int]:
     is absent from the parent scale — a validator gap, not a musical fault. The
     term is strictly additive: it only unions in more classes, so anything that
     passed before still passes, and legality stays quality-specific (a ♯9 is
-    in-set over dom7 and still out-of-set over maj7)."""
+    in-set over dom7 and still out-of-set over maj7).
+
+    **`quartal=True` unions in one further class: the perfect fourth above the
+    chord root** (`root_pc + 5`, the natural 11) — C-32, ruled by the user
+    2026-07-21 as option D of the S23-2 disposition, and the exact precedent
+    C-29 set for the ♯9 of the very same voicing. `theory/voicing.py:185` pins
+    the class as `[[0, 5, 10, 15]]`, so a quartal voicing *always* sounds that
+    fourth; PHASE_8 §6.4 in turn pins quartal as fusion's signature low-rung
+    comping harmony. §6.4's tension table then excludes `11` over a dominant
+    7th — correctly, as a musical rule about *dressing* a chord symbol (the
+    avoid note that makes `7sus4` a separate quality) — but the fourth is not
+    dressing here, it is a structural voice of a voicing class the pack was
+    told to use. Measured over 3 200 fusion renders, this is the **only**
+    out-of-set pitch class L2-1 ever sees on fusion comping: interval 5 over a
+    dom7 in `half_whole_dim`, and nothing else at all.
+
+    The flag is a *caller's* statement about which voicing class is in play, not
+    a property of the chord: see `quartal_voiced_groups` for how `measure_l2_1`
+    derives it from pack data, and why the default stays `False` so no other
+    pack's gate is loosened. Strictly additive in the same sense as C-29 — one
+    more pitch class, never one fewer."""
     tension_pcs = {
         (chord.chord.root_pc + EXTENSION_OFFSETS[ext]) % 12
         for ext in legal_extensions(chord.chord.quality)
     }
+    quartal_pcs = {(chord.chord.root_pc + _QUARTAL_FOURTH) % 12} if quartal else set()
     return (
         set(chord_tones(chord.chord))
         | set(scale_pcs(chord.scale.root_pc, chord.scale.name))
         | tension_pcs
+        | quartal_pcs
+    )
+
+
+def quartal_voiced_groups(trace: GenerationTrace) -> frozenset[tuple[str, str]]:
+    """The `(role, section_id)` pairs whose pack voicing classes include quartal.
+
+    **The mechanism C-32's widening keys off, and the reason it cannot leak.**
+    Nothing downstream of `parts/voicing.py::build_voicing_map` records *which*
+    candidate class won the Viterbi pass — `optimal_voicing_path` returns bare
+    MIDI lists, and the per-role voicing map never enters the `GenerationTrace`
+    — so per-note provenance does not exist to be read. What does exist is the
+    pinned pack data that *produced* the candidates: `pack.voicing[role].
+    classes[rung]`, indexed by the intensity the arrangement assigned that
+    `(role, section)`. Keying off it means the widening is switched on by
+    exactly the authored table that puts a quartal fourth into the render.
+
+    Narrow on three independent axes, each of which alone confines it to
+    fusion_jazz comping:
+
+    1. **Only roles with a `voicing:` block.** `bass` has none — it is not a
+       voiced role — so a bass group can never be widened, whatever the pack.
+    2. **Only rungs that declare `quartal`.** Of the five shipped packs, the only
+       comping ladder naming quartal is fusion_jazz's, at rungs 1–2 (`styles/
+       fusion_jazz/patterns/comping.yaml`); pop_rock, jazz, chill_lofi and blues
+       name triad/shell/rootless classes exclusively. jazz *does* use quartal —
+       but for **pads**, and L2-1 is defined over bass and comping only
+       (`_STRONG_BEATS`), so it is never measured and never widened.
+    3. **Only sections at such a rung.** fusion's rungs 3–4 are
+       `rootless_a/rootless_b` and stay on the un-widened set.
+
+    A pack that later authors quartal comping opts into the same treatment by
+    the same data, which is the point: the widening tracks the voicing table
+    rather than a pack name.
+
+    Known over-approximation, stated rather than hidden: a quartal-declaring rung
+    also offers `rootless_a`/`rootless_b`, and the DP may pick one of those for a
+    given chord. Such a group is widened even though no quartal fourth sounded in
+    it — the fourth is *admitted*, not *required*. Tightening that would need the
+    per-note provenance the pipeline does not carry; the residual cost is one
+    extra pitch class on fusion comping rungs 1–2 only."""
+    pack = resolve_pack(trace.plan.style_pack.id)
+    if pack is None:
+        return frozenset()
+    return frozenset(
+        (entry.role, entry.section_id)
+        for entry in trace.arrangement.entries
+        if entry.role in pack.voicing
+        and _QUARTAL_CLASS in pack.voicing[entry.role].classes.get(entry.intensity, ())
     )
 
 
 # Memo key for `_memoized_allowed_pitch_classes`: every field of the `ChordEvent`
-# that `allowed_pitch_classes` reads. `extensions` is included even though it is
-# empirically inert on shipped packs (`extensions ⊆ legal_extensions(quality)`, so
-# its pitch classes are already inside the `tension_pcs` term) — a *total* key
-# cannot rot, and `allowed_pitch_classes` is public, so a hand-built `ChordEvent`
-# carrying an extension its quality does not declare legal is reachable and would
-# otherwise collide. See `test_allowed_pitch_class_memo_matches_uncached_lookup`.
-_AllowedKey = tuple[int, str, tuple[str, ...], int, str]
+# that `allowed_pitch_classes` reads, plus its `quartal` argument. `extensions` is
+# included even though it is empirically inert on shipped packs (`extensions ⊆
+# legal_extensions(quality)`, so its pitch classes are already inside the
+# `tension_pcs` term) — a *total* key cannot rot, and `allowed_pitch_classes` is
+# public, so a hand-built `ChordEvent` carrying an extension its quality does not
+# declare legal is reachable and would otherwise collide. The `quartal` flag is
+# part of the key for the same totality reason: the same chord is measured under
+# both settings within one render (C-32 widens per section, not per document), so
+# omitting it would serve a widened set to an un-widened group.
+# See `test_allowed_pitch_class_memo_matches_uncached_lookup`.
+_AllowedKey = tuple[int, str, tuple[str, ...], int, str, bool]
 
 
 def _memoized_allowed_pitch_classes(
-    cache: dict[_AllowedKey, set[int]], chord: ChordEvent
+    cache: dict[_AllowedKey, set[int]], chord: ChordEvent, quartal: bool = False
 ) -> set[int]:
-    """`allowed_pitch_classes(chord)`, memoized in `cache` on the chord identity.
+    """`allowed_pitch_classes(chord, quartal=…)`, memoized in `cache`.
 
-    Pure-function memo: the return value must equal `allowed_pitch_classes(chord)`
-    for every `chord`, whatever the cache already holds. A render reuses a handful
-    of distinct chord identities across thousands of notes, so the memo removes
-    almost all of the repeated set construction."""
+    Pure-function memo: the return value must equal
+    `allowed_pitch_classes(chord, quartal=quartal)` for every `(chord, quartal)`,
+    whatever the cache already holds. A render reuses a handful of distinct chord
+    identities across thousands of notes, so the memo removes almost all of the
+    repeated set construction."""
     key: _AllowedKey = (
         chord.chord.root_pc,
         chord.chord.quality,
         tuple(chord.chord.extensions),
         chord.scale.root_pc,
         chord.scale.name,
+        quartal,
     )
     allowed = cache.get(key)
     if allowed is None:
-        allowed = cache[key] = allowed_pitch_classes(chord)
+        allowed = cache[key] = allowed_pitch_classes(chord, quartal=quartal)
     return allowed
 
 
@@ -188,10 +275,18 @@ def measure_l2_1(trace: GenerationTrace) -> list[L2_1Measurement]:
     order, so the result is deterministic.
 
     A note whose governing chord is undefined is excluded from both numerator and
-    denominator — with no chord in force there is no set to measure it against."""
+    denominator — with no chord in force there is no set to measure it against.
+
+    **Allowed set (C-32).** A note is measured against the widened set when its
+    `(role, section)` is one the pack's voicing table puts quartal in play for —
+    `quartal_voiced_groups`, which on the five shipped packs is fusion_jazz
+    comping at rungs 1–2 and nothing else. The section comes from the governing
+    chord (`ChordEvent.section_id`), so the widening follows the harmony the note
+    is actually judged against."""
     stats: dict[str, list[int]] = {}
     roles: dict[str, str] = {}
     allowed_cache: dict[_AllowedKey, set[int]] = {}
+    quartal_groups = quartal_voiced_groups(trace)
 
     for phrase in trace.phrases_stage6:
         strong = _STRONG_BEATS.get(phrase.role)
@@ -212,7 +307,11 @@ def measure_l2_1(trace: GenerationTrace) -> list[L2_1Measurement]:
             chord = governing_chord(trace, note.ticks)
             if chord is None:
                 continue
-            allowed = _memoized_allowed_pitch_classes(allowed_cache, chord)
+            allowed = _memoized_allowed_pitch_classes(
+                allowed_cache,
+                chord,
+                (phrase.role, chord.section_id) in quartal_groups,
+            )
             acc[0] += 1
             if note.midi % 12 in allowed:
                 acc[1] += 1
