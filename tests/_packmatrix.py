@@ -165,7 +165,7 @@ SEEDS_25: tuple[str, ...] = (
     "t9l6hso",
     "uhhk9jd",
 )
-"""25 pinned base36 u64 seeds (§14.7 pins "× 25 seeds").
+"""25 pinned base36 u64 seeds (§14.9 pins "× 25 seeds"; §14.7 is Tooling).
 
 Literals rather than a generator expression, matching `_SMOKE_SEEDS` in
 `tests/test_smoke_matrix.py`: the matrix is byte-stable forever and a failure is

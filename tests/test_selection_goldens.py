@@ -19,6 +19,13 @@ import random
 
 import pytest
 
+from _packmatrix import (
+    PACKS,
+    SEEDS_25,
+    cached_pack,
+    pack_mood_pairs,
+    total_moods,
+)
 from trackgen.arrangement import arrange
 from trackgen.form.stage import form
 from trackgen.interpreter.stage import generate_plan
@@ -27,7 +34,7 @@ from trackgen.packs.models import StylePack
 from trackgen.parts.selection import RngFactory, SelectionResult, select_patterns
 from trackgen.schema.document import Role
 from trackgen.schema.ir import GenerationPlan, SongForm
-from trackgen.seeds import Rng, derive, stream_seed, to_base36
+from trackgen.seeds import Rng, derive, stream_seed
 
 
 class _CountingRandom(random.Random):
@@ -247,21 +254,20 @@ def test_jazz_selection_draw_narrative() -> None:
 # DoD 4 — completeness property: every reachable key resolves
 # =============================================================================
 
-# Mirror test_form.py's pack×mood matrix; a modest seed set × a tempo spread
-# covering each pack's tempoRange exercises the loader's §3.2 completeness
-# guarantee through the selection path (no reference pattern is tempo-gated, so
-# every reachable key must resolve at every tempo).
-_SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(5)]
-
-
-def _pack_mood_params() -> list[tuple[str, str]]:
-    params: list[tuple[str, str]] = []
-    for style in ("pop_rock", "jazz"):
-        pack = resolve_pack(style)
-        assert pack is not None and pack.interpreter is not None
-        for mood in pack.interpreter.supported_moods:
-            params.append((style, mood))
-    return params
+# The §14.9 pack × mood matrix, taken from `_packmatrix` so the pack dimension
+# is derived from the registry rather than restated here. This module was written
+# when only two packs existed and its comment said "mirror test_form.py's
+# pack×mood matrix"; test_form.py was widened to five packs in SESSION_23 T5 and
+# this module was missed, so the mirror broke silently and DoD §14.9 was unmet
+# (SESSION_23 T10, lens B). A tempo spread covering each pack's tempoRange
+# exercises the loader's §3.2 completeness guarantee through the selection path
+# (no reference pattern is tempo-gated, so every reachable key must resolve at
+# every tempo).
+#
+# Seeds: the full §14.9 25-seed set. Measured cost of the widening (2 packs × 5
+# seeds → 5 packs × 25 seeds, i.e. 21 → 45 cells and 525 → 5625 pipelines):
+# 0.9 s → 8.4 s serial, ~2 s under `pytest -n auto`. Affordable, so §14.9's seed
+# depth is honoured rather than approximated.
 
 
 def _tempo_spread(pack: StylePack) -> list[int]:
@@ -270,18 +276,19 @@ def _tempo_spread(pack: StylePack) -> list[int]:
     return [round(lo + (hi - lo) * i / 4) for i in range(5)]
 
 
-@pytest.mark.parametrize(("style", "mood"), _pack_mood_params())
+@pytest.mark.parametrize(("style", "mood"), pack_mood_pairs())
 def test_selection_completeness(style: str, mood: str) -> None:
-    """PHASE_5 DoD 4 — for every pack × supported mood × tempo across its range ×
-    a seed spread, every reachable `(role, kind, rung)` (an active, pattern-mode
-    `(section, role)`) resolves to a pattern: `select_patterns` populates a
-    `by_section` entry for it and never comes up empty / never raises."""
-    pack = resolve_pack(style)
-    assert pack is not None and pack.forms is not None
+    """PHASE_5 DoD 4 — for every registered pack × supported mood × tempo across
+    its range × the 25-seed spread, every reachable `(role, kind, rung)` (an
+    active, pattern-mode `(section, role)`) resolves to a pattern:
+    `select_patterns` populates a `by_section` entry for it and never comes up
+    empty / never raises."""
+    pack = cached_pack(style)
+    assert pack.forms is not None
     walking_bass = pack.bass_mode == "walking"
 
     for tempo in _tempo_spread(pack):
-        for seed in _SEEDS:
+        for seed in SEEDS_25:
             plan = generate_plan(
                 {
                     "styleFamily": style,
@@ -314,3 +321,41 @@ def test_selection_completeness(style: str, mood: str) -> None:
                 assert result.by_section[pair] is not None, (ctx, pair)
             # No spurious selections beyond the reachable set.
             assert set(result.by_section) == reachable, ctx
+
+
+def test_matrix_non_vacuous() -> None:
+    """The DoD-4 completeness matrix is the exact expected size and covers every
+    registered pack.
+
+    Dimensions are recomputed from pack data (not restated), so a silent shrink —
+    a pack dropped from the registry, a mood lost, a truncated seed list — fails
+    loudly rather than quietly narrowing coverage (ROADMAP §3). This test exists
+    because the shrink it guards against already happened once: the matrix sat at
+    two packs for three chunks after `test_form.py` was widened to five."""
+    assert len(PACKS) >= 5, PACKS
+    assert len(SEEDS_25) == len(set(SEEDS_25)) == 25, SEEDS_25
+
+    cells = list(pack_mood_pairs())
+    assert len(cells) == total_moods(), (len(cells), total_moods())
+    assert {style for style, _ in cells} == set(PACKS)
+    assert len(cells) == len(set(cells)), "duplicate (pack, mood) cell"
+
+    # The tempo dimension is real per pack: five distinct tempi spanning a
+    # non-degenerate tempoRange, so "× tempo across its range" is not one value.
+    for style in PACKS:
+        spread = _tempo_spread(cached_pack(style))
+        assert len(spread) == 5, (style, spread)
+        assert len(set(spread)) == 5, (style, spread)
+        assert spread[0] < spread[-1], (style, spread)
+
+    # Both bass modes are exercised: walking bass takes a different completeness
+    # path (no selection), and pinning the split here keeps a pack that silently
+    # flips mode from narrowing what this property covers.
+    modes = {style: cached_pack(style).bass_mode for style in PACKS}
+    assert modes == {
+        "blues": "patterns",
+        "chill_lofi": "patterns",
+        "fusion_jazz": "patterns",
+        "jazz": "walking",
+        "pop_rock": "patterns",
+    }, modes

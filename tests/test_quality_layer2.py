@@ -26,7 +26,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from _packmatrix import PACKS, cached_pack, supported_moods
+from _packmatrix import PACKS, SEEDS_25, cached_pack, supported_moods
 from trackgen.pipeline.trace import GenerationTrace, generate_trace
 from trackgen.quality import calibration
 from trackgen.quality._common import governing_chord
@@ -554,11 +554,120 @@ def test_l2_1_skip_diagnostic_names_the_track_and_population() -> None:
 
 
 @pytest.mark.parametrize("params", [_POP, _JAZZ], ids=["pop", "jazz"])
-def test_no_skip_diagnostic_on_a_real_render(params: dict[str, object]) -> None:
-    """The corrected grain leaves nothing unmeasured on a real render — the
-    diagnostic is silent precisely where the old reader was silently vacuous."""
+def test_no_skip_diagnostic_on_the_reference_renders(
+    params: dict[str, object],
+) -> None:
+    """The two §9.x reference renders leave nothing unmeasured — the diagnostic is
+    silent precisely where the old reader was silently vacuous.
+
+    **Deliberately named for its two cells, not for "a real render" in general.**
+    It said the latter until SESSION_23 T10 (lens A/C) measured the residual: the
+    L2-1 grain fix made the vacuous case *loud*, it did not make it *empty*. Blues,
+    fusion_jazz and jazz comping all still skip on real renders — see
+    `_PINNED_SKIP_GROUPS` below for the measured rates and why they are structural.
+    Reading two clean cells as a universal was exactly the over-generalisation this
+    session has had to retract four times elsewhere (SESSION_23 §3a-FINAL)."""
     trace = generate_trace(params)
     assert layer2_skip_diagnostics(trace.document, trace) == []
+
+
+# The measured residual, pinned (C-31; SESSION_23 T10 FIX 4).
+#
+# `(skipped_groups, total_groups)` per (pack, role) over the sub-matrix below.
+# **Not a bug.** A group is unmeasurable when the role's stage-6 onset residues
+# never intersect §8.1's strong-beat set — for `blues/aggressive/60s` the comping
+# residues are {240, 480, 720, 1200, 1440, 1680}, so *zero* notes land on {0, 960}
+# and the check has no population at all. Blues comping is a pure off-beat pattern;
+# no amount of grain correction gives it a beat-1/3 note to measure. The `L2-1-SKIP:`
+# channel exists so that this is visible rather than a silent vacuous pass.
+#
+# Pinned as exact counts, not a ceiling: the point is that the residual cannot
+# drift in *either* direction unnoticed — a pack that starts skipping, or one whose
+# skip rate climbs, fails here rather than quietly narrowing L2-1's coverage.
+# Bass never skips on any pack (0 / 3600 groups in the verification sweep), which is
+# the load-bearing structural claim; the three zero-rows below are equally pinned so
+# a regression that *introduces* a skip is caught.
+#
+# Length-sensitivity is the reason both a short and a long length are sampled: the
+# rate is dominated by the short bucket and falls as sections multiply. Measured over
+# 3600 renders (5 packs × all moods × 20 seeds × lengths 60/120/180/240):
+#
+#   blues comping        24.38 %   (60s 50.00 % · 120s 20.62 %
+#                                  · 180s 13.75 % · 240s 13.12 %)
+#   fusion_jazz comping   7.34 %   (60s 29.38 %, zero elsewhere)
+#   jazz comping          5.25 %   (60s 15.00 % · 120s 6.00 %, zero elsewhere)
+#   every bass role       0.00 %   ·   pop_rock / chill_lofi comping   0.00 %
+#
+# A quoted global rate is therefore only meaningful against a stated length set —
+# it is *not* a population constant.
+_PINNED_SKIP_LENGTHS: tuple[int, ...] = (60, 240)
+_PINNED_SKIP_SEEDS = SEEDS_25[:8]
+_PINNED_SKIP_GROUPS: dict[tuple[str, str], tuple[int, int]] = {
+    ("blues", "bass"): (0, 128),
+    ("blues", "comping"): (41, 128),
+    ("chill_lofi", "bass"): (0, 128),
+    ("chill_lofi", "comping"): (0, 128),
+    ("fusion_jazz", "bass"): (0, 128),
+    ("fusion_jazz", "comping"): (23, 128),
+    ("jazz", "bass"): (0, 160),
+    ("jazz", "comping"): (15, 160),
+    ("pop_rock", "bass"): (0, 176),
+    ("pop_rock", "comping"): (0, 176),
+}
+
+
+@pytest.mark.parametrize("pack_id", PACKS)
+def test_l2_1_skip_rate_is_pinned_per_pack(pack_id: str) -> None:
+    """The unmeasurable-group residual is a tracked number, per pack and role.
+
+    Sub-matrix: every supported mood × 8 seeds × lengths 60/240. Both a short and
+    a long length, because the residual is concentrated at short lengths and a
+    single-length sample would misstate it either way."""
+    measured: dict[str, list[int]] = {}
+    for mood in supported_moods(pack_id):
+        for length in _PINNED_SKIP_LENGTHS:
+            for seed in _PINNED_SKIP_SEEDS:
+                trace = generate_trace(
+                    {
+                        "styleFamily": pack_id,
+                        "mood": mood,
+                        "maxLengthSec": length,
+                        "seed": seed,
+                    }
+                )
+                for m in measure_l2_1(trace):
+                    skipped, total = measured.setdefault(m.role, [0, 0])
+                    measured[m.role] = [
+                        skipped + (1 if m.total == 0 and m.pitched > 0 else 0),
+                        total + 1,
+                    ]
+
+    expected = {
+        role: counts
+        for (pack, role), counts in _PINNED_SKIP_GROUPS.items()
+        if pack == pack_id
+    }
+    assert {role: tuple(counts) for role, counts in measured.items()} == expected, (
+        pack_id,
+        measured,
+    )
+
+
+def test_pinned_skip_matrix_covers_every_pack_and_role() -> None:
+    """The pin is not vacuous: every registered pack appears, with both L2-1 roles,
+    and at least one pack carries a non-zero residual (so an all-zero pin — which
+    would be the shape a silently-reverted grain fix produces — cannot pass)."""
+    assert {pack for pack, _ in _PINNED_SKIP_GROUPS} == set(PACKS)
+    for pack_id in PACKS:
+        roles = {role for pack, role in _PINNED_SKIP_GROUPS if pack == pack_id}
+        assert roles == {"bass", "comping"}, (pack_id, roles)
+    assert all(total > 0 for _, total in _PINNED_SKIP_GROUPS.values())
+    assert sum(skipped for skipped, _ in _PINNED_SKIP_GROUPS.values()) > 0
+    assert all(
+        skipped == 0
+        for (_, role), (skipped, _t) in _PINNED_SKIP_GROUPS.items()
+        if role == "bass"
+    )
 
 
 # ---------------------------------------------------------------------------

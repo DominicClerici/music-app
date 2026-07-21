@@ -382,7 +382,55 @@ applies. **Carried to C10** as a scoped candidate (exclude suppressed boundaries
 `legal_fill_bars`), where it belongs alongside the other validator-coverage work. Logged here so
 it cannot be lost.
 
-### Correction to T5's performance attribution (for the close-out record)
+### T10 three-lens review — two mutation survivors worth carrying to C10
+
+Lens C ran 21 mutants against **production** code and killed **19**. Both survivors are
+coverage-boundary findings rather than broken tests, and both bound what this session's green
+gate actually proves:
+
+**Survivor M17 — the five-pack smoke matrix does NOT exercise the C-32 quartal widening.**
+Removing the widening entirely leaves all 129 fusion_jazz smoke tests green. Measured cause: over
+the 120 fusion smoke cells the **narrow** (un-widened) reader's minimum comping ratio is
+**0.9809**, clearing the 0.98 threshold by 0.0009, so no cell fails either way. Two consequences,
+pulling opposite ways:
+- *Reassuring:* the hard gate has real headroom on fusion at its pinned seeds — with the widening
+  in place the worst ratio is **1.0000** on both roles. S23-5's ordering caution was right in
+  principle, but the chosen seeds are nowhere near a knife-edge. This is why three consecutive
+  runs showed zero variation.
+- *Bounding:* the widening's only genuine protection is `tests/test_quality_layer2.py`.
+  **§14.6's greenness must not be read as covering §14.4b** — those 675 cells are insensitive to
+  the L2-1/C-32 question. State this in C10's DoD record rather than letting one imply the other.
+
+**Survivor M16 — byte-reproduction is structurally blind to `l2Thresholds`.** Since S23-11 made
+`calibrate()` *preserve* committed thresholds, a corrupted threshold reproduces perfectly.
+**GAP-2 is closed for bands only.** The backstop is thin: `test_load_l2_thresholds_reads_blessed_
+artifact` asserts only `0.0 < bass <= 1.0` (passes at 0.5) and covers pop_rock/jazz only — and it
+is *pre-existing* (C5/`ef9f410`), not added here. **C10 should add a direct per-pack pin of the
+committed threshold values** — which is exactly what S23-11's own "silent-drift twin" argument
+implies, now demonstrated rather than hypothesised.
+
+### Performance attribution — THRICE measured, still unresolved. Do not inherit a number.
+
+| source | render-level pair | plan-level trio | verdict |
+|---|---|---|---|
+| T5 (implementer) | "the cost" | — | render pair dominates |
+| T5's reviewer | 237.8 s / 46.4 % | 270.3 s / 52.8 % | plan trio dominates |
+| T10 lens C | **242.7 s / 50.8 %** | **235.0 s / 49.2 %** | effectively tied, render pair leads |
+
+**The orchestrator's "correction" below was itself unreproducible** — a third independent
+measurement reverses it again, and the two are within ~3 % of each other, i.e. tied within noise.
+Per this session's own standing rule about firm numbers from single sweeps, **C10 must re-measure
+before optimizing either module** rather than inherit any of the three orderings.
+
+Also: **`test_smoke_matrix` is absent from the attribution table entirely**, and lens C measures
+it at **123.8 s / 18.3 %** — the second-largest module in the suite and the largest single thing
+T7 added. Any optimization pass should start by looking there, not at the trio-vs-pair question.
+
+**Settled facts** (all three sweeps agree): wall ~102–104 s idle; **no single test sets the
+parallel floor** (longest 4.91 s against a ~102 s wall — T6's per-pack split worked); zero
+flakiness across three consecutive runs.
+
+### Correction to T5's performance attribution (SUPERSEDED — see the table directly above)
 
 T5 reported the added cost as "the two Phase-6 render-level modules". **That is inverted.**
 Measured per-module CPU by the reviewer:

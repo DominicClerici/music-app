@@ -12,8 +12,24 @@ pads-only golden cells but never re-ran `calibrate` (SESSION_23 F3).
 This module closes that hole by regenerating each pack's artifact into `tmp_path`
 and asserting the bytes equal what is committed. The shape is deliberate
 (S23-7): a legitimate re-bless *regenerates* the file, so this test follows
-along with nothing to hand-update and cannot rot into a rubber stamp — while
-still catching drift in any band, threshold, mood, or key ordering.
+along with nothing to hand-update and cannot rot into a rubber stamp.
+
+**Scope — GAP-2 is closed for BANDS ONLY, not for thresholds.** This docstring
+claimed "drift in any band, threshold, mood, or key ordering" until SESSION_23
+T10 (lens C), which disproved the threshold half by mutation: setting fusion's
+`comping` threshold to 0.5 **survives** this test. The reason is S23-11 — to make
+byte-reproduction and hand-tuned per-pack thresholds compatible, `calibrate()`
+now *preserves* a committed artifact's `l2Thresholds` rather than regenerating
+them. A preserved value reproduces itself trivially, so a corrupted threshold is
+structurally invisible here. Bands, moods and key ordering are all still fully
+covered: those remain derived from the batch render.
+
+The remaining backstop for thresholds is weak and known: `test_quality_layer2.py
+::test_load_l2_thresholds_reads_blessed_artifact` asserts only `0.0 < bass <= 1.0`
+(which 0.5 satisfies) over pop_rock and jazz. A real per-pack threshold pin is
+C10 work, tracked there rather than bolted on here — this module's subject is
+reproduction, and a value that is preserved by design cannot be pinned by a
+reproduction test.
 
 Cost is ~0.4-1.2 s CPU per pack.
 """

@@ -171,7 +171,14 @@ def compute_bands(
         return {role: _band(vals) for role, vals in per_metric[name].items() if vals}
 
     return PackMoodCalibration(
-        l2_thresholds=dict(l2_thresholds or DEFAULT_L2_THRESHOLDS),
+        # `is None`, not `or`: an artifact authored with an explicit empty
+        # `l2Thresholds: {}` is falsy, and `or` would silently substitute the
+        # engine defaults for it — the opposite of S23-11's "preserve what the
+        # artifact says". Unreachable on the shipped packs, but `or` is not the
+        # intended semantics and the distinction is free.
+        l2_thresholds=dict(
+            DEFAULT_L2_THRESHOLDS if l2_thresholds is None else l2_thresholds
+        ),
         note_density=role_bands("note_density"),
         mean_ioi=role_bands("mean_ioi"),
         pitch_range=role_bands("pitch_range"),

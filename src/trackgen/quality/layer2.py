@@ -129,7 +129,18 @@ def allowed_pitch_classes(chord: ChordEvent, *, quartal: bool = False) -> set[in
     2026-07-21 as option D of the S23-2 disposition, and the exact precedent
     C-29 set for the ♯9 of the very same voicing. `theory/voicing.py:185` pins
     the class as `[[0, 5, 10, 15]]`, so a quartal voicing *always* sounds that
-    fourth; PHASE_8 §6.4 in turn pins quartal as fusion's signature low-rung
+    fourth — but **this widening admits offset 5 only**, so "always sounds it" is
+    not "always allowed". Offsets 10 and 15 are in the set only where they happen
+    to fall in some *other* term: over the shipped case (`dom7` in
+    `half_whole_dim`) 10 is a chord tone and 15 → ♯9 is a legal extension per
+    C-29, so both land. That is a property of the quality, not of the voicing.
+    Over `maj` in `lydian` **all three** of 5, 10 and 15 sit outside the set
+    (lydian carries the ♯11, not the natural 11) — reachable at chord level,
+    though it has never bitten in practice, since no shipped pack pairs a quartal
+    comping rung with that chord (see the 3 200-render measurement below). A pack
+    that authors a quartal comping ladder over other qualities must re-measure
+    rather than inherit this paragraph as a guarantee. PHASE_8 §6.4 in turn pins
+    quartal as fusion's signature low-rung
     comping harmony. §6.4's tension table then excludes `11` over a dominant
     7th — correctly, as a musical rule about *dressing* a chord symbol (the
     avoid note that makes `7sus4` a separate quality) — but the fourth is not

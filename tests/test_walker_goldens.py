@@ -11,8 +11,23 @@ via the walker's `rng_factory`, seeded at the REAL §3.6 per-bar seed
 so outcomes match production; bars are mapped to sections through the form's
 section bar ranges and the counts summed per section.
 
-Pop bass is `mode: patterns` — the walker does not run for pop; the property
-matrix therefore runs on jazz only (asserted).
+**Jazz-only by construction, not by omission** (SESSION_23 T5 / T10). PHASE_5
+§13.5's walker property suite is defined over `bass_mode: walking`, and of the
+five registered packs jazz is the only one that declares it — pop_rock,
+chill_lofi, blues and fusion_jazz are all `mode: patterns`, for which `walk`
+returns `{}` and there is nothing to assert. So this module is the documented
+exception to DoD §14.9's "run over all five packs": widening it would add four
+packs' worth of empty matrices, not coverage. The complement is pinned rather
+than assumed — `test_non_walking_packs_are_walker_silent` below asserts
+`bass_mode == "patterns"` and a silent walker for all four, and each pack's own
+suite pins its mode independently (`tests/test_blues_pack.py`,
+`tests/test_chill_lofi_pack.py`, `tests/test_fusion_jazz_pack.py`,
+`tests/test_selection_goldens.py::test_matrix_non_vacuous`). A sixth pack that
+declares `walking` joins this matrix by failing that complement assertion.
+
+(This paragraph previously read "the property matrix therefore runs on jazz only
+(asserted)" and was written in SESSION_08, when only two packs existed — the
+"asserted" part covered pop_rock alone.)
 
 ARBITRATED (golden-value arbitration, ROADMAP §3 — human sign-off): three §9.2
 samples were wrong DERIVED doc values (no engine bug — the engine faithfully
@@ -33,6 +48,7 @@ import random
 
 import pytest
 
+from _packmatrix import PACKS, cached_pack
 from trackgen.arrangement import arrange
 from trackgen.form.stage import form
 from trackgen.harmony.stage import harmony
@@ -354,19 +370,44 @@ def test_outro1_excerpt_and_final_bar_rule() -> None:
 # Property matrix — jazz × supported moods × seed/length spread (pop is patterns)
 # =============================================================================
 
+_WALKING_PACK = "jazz"
+"""The one registered pack whose bass is `mode: walking` — see the module
+docstring. Named rather than repeated as a literal so the jazz-only scope and its
+complement assertion read against the same fact."""
+
 _SEEDS = [to_base36(((i + 1) * 2654435761) % (2**63)) for i in range(5)]
 _LENGTHS = [120, 240, 360]
 
 
-def test_pop_bass_is_patterns_walker_silent() -> None:
-    """Pop bass is `mode: patterns` → the walker does not run (returns {})."""
-    pop_params: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
-    plan, pack, sf, hp, ap = _drive(pop_params)
-    assert pack.bass_mode == "patterns"
+@pytest.mark.parametrize(
+    "style", [pack_id for pack_id in PACKS if pack_id != _WALKING_PACK]
+)
+def test_non_walking_packs_are_walker_silent(style: str) -> None:
+    """Every non-jazz pack is `mode: patterns` → the walker does not run (`{}`).
+
+    The complement half of this module's jazz-only scope (see the module
+    docstring): it is what makes "jazz alone walks" a checked fact rather than an
+    assumption inherited from when the repo had two packs. Derived from `PACKS`,
+    so a sixth pack is covered without a test edit — and a pack that switches to
+    `walking` fails here, which is the signal that §13.5's matrix must widen."""
+    plan, pack, sf, hp, ap = _drive({"styleFamily": style, "seed": "1ps9wxb"})
+    assert pack.bass_mode == "patterns", style
     walked = walk(
         ap, hp, sf, plan, pack, master=plan.seed.master, overrides=plan.seed.overrides
     )
-    assert walked == {}
+    assert walked == {}, style
+
+
+def test_jazz_is_the_only_walking_pack() -> None:
+    """`bass_mode == "walking"` on exactly one registered pack.
+
+    Pinned in both directions so the jazz-only matrix above cannot silently become
+    an under-covering one: a new walking pack fails here, and jazz losing walking
+    mode fails here too."""
+    walking = {
+        pack_id for pack_id in PACKS if cached_pack(pack_id).bass_mode == "walking"
+    }
+    assert walking == {_WALKING_PACK}, walking
 
 
 def _governing(chords: list[ChordEvent], tick: int) -> ChordEvent:
