@@ -310,6 +310,17 @@ independently reproduced by the orchestrator)
   (`fu_bs_2b`)** — a valid whole-bar 3+3+4+3+3 ostinato, so both candidates are individually
   sound and the variety lint needs two anyway. Ids swapped so the anchor is unsuffixed.
   §6.4 annotated; `dur 480` recorded as a wrong printed sample.
+- **S22-12 (RAISED AT THE E1 REVIEW, RULED 2026-07-21):** the E1 reviewer ruled that the
+  S22-10 clamp requires a **logged deviation**, not silent absorption: PHASE_6 §3.7 pins
+  `hat_lift` as "→ voice `hat_open`, **dur 360**", and 360 is an *algorithm-text constant*,
+  not a derived worked-example sample — so ROADMAP §3's arbitration does not license changing
+  it quietly. After the clamp, 360 is a **maximum**. **User ruled: annotate PHASE_6 §3.7's
+  `hat_lift` row AND log caveat C-26**, recording the §3.5/§3.7 latent tension that the pinned
+  6b→6c order creates, the currently-unreachable sub-60-tick no-op branch and its C-07-borrowed
+  rationale, and the no-op evidence. Rejected: caveat-only with no §3.7 edit (a later reader of
+  §3.7 would see "dur 360" flatly contradicted by the code with nothing pointing at the
+  caveat — the exact failure the caveat log exists to prevent); and treating it as an ordinary
+  bug fix requiring no record.
 - **S22-13 (RAISED AT THE T3 REVIEW, RULED 2026-07-21):** §6.4 pins quartal as fusion's
   comping "low-rung signature", but quartal `[0, 5, 10, 15]`'s top voice is a **♯9**, which
   L2-1's allowed set (chord tones ∪ scale tones) rejects over fusion's majority
@@ -352,10 +363,18 @@ independently reproduced by the orchestrator)
   admit `11`, which is exactly why mysterious/tense — dorian/minor — were always clean.)
   Measured after the widening: **2/400 renders fail**, each from a **single** offending note
   against the 0.98 threshold (ratios 0.970 on 33 notes, 0.929 on 14); the implementing agent
-  measured 5/192 on its own seed set. **All 12 actual fusion_jazz corpus cells validate
+  measured 5/192 on its own seed set.
+  **[CORRECTED 2026-07-21 — the "0.5 %" this ruling was originally granted against is
+  superseded. Four independent measurements on different seed sets: orchestrator 2/400
+  (0.50 %), implementing agent 5/192 (2.60 %), T6 audition sweep 7/384 (1.82 %), T10 lens B
+  4/384 (1.04 %, ratios down to 0.867). The honest figure is **~1–2 %**, i.e. 2–4× the number
+  in the original ruling. T6's corrected 1.82 % was restated to the user BEFORE the T8
+  listening gate, so the acceptance is informed — see the `listening/log.jsonl` session-22
+  entry. The accepted residual is caveated at **C-30**.]**
+  **All 12 actual fusion_jazz corpus cells validate
   clean** (verified: energetic/calm/tense × 120/240 s × both pinned seeds → 0/12), so T9 is
   unaffected. A clean A/B on the current pack: quartal at comping r1–2 → 2/400; quartal
-  removed → 0/400. **User ruled: accept the 0.5 %, caveat it, and let T7 calibration set the
+  removed → 0/400. **User ruled: accept the residual, caveat it, and let T7 calibration set the
   real per-pack threshold.** Rationale: `validate_pipeline` is a QA report, not a generation
   path (nothing crashes); §8.1's own bootstrap order is defaults → listening → `calibrate`,
   and §12 Q4 pins the L2 thresholds as **data**, tunable per pack without design change — so

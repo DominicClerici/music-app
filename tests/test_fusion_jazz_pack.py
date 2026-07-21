@@ -590,6 +590,9 @@ def test_quartal_comping_renders_and_sits_under_c5() -> None:
         if isinstance(r, PatternRecord) and r.role == "comping" and r.kind == "main"
     }
     assert 2 in rungs, f"cell did not route comping main rung 2 (got {sorted(rungs)})"
+    # §14.10 says quartal *Rhodes*, so the flavor is part of the claim, not an
+    # accident of the default ensemble happening to comp on rhodes.
+    assert trace.plan.role_flavors["comping"] == "rhodes"
 
     voicings = _simultaneities(trace, "comping")
     quartal = [v for v in voicings if _is_quartal(v)]
@@ -975,13 +978,95 @@ def test_autofilter_reaches_the_document_only_via_headhunters(mood: str) -> None
     assert not has_autofilter("default")
 
 
-# The vamp-template cells whose form contains a breakdown followed by a rebuilt
-# main (discovered by fixed enumeration).
-_BREAKDOWN_CELLS = [_params("energetic", "1", 120), _params("tense", "1", 120)]
+# The three authored flavors no production render can reach: flavor selection is
+# deterministic-default, so `default`/`headhunters` between them cover only
+# funk_kit, synth_moog, rhodes, clav and analog_poly. `clav` has its own render
+# pin above; these three are otherwise asserted as authored YAML only, and
+# glass_pad in particular carries the TB7 remedy (S22-7 fix 4) that YAML text
+# cannot prove actually survives the timbre stage.
+_DORMANT_FLAVOR_CELL = _params("energetic", "1ps9wxb", 120)
+_GLASS_PAD_MOD_INDEX_BAND = (4.0, 18.0)  # timbres.yaml glass_pad brightness band
+
+
+def _instrument_options(document: Any, role: str) -> dict[str, Any]:
+    raw = document.model_dump(by_alias=True)
+    (track,) = (t for t in raw["tracks"] if t["role"] == role and t["id"] == role)
+    options = track["instrument"]["options"]
+    assert isinstance(options, dict)
+    return options
 
 
 @pytest.mark.parametrize(
-    "cell", _BREAKDOWN_CELLS, ids=[c["mood"] for c in _BREAKDOWN_CELLS]
+    ("role", "flavor"),
+    [
+        ("drums", "fusion_ride_kit"),
+        ("bass", "electric_finger"),
+        ("pads", "glass_pad"),
+    ],
+)
+def test_dormant_flavors_render_clean_when_forced(role: str, flavor: str) -> None:
+    """S22-7's dormant half: these flavors are authored but unreachable without
+    hand-passed `roleFlavors`, so nothing else proves their recipes even load.
+    Forcing each one must produce a real, clean render on BOTH validation layers.
+
+    Not vacuous: the override is asserted to have actually taken (the resolved
+    plan flavor changes, and for glass_pad the emitted patch changes shape)."""
+    trace = generate_trace(
+        _params("energetic", "1ps9wxb", 120, roleFlavors={role: flavor})
+    )
+    assert trace.plan.role_flavors[role] == flavor
+    assert validate_document(trace.document) == []
+    assert validate_pipeline(trace.document, trace) == []
+
+
+def test_glass_pad_brightness_reaches_the_document_as_modulation_index() -> None:
+    """TB7 end-to-end, the half `test_fm_flavors_override_brightness_to_
+    modulation_index` cannot reach: the authored override is only a remedy if the
+    mapped param survives into the emitted patch. Default pads are `analog_poly`
+    (no `modulationIndex` at all), so the presence of an in-band value on the
+    forced render is the discriminator — the exact silent-trap shape that the
+    S21 `organ_swell` replay produced when the mapping quietly dropped.
+
+    The value itself is deliberately NOT pinned: it is a curve sample and may
+    legitimately drift; only its presence and its authored band are contractual."""
+    default = generate_trace(_DORMANT_FLAVOR_CELL)
+    assert default.plan.role_flavors["pads"] == "analog_poly"
+    assert "modulationIndex" not in _instrument_options(default.document, "pads")
+
+    forced = generate_trace(
+        _params("energetic", "1ps9wxb", 120, roleFlavors={"pads": "glass_pad"})
+    )
+    options = _instrument_options(forced.document, "pads")
+    assert forced.document.model_dump(by_alias=True) != default.document.model_dump(
+        by_alias=True
+    )
+    lo, hi = _GLASS_PAD_MOD_INDEX_BAND
+    assert lo <= options["modulationIndex"] <= hi
+    # the illegal role-default path must be fully replaced, not merely added to.
+    assert "filterEnvelope" not in options
+
+
+# The vamp-template cells whose form contains a breakdown followed by a rebuilt
+# main (discovered by fixed enumeration).
+#
+# The last two are *defect-bearing*, not merely breakdown-bearing: they are the
+# cells where a `hat_lift` actually fires on the bar before the breakdown entry,
+# so an unclamped `_lift_duration` re-introduces a sustain across it. Being
+# breakdown-bearing is NOT sufficient to observe S22-10 — the first two cells
+# pass with the clamp removed — so the dropout regression test below is only
+# discriminating because these are in the list.
+_BREAKDOWN_CELLS = [
+    _params("energetic", "1", 120),
+    _params("tense", "1", 120),
+    _params("calm", "4", 120),
+    _params("mysterious", "4", 120),
+]
+
+
+@pytest.mark.parametrize(
+    "cell",
+    _BREAKDOWN_CELLS,
+    ids=[f"{c['mood']}-{c['seed']}" for c in _BREAKDOWN_CELLS],
 )
 def test_breakdown_strips_to_drums_bass_and_the_next_main_rebuilds(
     cell: dict[str, Any],
@@ -1018,7 +1103,11 @@ def test_breakdown_entry_dropout_leaves_no_note_sustaining_across_it() -> None:
     the first to enable it alongside a breakdown) sets `duration_ticks = 360` on
     an offbeat 8th, and the last offbeat 8th of a bar is 1680, so an unclamped
     lift would re-introduce a 120-tick overhang past the boundary and W2 fires.
-    Pinned on the post-transitions IR across every breakdown-bearing cell."""
+    Pinned on the post-transitions IR across every breakdown-bearing cell.
+
+    Discrimination verified by mutation: with `_lift_duration` reduced to an
+    unconditional `return _HAT_LIFT_DUR`, calm/4 and mysterious/4 fail here
+    (energetic/1 and tense/1 still pass — see the `_BREAKDOWN_CELLS` note)."""
     for cell in _BREAKDOWN_CELLS:
         trace = generate_trace(cell)
         for section in trace.song_form.sections:
@@ -1053,6 +1142,21 @@ def test_plan_shape_fully_populated() -> None:
 
 
 # --- (e) end-to-end validation slice (Layer 1 + L2 at engine defaults) --------
+
+
+def test_calibration_yaml_blessed() -> None:
+    """§8.1: the blessed calibration artifact exists and covers every supported
+    mood — the chill_lofi precedent (`test_calibration_yaml_blessed`), which the
+    blues pack dropped and fusion never had. Pinning the *band values* is a
+    separate, pack-wide gap deferred to the C9 close-out."""
+    path = _PACK_DIR / "calibration.yaml"
+    assert path.exists()
+    data = yaml.safe_load(path.read_text())
+    assert data["pack"] == "fusion_jazz"
+    interp = _pack().interpreter
+    assert interp is not None
+    assert set(data["moods"]) == set(interp.supported_moods)
+    assert len(interp.supported_moods) == 8
 
 
 @pytest.mark.parametrize("mood", ["energetic", "calm", "tense"])
