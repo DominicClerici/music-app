@@ -291,11 +291,13 @@ contingency-14 bless collateral.
 | # | Task | Model | Status | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Config quintet (manifest+S22-1 / interpreter+S22-2 / forms / progressions+S22-3 / transitions) — 10/10 scratch checks; S22-3 regression measured **0 deceptive on 979 `vamp` sections** across 168 renders (`tune_16` 169/236, accepted per ruling); **raised S22-10** | opus | done | (commit 1, pending) |
-| T2 | Drums + bass banks | opus | in progress | (commit 1) |
-| T3 | Comping + pads banks (incl. the S22-4 quartal fix) | opus | in progress | (commit 1) |
-| T4 | Timbres — 8 flavors incl. the four S22-7 fixes | opus | in progress | (commit 1) |
-| E1 | **S22-10 engine fix** — clamp `_hat_lift` at dropout-entered breakdown boundaries + discriminating tests; no-op proof required | opus | in progress | (commit 1) |
-| T5 | Integration + fusion test suite → **commit 1** (atomic) | opus | not started | |
+| T2 | Drums + bass banks — 27 entries; review **CHANGES-REQUIRED → fixed**: 2 MAJOR (S22-11 tresillo weights inverted vs arbitration rule 1; S22-14 `approach`+`push` measured **0/399** correct) + blues-clone ending pair + degenerate rung-1 pair, all re-authored | opus | done (fix verified) | `8b04bea` |
+| T3 | Comping + pads banks (incl. the S22-4 quartal fix) — review **CHANGES-REQUIRED → escalated**: found the L2-1 MAJOR its own verification never looked for (→ S22-13/S22-15); also corrected T3's false rung-2 dormancy claim that would have misdirected T5 | opus | done | `8b04bea` |
+| T4 | Timbres — 8 flavors incl. the four S22-7 fixes; review **APPROVE-WITH-NITS** (reviewer read the curve code to confirm `exp` is geometric; orchestrator applied the `electric_finger` band nit → exact 0.020 s) | opus | done | `8b04bea` |
+| E1 | **S22-10 engine fix** — clamp `_hat_lift`; review **APPROVE-WITH-NITS**, determinism verdict **TRUE** (185 byte-identical doc hashes across all 4 existing packs; 6327→6331 isolated) | opus | done | `8b04bea` |
+| E2 | **S22-13** — L2-1 widened to admit §6.4-legal alterations; strictly additive (2520-combination superset proof); generation-neutral; residual → S22-15 | opus | done | `8b04bea` |
+| D1 | Doc amendments (PHASE_8 §6.1/§6.3/§6.4/§3.3/§8.1, PHASE_6 §3.7, PHASE_4 D6) + CAVEATS C-26…C-29; caught the orchestrator's C-26/C-28 numbering collision and 3 unrecorded decisions | opus | done | `8b04bea` |
+| T5 | Integration + fusion test suite → **commit 1** (atomic) — +138 tests; 3 destructive mutations verified discriminating (reverting S22-4 → 9 failures incl. the real `ValueError`; reverting S22-3 → 19 drifting vamp sections) | opus | done | `8b04bea` |
 | T6 | Full-grid audition + first-use verification | opus | not started | |
 | T7 | Calibrate → commit 2 | opus | not started | |
 | T8 | **USER listening gate** | user | not started | |
