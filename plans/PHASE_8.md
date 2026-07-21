@@ -177,7 +177,10 @@ defaultMood: nostalgic           # the genre's most-cited affect
 # vs the PHASE_2 §5 sketch: energetic is DROPPED (contradicts the genre's defining
 # low-arousal character); happy kept as the muted "sunny chillhop" edge.
 
-modes: [minor, dorian, major]
+modes: [major, dorian, minor]   # amended 2026-07-20 (S20-1, user-ratified): original printed
+                                 # order [minor, dorian, major] violates the interpreter's
+                                 # Rule 3 (modes must be a MODE_LADDER-ordered subsequence);
+                                 # set and semantics unchanged (selection is ladder-distance)
 tonics:
   minor:  [A, D, E]
   dorian: [D, G]

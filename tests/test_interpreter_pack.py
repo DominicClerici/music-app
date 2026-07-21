@@ -111,7 +111,7 @@ def test_stub_pack_still_loads_with_no_interpreter() -> None:
 
 
 def test_registered_styles_excludes_stub() -> None:
-    assert registered_styles() == {"pop_rock", "jazz"}
+    assert registered_styles() == {"pop_rock", "jazz", "chill_lofi"}
 
 
 def test_resolve_pack_unregistered_style_returns_none() -> None:

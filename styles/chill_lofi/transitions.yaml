@@ -1,0 +1,7 @@
+# chill_lofi transitions (PHASE_8 §4.5, verbatim).
+phraseFill: { odds: [1, 4] }             # fills rare and understated
+stop:       { enabled: false }
+crash:      { velocity: [0.30, 0.55] }   # soft washes, never arena hits
+mutation:
+  drums:   { none: 8, drop_ornament: 2, kick_pickup: 1 }
+  comping: { none: 5, anticipate: 1, drop_hit: 1 }

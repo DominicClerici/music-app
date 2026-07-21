@@ -1,0 +1,8 @@
+# chill_lofi pack manifest (PHASE_8 §4.1, verbatim).
+formatVersion: 1
+id: chill_lofi
+name: Chill / Lo-fi
+version: 0.1.0
+engine: ">=0.1"
+timeSignatures: [[4, 4]]
+tempoRange: [68, 95]            # research center 82; >95 stops reading as lo-fi

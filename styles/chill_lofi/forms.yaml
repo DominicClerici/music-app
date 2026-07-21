@@ -1,0 +1,42 @@
+# chill_lofi forms (PHASE_8 §4.2, verbatim).
+energyRange: [0.25, 0.60]        # flat dramaturgy — the exact envelope PHASE_3 §6.4 predicted
+
+sections:
+  intro:     { bars: [[4, 3], [8, 1]], phrases: { 4: [a], 8: [a, a] },
+               harmonyTag: { 4: loop, 8: loop } }
+  main:      { bars: [[8, 1]], phrases: { 8: [a, a] }, harmonyTag: { 8: loop } }
+  breakdown: { bars: [[8, 1]], phrases: { 8: [a, a] }, harmonyTag: { 8: loop } }
+  outro:     { bars: [[4, 3], [8, 1]], phrases: { 4: [a], 8: [a, a] },
+               harmonyTag: { 4: loop, 8: loop } }
+
+templates:
+  - id: loop_ab                  # loop-with-beat / loop-without-beat alternation (ABAB..B)
+    weight: 60
+    spine:
+      - { section: intro, optional: [2, 1] }
+      - repeat: { count: [1, 2], slots: [ { section: main }, { section: breakdown } ] }
+      - { section: main }
+      - { section: outro, optional: [3, 1] }
+    ending: { tagBars: 0, close: fade }      # fade = HOLD alias (PHASE_6 D7), accepted for v1
+    degrade:
+      - { drop: outro }
+      - { shrink: intro }
+      - { dropFromRepeat: breakdown }
+      - { drop: intro }
+    fallback: { section: main, bars: 8 }
+
+  - id: loop_a                   # main cycles with one late stripped section
+    weight: 40
+    spine:
+      - { section: intro, optional: [2, 1] }
+      - repeat: { count: [2, 4], slots: [ { section: main } ] }
+      - { section: breakdown }
+      - { section: main }
+      - { section: outro, optional: [3, 1] }
+    ending: { tagBars: 0, close: fade }
+    degrade:
+      - { drop: outro }
+      - { shrink: intro }
+      - { drop: breakdown }
+      - { drop: intro }
+    fallback: { section: main, bars: 8 }

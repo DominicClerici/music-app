@@ -1,0 +1,22 @@
+# chill_lofi progressions (PHASE_8 §4.3, verbatim).
+pools:
+  loop:                          # every entry authored ROTATED TO END OPEN (P7: tag serves intro)
+    - { id: royal_road,     weight: 30, modes: [major],
+        phrases: { a: [[IVmaj7], [V7], [iii7], [vi7]] } }
+    - { id: pop_soul,       weight: 30, modes: [major],
+        phrases: { a: [[Imaj7], [vi7], [ii7], [V7]] } }
+    - { id: minor_two_five, weight: 40, modes: [minor],
+        phrases: { a: [[i7], [~], [iiø7], [V7]] } }
+    - { id: minor_lament,   weight: 30, modes: [minor],
+        phrases: { a: [[bVImaj7], [~], [i7], [V7]] } }
+    - { id: dorian_vamp,    weight: 100, modes: [dorian],
+        phrases: { a: [[i7], [IV7], [i7], [IV7]] } }
+
+turnarounds: []                  # loops don't relaunch; transforms inert (PHASE_4 D6)
+
+finals:
+  - { id: two_five_close, weight: 60, modes: [major],  bars: [[ii7, V7], [Imaj7]] }
+  - { id: plagal_soul,    weight: 40, modes: [major],  bars: [[IVmaj7], [Imaj7]] }
+  - { id: minor_close,    weight: 60, modes: [minor],  bars: [[iiø7, V7], [i7]] }
+  - { id: minor_plagal,   weight: 40, modes: [minor],  bars: [[iv7], [i7]] }
+  - { id: dorian_plagal,  weight: 100, modes: [dorian], bars: [[IV7], [i7]] }

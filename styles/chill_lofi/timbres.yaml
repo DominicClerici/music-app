@@ -1,0 +1,305 @@
+# chill_lofi timbres (PHASE_8 §4.6) — full recipes for all 8 interpreter-declared
+# flavors (TB1). The four defining entries (dusty_kit, warm_sub, ep_mellow,
+# tape_strings) are §4.6 verbatim; boombap_kit / round_pick / piano_felt /
+# warm_wash are in-idiom siblings. The "compressed and quiet" aesthetic: heavier
+# master glue, the wettest reverb bus of the five packs, dark voicing throughout.
+# Mapped params (drum resonance / noise.playbackRate, bass filterEnvelope
+# baseFrequency+octaves / filter.Q / envelope.attack, comping/pads
+# filterEnvelope.baseFrequency / envelope.attack / mix.sends.reverb, ep
+# modulationIndex) are omitted from base/mix — the merged mod tables are their
+# sole authority (§3.3 base XOR mod).
+
+flavors:
+  drums:
+    dusty_kit:
+      # §4.6: lowpass-voiced MembraneSynth kick (no click), soft pink snare,
+      # dark hats. brightness overrides: snare playbackRate down-ranged (dusty
+      # not cracky), hats resonance darkened.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.08
+              octaves: 3
+              oscillator: { type: sine }
+              envelope: { attack: 0.003, decay: 0.4, sustain: 0, release: 0.4 }
+          mix: { volumeDb: -9, pan: 0 } # kick dry (PHASE_7 architecture)
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: pink } # playbackRate mapped (dusty override ↓)
+              envelope: { attack: 0.005, decay: 0.18, sustain: 0, release: 0.1 }
+          mix: { volumeDb: -11, pan: 0 } # send mapped (space)
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -14
+              frequency: 200 # dark
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.05, release: 0.02 }
+          mix: { volumeDb: -18, pan: 0.2, sends: { reverb: -18 } } # resonance mapped
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 400
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.4, release: 0.6 }
+          mix: { volumeDb: -20, pan: -0.2, sends: { reverb: -16 } }
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.5, release: 1.5 }
+          mix: { volumeDb: -16, pan: -0.3 } # send mapped (space)
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.25 } # send mapped (space)
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.05 } # send mapped (space)
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.002, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: 0.15 } # send mapped (space)
+        perc: # shaker
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.03 }
+          mix: { volumeDb: -18, pan: 0.2 }
+      mod:
+        brightness:
+          snare: # dusty, not cracky (down-ranged vs the 2.0–4.0 default)
+            - { param: noise.playbackRate, min: 0.8, max: 2.0, curve: linear }
+          hats: # darkened (down-ranged vs the 2000–5500 default)
+            - { param: resonance, min: 1500, max: 3500, curve: exp }
+    boombap_kit:
+      # in-idiom sibling: punchier kick (shorter attack, more octaves), crackier
+      # snare (higher playbackRate range), slightly brighter hats. Same voice
+      # architecture as dusty_kit.
+      kit:
+        kick:
+          midi: 24
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 4
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 1.2 }
+          mix: { volumeDb: -9, pan: 0 }
+        snare:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -4
+              noise: { type: pink }
+              envelope: { attack: 0.002, decay: 0.14, sustain: 0, release: 0.08 }
+          mix: { volumeDb: -11, pan: 0 }
+        hats:
+          midi: 80
+          patch:
+            type: MetalSynth
+            options:
+              volume: -13
+              frequency: 300 # brighter than dusty
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 0.04, release: 0.02 }
+          mix: { volumeDb: -18, pan: 0.2, sends: { reverb: -18 } }
+        ride:
+          midi: 82
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 420
+              harmonicity: 12
+              modulationIndex: 16
+              octaves: 1
+              envelope: { attack: 0.001, decay: 0.4, release: 0.6 }
+          mix: { volumeDb: -20, pan: -0.2, sends: { reverb: -16 } }
+        crash:
+          midi: 84
+          patch:
+            type: MetalSynth
+            options:
+              volume: -12
+              frequency: 300
+              harmonicity: 5.1
+              modulationIndex: 32
+              octaves: 1.5
+              envelope: { attack: 0.001, decay: 1.5, release: 1.5 }
+          mix: { volumeDb: -16, pan: -0.3 }
+        tom_low:
+          midi: 43
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.25 }
+        tom_mid:
+          midi: 47
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: -0.05 }
+        tom_high:
+          midi: 50
+          patch:
+            type: MembraneSynth
+            options:
+              pitchDecay: 0.05
+              octaves: 5
+              oscillator: { type: sine }
+              envelope: { attack: 0.001, decay: 0.35, sustain: 0, release: 0.3 }
+          mix: { volumeDb: -14, pan: 0.15 }
+        perc:
+          patch:
+            type: NoiseSynth
+            options:
+              volume: -6
+              noise: { type: white }
+              envelope: { attack: 0.001, decay: 0.06, sustain: 0, release: 0.03 }
+          mix: { volumeDb: -18, pan: 0.2 }
+      mod:
+        brightness:
+          snare: # crackier: higher range than dusty
+            - { param: noise.playbackRate, min: 1.5, max: 3.5, curve: linear }
+          hats: # brighter than dusty
+            - { param: resonance, min: 2500, max: 4500, curve: exp }
+
+  bass:
+    warm_sub: # §4.6: MonoSynth sine + gentle Distortion; dry, −10 dB
+      engine: { type: MonoSynth }
+      base:
+        oscillator: { type: sine }
+        envelope: { decay: 0.4, sustain: 0.6, release: 0.9 } # attack mapped
+        filter: { type: lowpass, rolloff: -12 } # Q mapped
+        filterEnvelope: { attack: 0.005, decay: 0.6, sustain: 0.2, release: 0.8 }
+          # baseFrequency + octaves mapped
+      effects:
+        - { type: Distortion, options: { distortion: 0.12, wet: 0.4 } } # harmonics
+      mix: { volumeDb: -10, pan: 0 } # dry (bass space default is [])
+    round_pick: # in-idiom sibling: MonoSynth triangle, lowpassed, small pick attack; dry
+      engine: { type: MonoSynth }
+      base:
+        oscillator: { type: triangle }
+        envelope: { decay: 0.25, sustain: 0.4, release: 0.6 } # attack mapped
+        filter: { type: lowpass, rolloff: -12 } # Q mapped
+        filterEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.2, release: 0.5 }
+          # baseFrequency + octaves mapped
+      effects: []
+      mix: { volumeDb: -10, pan: 0 }
+      mod: # gentle pick bite (never fully hard — lo-fi restraint)
+        attackHardness:
+          - { param: envelope.attack, min: 0.03, max: 0.005, curve: exp }
+          - { param: filterEnvelope.octaves, min: 1.5, max: 3.0, curve: linear }
+
+  comping:
+    ep_mellow: # §4.6: FM Mark-I (harmonicity 1), tape-wobble inserts
+      engine: { type: PolySynth, voice: FMSynth, maxPolyphony: 12 }
+      base:
+        harmonicity: 1
+        oscillator: { type: sine }
+        envelope: { decay: 1.2, sustain: 0.1, release: 1.2 } # attack mapped
+        modulation: { type: sine }
+        modulationEnvelope: { attack: 0.002, decay: 0.25, sustain: 0, release: 0.2 }
+      effects:
+        - { type: Vibrato, options: { frequency: 0.9, depth: 0.12, wet: 0.5 } } # tape wobble
+        - { type: Chorus, options: { frequency: 0.8, delayTime: 3.5, depth: 0.5, wet: 0.35 } }
+      mix: { volumeDb: -13, pan: -0.2 } # reverb send mapped (space)
+      mod:
+        brightness: # FM lever, not cutoff (FMSynth has no filterEnvelope)
+          - { param: modulationIndex, min: 2, max: 8, curve: exp }
+    piano_felt: # in-idiom sibling: soft, dark felt piano (subtractive)
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 12 }
+      base:
+        oscillator: { type: triangle }
+        envelope: { decay: 1.0, sustain: 0.15, release: 1.0 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.005, decay: 0.6, sustain: 0.3, release: 0.8, octaves: 1.8 }
+          # baseFrequency mapped
+      effects: []
+      mix: { volumeDb: -13, pan: -0.2 } # reverb send mapped (space)
+
+  pads:
+    tape_strings: # §4.6: fatsawtooth lowpassed, tape wobble + width
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: fatsawtooth, count: 3, spread: 25 }
+        envelope: { decay: 0.5, sustain: 0.7, release: 2.2 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.5, decay: 0.8, sustain: 0.6, release: 1.8, octaves: 1.8 }
+          # baseFrequency mapped
+      effects:
+        - { type: Vibrato, options: { frequency: 0.5, depth: 0.10, wet: 0.4 } } # tape wobble
+        - { type: StereoWidener, options: { width: 0.7 } }
+      mix: { volumeDb: -19, pan: 0 } # reverb send mapped (space)
+    warm_wash: # in-idiom sibling: softer, darker, non-widened
+      engine: { type: PolySynth, voice: MonoSynth, maxPolyphony: 8 }
+      base:
+        oscillator: { type: fatsawtooth, count: 2, spread: 15 }
+        envelope: { decay: 0.6, sustain: 0.6, release: 2.6 } # attack mapped
+        filter: { type: lowpass, rolloff: -12, Q: 1 }
+        filterEnvelope: { attack: 0.6, decay: 0.9, sustain: 0.5, release: 2.0, octaves: 1.5 }
+          # baseFrequency mapped
+      effects:
+        - { type: Vibrato, options: { frequency: 0.4, depth: 0.08, wet: 0.3 } } # gentle wobble, no widener
+      mix: { volumeDb: -20, pan: 0 } # reverb send mapped (space)
+
+bus:
+  reverb: { decay: [1.2, 3.5], preDelay: [0.02, 0.04], returnFilterHz: 300 } # wettest of the five packs
+
+master:
+  - { type: Compressor, options: { threshold: -18, ratio: 3, attack: 0.02, release: 0.3 } } # heavier glue
+  - { type: Limiter, options: { threshold: -1 } }

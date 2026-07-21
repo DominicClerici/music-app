@@ -1,0 +1,33 @@
+# chill_lofi interpreter config (PHASE_8 §4.1).
+supportedMoods: [nostalgic, calm, dreamy, melancholic, romantic, mysterious, dark, happy]
+defaultMood: nostalgic           # the genre's most-cited affect
+# vs the PHASE_2 §5 sketch: energetic is DROPPED (contradicts the genre's defining
+# low-arousal character); happy kept as the muted "sunny chillhop" edge.
+
+modes: [major, dorian, minor]    # amended 2026-07-20 (S20-1, user-ratified): original printed
+                                 # order [minor, dorian, major] violates the interpreter's
+                                 # Rule 3 (modes must be a MODE_LADDER-ordered subsequence);
+                                 # set and semantics unchanged (selection is ladder-distance)
+tonics:
+  minor:  [A, D, E]
+  dorian: [D, G]
+  major:  [C, F, G]
+
+feel: swing16
+swingRatio: 0.57                 # research 56-58%; the tempo table would give ~64% at 82 BPM
+feelTable: laidback              # §3.4
+
+expressionRanges:
+  density:    [0.15, 0.55]       # sparse genre
+  dissonance: [0.40, 0.65]       # floor lands dressing tier 3: 7ths/9ths ARE the default;
+                                 # ceiling keeps altered dominants out
+
+flavors:
+  drums:   [dusty_kit, boombap_kit]
+  bass:    [warm_sub, round_pick]
+  comping: [ep_mellow, piano_felt]
+  pads:    [tape_strings, warm_wash]
+
+ensembles:
+  default: { drums: dusty_kit, bass: warm_sub, comping: ep_mellow, pads: tape_strings }
+  study:   { drums: boombap_kit, bass: warm_sub, comping: piano_felt, pads: warm_wash }
