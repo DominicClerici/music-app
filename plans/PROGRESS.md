@@ -6,11 +6,17 @@ Statuses: `not started` · `planning` · `in progress` · `blocked` · `done`
 
 ## Handoff — next session starts here
 
-> **Next:** **Phase 8, Chunk 7 (Session 21) — blues (PHASE_8 §5), the second new pack. FRESH
-> CHUNK — run PROMPT step 0/1 (orient → scope → `plans/sessions/SESSION_21.md` → USER APPROVAL
-> GATE) before dispatching.** C7 authors the full pack per §9.4, DoD §14.3 + §14.8/§14.10
-> (blues slices). **C-03 goes LIVE here** (bII7 tritone-sub turnarounds — the P8 SubV
-> admission gets its first real exerciser).
+> **Next:** **Phase 8, Chunk 7 (Session 21) — blues (PHASE_8 §5). IN PROGRESS — plan
+> approved (S21-1…S21-5 user-ratified 2026-07-21, all as recommended); implementation
+> dispatching per `plans/sessions/SESSION_21.md`.**
+> Headline scoping findings: (1) **S21-2** — `main`-kind patterns render only in `solo`
+> sections and the R2 solo arch floors energy at 0.624, so §5.4's printed rung-1/2 ladder
+> (slow-blues 12/8 + Chicago) would be dormant grid-wide; recommended re-map onto rungs
+> 3/4. (2) The C6 handoff's "C-03 goes LIVE here" is **REFUTED** — all §5.3 turnarounds
+> end plain V7; the tritone final's bII7 is parse-only; C-03 stays unexercised (S21-3
+> records this honestly). (3) §5.1's printed manifest omits required `formatVersion`/
+> `engine` (S21-1). (4) Baseline re-verified green: 6183/1, all four gates, at `7500f24`.
+> Corpus triple computed safe: (energetic, aggressive, romantic), 36→48.
 >
 > **C6 (S20) DONE — chill_lofi, the first new pack; DoD §14.3/§14.8/§14.10 lofi slices ALL
 > MET.** Commits: `9e86b5a` plan · `51da4a0` T1–T5 pack+tests (atomic) · `be3c246` T7
@@ -222,6 +228,29 @@ analyses); `fixtures/goldens/<pack>/<mood>/<len>-<seed>/<stage>.json`; `listenin
   are wiring+validation, not new machinery. **C-03 orthogonal** (P8/P9 blind to extensions).
 - **feelTable threading:** add `feel_table` to `GenerationPlan` (additive null field) mirrors how
   `swing` flows; changes the plan-IR JSON that C4's corpus will capture natively (bless it fresh).
+
+#### Phase 8 — Chunk 7 — session 21 (`plans/sessions/SESSION_21.md`)
+
+**Status: in progress — S21-1…S21-5 ALL USER-RATIFIED as recommended (2026-07-21).**
+Scoping complete (2 opus agents, 2026-07-21; baseline 6183/1 verified at `7500f24`). Key facts pinned in the plan's Binding constraints: solo-only form → rungs 3/4
+live, rung-1/2 mains dormant (S21-2 ruling required); manifest formatVersion/engine omission
+(S21-1); C-03 claim refuted (S21-3); swing-comment derived-sample stale (S21-4); no
+allowlist gaps (Tremolo/oversample present); AMSynth brightness override required for BOTH
+organ flavors; no `expected-unreachable` markers needed; corpus triple (energetic,
+aggressive, romantic) safe, 36→48; C-12 safe (crash lo 0.45 → min 0.518).
+
+| # | Task | Model | Status | Commit |
+| --- | --- | --- | --- | --- |
+| T1 | Config quintet (manifest+S21-1 / interpreter / forms / progressions / transitions) | opus | not started | — |
+| T2 | Drums + bass banks (S21-2 re-map; tempo-gated 12/8 at rung 3) | opus | not started | — |
+| T3 | Comping + pads banks (S21-2 re-map) | opus | not started | — |
+| T4 | timbres.yaml — all 8 flavors; AMSynth brightness overrides ×2 | opus | not started | — |
+| T5 | Integration + blues tests → commit 1 (atomic; lint 0/0; first-use pins) | opus | not started | — |
+| T6 | Full-grid audition + first-use verification (report-only) | opus | not started | — |
+| T7 | Calibrate → first blessed `styles/blues/calibration.yaml` | orchestrator+opus | not started | — |
+| T8 | USER listening gate (§14.8/§14.10 blues slices; log.jsonl append) | user | not started | — |
+| T9 | Corpus 36→48 + bless first capture | orchestrator | not started | — |
+| T10 | Whole-chunk 3-lens review + close-out | opus ×3 | not started | — |
 
 #### Phase 8 — Chunk 6 — session 20 (`plans/sessions/SESSION_20.md`)
 
