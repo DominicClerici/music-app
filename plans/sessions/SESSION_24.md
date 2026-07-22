@@ -26,10 +26,19 @@ are built: `generate(params, seed) → TrackDocument` stands across five style f
 | T4 GAP-1 dry-render | **done** | `03bfe8b` | APPROVE-WITH-NITS (both fixed); **233 candidates, 0 latent bugs**; seam generation-neutral (bless 60/60, no gv bump); 12 chill_lofi pads unroutable (pinned skips, C-22 extreme) |
 | T5 A/B harness + audition flags | **done** | `019cdba` | APPROVE-WITH-NITS; binomial + unblinding verified; A3 closed |
 | T6 rubric tooling | **done** | `9cf5f2d` | APPROVE-WITH-NITS (notes-capture test hardened); 20 anchors; 15 cells 1:1 with corpus |
-| T7 whole-phase 4-lens review | **in progress** | — | 4 lenses over all 9 chunks + C10 diff |
-| T8 §14 DoD sweep | not started | — | |
-| T9 A/B demo + listening runbook | not started | — | |
-| T10 close-out | not started | — | |
+| T7 whole-phase 4-lens review | **done** | `052b216` | 4 lenses: **no correctness/determinism/contract BLOCKER/MAJOR**. 1 MAJOR = ab CLI coverage gap (fixed) + quality cleanups. Lens B doc NITs → close-out |
+| T8 §14 DoD sweep | **done** | `360b887` (docs) | **Phase BUILT**: items 1/3/5/7/9/11 MET; 2/8/10 tooling-MET + listening DEFERRED-BY-USER; 4/6 MET-WITH-NOTED-GAP (L3 warner; M17) |
+| T9 A/B demo + listening runbook | **done** | `c207614` | ab_demo mechanism demo (rhodes:clav, 20/0, p=1.9e-6); SESSION_24_RUNBOOK.md (deferred obligations, reproducible) |
+| T10 close-out | **done** | (this commit) | doc reconciliations `360b887`; PROGRESS handoff; Phase 8 stamped BUILT, listening-pending |
+
+**Phase 8 close-out result: BUILT — all machine-checkable DoD clauses MET**, four gates green
+(11327 passed / 13 skipped, ~94 s), `bless` 60/0, five packs lint-clean, `_GENERATOR_VERSION`
+0.1.3, corpus 60/60. **Only the human-listening clauses (§14.8 T1/T2/rubric-pass, §14.10 playground
+checklists) remain — DEFERRED-BY-USER**, reproducible via `listening/SESSION_24_RUNBOOK.md`. With
+that, the roadmap machinery is complete: `generate(params, seed) → TrackDocument` across five style
+families. **Honest gaps (recorded, not glossed):** L3 warn-only warner unbuilt (§14.4c literal text
+MET; warner out of scope); M17 (§14.6 green ≠ §14.4b coverage); C-20 golden-blindness residual (12
+chill_lofi pads unroutable, C-22 extreme) — all in the DoD sweep + CAVEATS.
 
 **T3 finding (verified):** the faithful reachability lint reveals both reference packs have dead
 rung-1 mains (pop_rock ×8, jazz ×6) — same section-kind-floor mechanism as blues C-23, already
