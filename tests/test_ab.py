@@ -7,8 +7,13 @@ score `wins_a == n` regardless of blinded order), and end-to-end determinism.
 
 from __future__ import annotations
 
-import pytest
+import json
+from pathlib import Path
 
+import pytest
+from typer.testing import CliRunner
+
+from trackgen.cli import app
 from trackgen.pipeline import to_json
 from trackgen.pipeline.trace import generate_trace
 from trackgen.schema.document import TrackDocument
@@ -18,6 +23,8 @@ from trackgen.tooling.ab import (
     presentation_orders,
     run_ab,
 )
+
+runner = CliRunner()
 
 # Two variants differing only on the comparison axis: pop_rock comping flavor.
 # `piano` and `crunch_electric` render provably distinct documents.
@@ -100,6 +107,11 @@ def test_always_prefer_a_yields_wins_a_equals_n() -> None:
         return 0 if to_json(first) in a_docs else 1
 
     for master in ("m1", "m2", "flip-the-order"):
+        # Prove the shown-position -> variant remapping is exercised in BOTH
+        # directions (not just by luck-of-the-seed): this master shows A first
+        # in some trials and B first in others.
+        orders = presentation_orders(master, len(_SEEDS))
+        assert True in orders and False in orders
         result = run_ab(
             _VARIANT_A, _VARIANT_B, _SEEDS, decide_prefers_a, blind_master=master
         )
@@ -114,6 +126,8 @@ def test_always_prefer_b_yields_wins_b_equals_n() -> None:
     def decide_prefers_b(first: TrackDocument, second: TrackDocument) -> int:
         return 0 if to_json(first) in b_docs else 1
 
+    orders = presentation_orders("m1", len(_SEEDS))
+    assert True in orders and False in orders
     result = run_ab(_VARIANT_A, _VARIANT_B, _SEEDS, decide_prefers_b, blind_master="m1")
     assert result.wins_b == len(_SEEDS)
     assert result.wins_a == 0
@@ -134,3 +148,108 @@ def test_run_ab_rejects_bad_decision() -> None:
 
     with pytest.raises(ValueError):
         run_ab(_VARIANT_A, _VARIANT_B, ("1",), decide_bad, blind_master="m")
+
+
+# --- CLI wiring (stubbed prompts + tmp log) ---------------------------------
+
+
+def test_cli_ab_writes_one_record_to_tmp_log(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The `ab` command parses `--axis`, drives the blinded trials, and appends
+    exactly one `{"type": "ab"}` record.
+
+    The pick prompt (`type=int`) is stubbed to always answer "1" (option 1 =
+    first-shown), so every trial's win goes to whichever variant the blinding
+    showed first. The tally is therefore fully predictable from
+    `presentation_orders`: winsA is the count of A-shown-first trials. `master`
+    and `--trials 7` are chosen so winsA != winsB, which is what makes this
+    assertion kill a winsA/winsB-swap mutant. `open_playground` is neutered and
+    the log is a tmp path — the committed `listening/log.jsonl` is never written.
+    """
+    master = "cli-ab-test"
+    trials = 7
+    orders = presentation_orders(master, trials)
+    expected_wins_a = sum(orders)
+    expected_wins_b = trials - expected_wins_a
+    # Precondition that arms the swap-detection: an even split would let a
+    # winsA<->winsB swap pass unnoticed.
+    assert expected_wins_a != expected_wins_b
+
+    def _stub_prompt(*args: object, **kwargs: object) -> object:
+        return 1 if kwargs.get("type") is int else ""
+
+    monkeypatch.setattr("trackgen.cli.open_playground", lambda rendered: None)
+    monkeypatch.setattr("trackgen.cli.typer.prompt", _stub_prompt)
+
+    log = tmp_path / "nested" / "log.jsonl"
+    result = runner.invoke(
+        app,
+        [
+            "ab",
+            "--pack",
+            "pop_rock",
+            "--mood",
+            "happy",
+            "--axis",
+            "comping=piano:crunch_electric",
+            "--date",
+            "2026-07-21",
+            "--trials",
+            str(trials),
+            "--blind-master",
+            master,
+            "--log",
+            str(log),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    lines = log.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    record = json.loads(lines[0])
+
+    assert record["type"] == "ab"
+    assert record["date"] == "2026-07-21"
+    assert record["pack"] == "pop_rock"
+    assert record["mood"] == "happy"
+    assert record["axis"] == "comping=piano:crunch_electric"
+    assert record["variantA"] == {
+        "styleFamily": "pop_rock",
+        "mood": "happy",
+        "roleFlavors": {"comping": "piano"},
+    }
+    assert record["variantB"] == {
+        "styleFamily": "pop_rock",
+        "mood": "happy",
+        "roleFlavors": {"comping": "crunch_electric"},
+    }
+    assert record["blindMaster"] == master
+    assert record["trialSeeds"] == derive_trial_seeds(master, trials)
+    assert record["n"] == trials
+    assert record["winsA"] == expected_wins_a
+    assert record["winsB"] == expected_wins_b
+    assert record["winsA"] + record["winsB"] == trials
+    assert record["pValue"] == pytest.approx(
+        binomial_two_sided_p(trials, max(expected_wins_a, expected_wins_b))
+    )
+
+
+def test_cli_ab_malformed_axis_is_clean_bad_parameter() -> None:
+    """A `--axis` missing its `=`/`:` structure exits non-zero with a clean
+    `BadParameter` message (no traceback)."""
+    result = runner.invoke(
+        app,
+        [
+            "ab",
+            "--pack",
+            "pop_rock",
+            "--axis",
+            "not-a-valid-axis",
+            "--date",
+            "2026-07-21",
+        ],
+    )
+    assert result.exit_code != 0
+    assert not isinstance(result.exception, (KeyError, ValueError, TypeError))
+    assert "role=flavorA:flavorB" in result.output

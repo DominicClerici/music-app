@@ -467,13 +467,13 @@ def _positional_samples(
     `template` can present to `section_energy` under some reachable form
     realization — the inputs the energy model's §6.2 positional rules key off.
 
-    Positions are over-approximated upward (repeat counts up to `_MAX_REPEAT_
-    SAMPLE`, `total_of_type` swept from 1) — safe per that constant's note. A
-    type is given the positional sweep only if it has at least one NON-override
+    Positions are over-approximated upward (`total_of_type` swept from 1, repeat
+    counts up to `_MAX_REPEAT_SAMPLE`) — safe per that constant's note. A type is
+    given the positional sweep only if it has at least one NON-override
     occurrence; every explicit `slot.energy` override is emitted as its own
     fixed sample (`section_energy` ignores index/total when `override` is set)."""
-    top_slots: dict[str, list[bool]] = defaultdict(list)
-    repeat_slots: dict[str, list[bool]] = defaultdict(list)
+    top_slots: dict[str, int] = defaultdict(int)
+    repeat_slots: dict[str, int] = defaultdict(int)
     count_max: int | None = 1
     overrides: list[tuple[str, float]] = []
     has_non_override: set[str] = set()
@@ -488,10 +488,10 @@ def _positional_samples(
         if isinstance(element, RepeatBlock):
             count_max = element.repeat.count[1]
             for slot in element.repeat.slots:
-                repeat_slots[slot.section].append(slot.optional is not None)
+                repeat_slots[slot.section] += 1
                 record(slot.section, slot.energy)
         else:
-            top_slots[element.section].append(element.optional is not None)
+            top_slots[element.section] += 1
             record(element.section, element.energy)
 
     reps = _MAX_REPEAT_SAMPLE if count_max is None else count_max
@@ -499,9 +499,7 @@ def _positional_samples(
     for section in set(top_slots) | set(repeat_slots):
         if section not in has_non_override:
             continue
-        max_total = len(top_slots.get(section, [])) + reps * len(
-            repeat_slots.get(section, [])
-        )
+        max_total = top_slots.get(section, 0) + reps * repeat_slots.get(section, 0)
         for total in range(1, max(1, max_total) + 1):
             for index in range(1, total + 1):
                 samples.append((section, index, total, None))

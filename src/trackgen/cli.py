@@ -1,6 +1,7 @@
 """Typer CLI entry point (PHASE_1 §2)."""
 
 import json
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Annotated
 
@@ -42,6 +43,29 @@ def _params_error(err: ParamsInvalid) -> typer.BadParameter:
     """Render a `ParamsInvalid` catalog as a single clean `BadParameter`."""
     lines = "; ".join(f"{e.code} ({e.field}): {e.message}" for e in err.errors)
     return typer.BadParameter(lines)
+
+
+_LISTENING_LOG = Path(__file__).resolve().parents[2] / "listening" / "log.jsonl"
+
+
+def _append_jsonl(log: Path | None, records: Iterable[Mapping[str, object]]) -> Path:
+    """Append each record as one JSON line to `log` (default the listening log).
+
+    Resolves the default target, creates its parent, and returns the path
+    written — the single append path shared by the `ab` and `rubric` commands.
+    """
+    target = log if log is not None else _LISTENING_LOG
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as fh:
+        for record in records:
+            fh.write(json.dumps(record) + "\n")
+    return target
+
+
+def _play_and_wait(doc: TrackDocument, prompt: str) -> None:
+    """Open one doc in the playground and block on an enter-to-continue prompt."""
+    open_playground(to_json(doc))
+    typer.prompt(prompt, default="", show_default=False)
 
 
 @app.command("export-schema")
@@ -243,9 +267,6 @@ def audition_command(
         typer.echo(rendered)
 
 
-_LISTENING_LOG = Path(__file__).resolve().parents[2] / "listening" / "log.jsonl"
-
-
 @app.command("ab")
 def ab_command(
     pack: Annotated[
@@ -310,12 +331,9 @@ def ab_command(
 
     def decide(first: TrackDocument, second: TrackDocument) -> int:
         typer.echo("Option 1:")
-        open_playground(to_json(first))
-        typer.prompt(
-            "Press enter when you have heard option 1", default="", show_default=False
-        )
+        _play_and_wait(first, "Press enter when you have heard option 1")
         typer.echo("Option 2:")
-        open_playground(to_json(second))
+        _play_and_wait(second, "Press enter when you have heard option 2")
         pick = 0
         while pick not in (1, 2):
             pick = typer.prompt("Which sounds better - 1 or 2?", type=int)
@@ -343,10 +361,7 @@ def ab_command(
         "winsB": result.wins_b,
         "pValue": result.p_value,
     }
-    target = log if log is not None else _LISTENING_LOG
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(record) + "\n")
+    target = _append_jsonl(log, [record])
 
     typer.echo(
         f"A/B complete: A={result.wins_a} B={result.wins_b} of {result.n}, "
@@ -381,12 +396,7 @@ def rubric_command(
 
     def score(pack: str, mood: str, doc: TrackDocument) -> CellScore:
         typer.echo(f"\n=== {pack} / {mood} ===")
-        open_playground(to_json(doc))
-        typer.prompt(
-            "Press enter when you have heard the track",
-            default="",
-            show_default=False,
-        )
+        _play_and_wait(doc, "Press enter when you have heard the track")
         scores: dict[str, int] = {}
         for axis in AXES:
             typer.echo(f"\n{axis}:")
@@ -401,11 +411,7 @@ def rubric_command(
 
     records = run_rubric(rubric_cells(), score, date=date)
 
-    target = log if log is not None else _LISTENING_LOG
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("a", encoding="utf-8") as fh:
-        for record in records:
-            fh.write(json.dumps(record) + "\n")
+    target = _append_jsonl(log, records)
 
     typer.echo(f"Rubric complete: {len(records)} cells scored. Appended to {target}.")
 
