@@ -6,12 +6,19 @@ from typing import Annotated
 
 import typer
 
+from trackgen.interpreter.stage import ParamsInvalid
 from trackgen.packs.loader import STYLES_ROOT
 from trackgen.pipeline import generate_trace, to_json
 from trackgen.pipeline.explain import ExplainCollector, render_explain
+from trackgen.schema.document import TrackDocument
 from trackgen.schema.export import DEFAULT_SCHEMA_PATH, export_schema
 from trackgen.tooling import corpus
-from trackgen.tooling.audition import build_audition, open_playground
+from trackgen.tooling.ab import derive_trial_seeds, run_ab
+from trackgen.tooling.audition import (
+    build_audition,
+    open_playground,
+    parse_role_flavors,
+)
 from trackgen.tooling.bless import bless, format_result
 from trackgen.tooling.calibrate import calibrate
 from trackgen.tooling.lint import run_lint
@@ -22,6 +29,12 @@ app = typer.Typer(help="trackgen: deterministic backing-track generation pipelin
 @app.callback()
 def main() -> None:
     """trackgen: deterministic backing-track generation pipeline."""
+
+
+def _params_error(err: ParamsInvalid) -> typer.BadParameter:
+    """Render a `ParamsInvalid` catalog as a single clean `BadParameter`."""
+    lines = "; ".join(f"{e.code} ({e.field}): {e.message}" for e in err.errors)
+    return typer.BadParameter(lines)
 
 
 @app.command("export-schema")
@@ -153,6 +166,26 @@ def audition_command(
         str | None,
         typer.Option("--mute", help="Drop this role or drum sub-track id."),
     ] = None,
+    ensemble: Annotated[
+        str | None,
+        typer.Option(
+            "--ensemble", help="Ensemble preset id (-> ensemblePreset), e.g. driven."
+        ),
+    ] = None,
+    role_flavors: Annotated[
+        str | None,
+        typer.Option(
+            "--role-flavors",
+            help="Comma list of role=flavor, e.g. comping=piano,drums=tight_kit.",
+        ),
+    ] = None,
+    role_flavor: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--role-flavor",
+            help="A single role=flavor; repeatable. Merges with --role-flavors.",
+        ),
+    ] = None,
     out: Annotated[
         Path | None,
         typer.Option("--out", help="Write the TrackDocument JSON here."),
@@ -176,11 +209,19 @@ def audition_command(
         raw_params["seed"] = seed
     if tempo is not None:
         raw_params["tempoBpm"] = tempo
+    if ensemble is not None:
+        raw_params["ensemblePreset"] = ensemble
+    tokens = ([role_flavors] if role_flavors is not None else []) + (role_flavor or [])
+    if tokens:
+        raw_params["roleFlavors"] = parse_role_flavors(tokens)
 
     collector = ExplainCollector() if explain else None
-    doc = build_audition(
-        raw_params, section=section, solo=solo, mute=mute, explain=collector
-    )
+    try:
+        doc = build_audition(
+            raw_params, section=section, solo=solo, mute=mute, explain=collector
+        )
+    except ParamsInvalid as err:
+        raise _params_error(err) from err
     rendered = to_json(doc)
     if collector is not None:
         typer.echo(render_explain(collector), err=True)
@@ -193,6 +234,117 @@ def audition_command(
         open_playground(rendered)
     if out is None and not play:
         typer.echo(rendered)
+
+
+_LISTENING_LOG = Path(__file__).resolve().parents[2] / "listening" / "log.jsonl"
+
+
+@app.command("ab")
+def ab_command(
+    pack: Annotated[
+        str, typer.Option("--pack", help="Style pack id (-> styleFamily), required.")
+    ],
+    axis: Annotated[
+        str,
+        typer.Option(
+            "--axis",
+            help="Compared axis as role=flavorA:flavorB, e.g. bass=a:b.",
+        ),
+    ],
+    date: Annotated[
+        str,
+        typer.Option(
+            "--date",
+            help="Session date, passed in (wall-clock is banned), e.g. 2026-07-21.",
+        ),
+    ],
+    mood: Annotated[
+        str | None, typer.Option("--mood", help="Mood id, e.g. happy or melancholic.")
+    ] = None,
+    trials: Annotated[
+        int, typer.Option("--trials", help="Number of A/B trials (§8.4 uses ~20).")
+    ] = 20,
+    blind_master: Annotated[
+        str,
+        typer.Option(
+            "--blind-master",
+            help="Seed text for the blinding + trial-seed streams; logged for replay.",
+        ),
+    ] = "trackgen-ab",
+    log: Annotated[
+        Path | None,
+        typer.Option(
+            "--log",
+            help="Append the result record here (default listening/log.jsonl).",
+        ),
+    ] = None,
+) -> None:
+    """Blinded pairwise A/B listening test over two flavors (§8.4, instrument 2).
+
+    Renders identical seeds two ways (variant A vs B on `--axis`), plays each
+    pair in a blinded order, forces a "which sounds better" choice per trial, and
+    scores the tally with an exact two-sided binomial test. One `{"type": "ab"}`
+    record is appended to the listening log on completion.
+    """
+    role, _, flavors = axis.partition("=")
+    flavor_a, sep, flavor_b = flavors.partition(":")
+    if not role or not sep or not flavor_a or not flavor_b:
+        raise typer.BadParameter(
+            "--axis must be role=flavorA:flavorB, e.g. comping=piano:crunch_electric"
+        )
+
+    base: dict[str, object] = {"styleFamily": pack}
+    if mood is not None:
+        base["mood"] = mood
+    variant_a: dict[str, object] = {**base, "roleFlavors": {role: flavor_a}}
+    variant_b: dict[str, object] = {**base, "roleFlavors": {role: flavor_b}}
+
+    trial_seeds = derive_trial_seeds(blind_master, trials)
+
+    def decide(first: TrackDocument, second: TrackDocument) -> int:
+        typer.echo("Option 1:")
+        open_playground(to_json(first))
+        typer.prompt(
+            "Press enter when you have heard option 1", default="", show_default=False
+        )
+        typer.echo("Option 2:")
+        open_playground(to_json(second))
+        pick = 0
+        while pick not in (1, 2):
+            pick = typer.prompt("Which sounds better - 1 or 2?", type=int)
+        return pick - 1
+
+    try:
+        result = run_ab(
+            variant_a, variant_b, trial_seeds, decide, blind_master=blind_master
+        )
+    except ParamsInvalid as err:
+        raise _params_error(err) from err
+
+    record = {
+        "type": "ab",
+        "date": date,
+        "pack": pack,
+        "mood": mood,
+        "axis": axis,
+        "variantA": variant_a,
+        "variantB": variant_b,
+        "blindMaster": blind_master,
+        "trialSeeds": trial_seeds,
+        "n": result.n,
+        "winsA": result.wins_a,
+        "winsB": result.wins_b,
+        "pValue": result.p_value,
+    }
+    target = log if log is not None else _LISTENING_LOG
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record) + "\n")
+
+    typer.echo(
+        f"A/B complete: A={result.wins_a} B={result.wins_b} of {result.n}, "
+        f"p={result.p_value:.4g}. Appended to {target}."
+    )
 
 
 @app.command("lint")

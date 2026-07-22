@@ -15,6 +15,7 @@ production path.
 from __future__ import annotations
 
 import webbrowser
+from collections.abc import Sequence
 from pathlib import Path
 
 import typer
@@ -104,6 +105,34 @@ def _apply_target(phrases: list[Phrase], target: str, *, keep: bool) -> list[Phr
 
     valid = ", ".join(sorted(_ROLES) + sorted(_DRUM_TRACK_IDS))
     raise typer.BadParameter(f"unknown target {target!r}; valid: {valid}")
+
+
+def parse_role_flavors(tokens: Sequence[str]) -> dict[str, str]:
+    """Parse `role=flavor` tokens into a `roleFlavors` dict (last write wins).
+
+    Each token may itself be a comma-separated list (`comping=piano,drums=tight_kit`),
+    so a single `--role-flavors` string and repeated `--role-flavor` flags parse
+    through the same path. Role/flavor names are not checked here — that is the
+    §3.1 param validator's job downstream (`FLAVOR_UNKNOWN`/`ROLE_UNKNOWN`), which
+    reports against pack data; this only enforces the `role=flavor` shape.
+    """
+    out: dict[str, str] = {}
+    for token in tokens:
+        for piece in token.split(","):
+            piece = piece.strip()
+            if not piece:
+                continue
+            if "=" not in piece:
+                raise typer.BadParameter(
+                    f"role-flavor entry {piece!r} must be of the form role=flavor"
+                )
+            role, flavor = (part.strip() for part in piece.split("=", 1))
+            if not role or not flavor:
+                raise typer.BadParameter(
+                    f"role-flavor entry {piece!r} must be of the form role=flavor"
+                )
+            out[role] = flavor
+    return out
 
 
 def open_playground(rendered_json: str) -> None:

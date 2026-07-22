@@ -15,7 +15,7 @@ from typer.testing import CliRunner
 from trackgen.cli import app
 from trackgen.pipeline import generate_track, to_json
 from trackgen.schema.document import TrackDocument
-from trackgen.tooling.audition import build_audition
+from trackgen.tooling.audition import build_audition, parse_role_flavors
 
 _POP: dict[str, object] = {"styleFamily": "pop_rock", "seed": "1ps9wxb"}
 _JAZZ: dict[str, object] = {"styleFamily": "jazz", "seed": "1ps9wxb"}
@@ -162,6 +162,111 @@ def test_cli_default_echoes_json() -> None:
 def test_cli_requires_pack() -> None:
     result = runner.invoke(app, ["audition", "--seed", "1ps9wxb"])
     assert result.exit_code != 0
+
+
+def _comping_instrument(doc: TrackDocument) -> object:
+    for track in doc.tracks:
+        if track.id == "comping":
+            return track.instrument
+    raise AssertionError("no comping track")
+
+
+def test_role_flavors_changes_document() -> None:
+    """A non-default comping flavor changes the rendered patch (flag is real)."""
+    default = build_audition(_POP)
+    flavored = build_audition({**_POP, "roleFlavors": {"comping": "piano"}})
+    assert to_json(default) != to_json(flavored)
+    assert _comping_instrument(default) != _comping_instrument(flavored)
+
+
+def test_ensemble_preset_changes_document() -> None:
+    default = build_audition(_POP)
+    driven = build_audition({**_POP, "ensemblePreset": "driven"})
+    assert to_json(default) != to_json(driven)
+
+
+def test_parse_role_flavors_comma_and_repeat() -> None:
+    assert parse_role_flavors(["comping=piano,drums=tight_kit"]) == {
+        "comping": "piano",
+        "drums": "tight_kit",
+    }
+    assert parse_role_flavors(["comping=piano", "drums=tight_kit"]) == {
+        "comping": "piano",
+        "drums": "tight_kit",
+    }
+
+
+def test_parse_role_flavors_rejects_malformed() -> None:
+    with pytest.raises(typer.BadParameter):
+        parse_role_flavors(["comping"])
+    with pytest.raises(typer.BadParameter):
+        parse_role_flavors(["=piano"])
+
+
+def test_cli_role_flavors_flag_changes_render() -> None:
+    default = runner.invoke(
+        app, ["audition", "--pack", "pop_rock", "--seed", "1ps9wxb"]
+    )
+    flavored = runner.invoke(
+        app,
+        [
+            "audition",
+            "--pack",
+            "pop_rock",
+            "--seed",
+            "1ps9wxb",
+            "--role-flavors",
+            "comping=piano",
+        ],
+    )
+    assert default.exit_code == 0 and flavored.exit_code == 0, flavored.output
+    assert json.loads(default.output) != json.loads(flavored.output)
+
+
+def test_cli_ensemble_flag_changes_render() -> None:
+    default = runner.invoke(
+        app, ["audition", "--pack", "pop_rock", "--seed", "1ps9wxb"]
+    )
+    driven = runner.invoke(
+        app,
+        ["audition", "--pack", "pop_rock", "--seed", "1ps9wxb", "--ensemble", "driven"],
+    )
+    assert driven.exit_code == 0, driven.output
+    assert json.loads(default.output) != json.loads(driven.output)
+
+
+def test_cli_invalid_flavor_errors_cleanly() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "audition",
+            "--pack",
+            "pop_rock",
+            "--seed",
+            "1ps9wxb",
+            "--role-flavors",
+            "comping=not_a_flavor",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "FLAVOR_UNKNOWN" in result.output
+
+
+def test_cli_invalid_ensemble_errors_cleanly() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "audition",
+            "--pack",
+            "pop_rock",
+            "--seed",
+            "1ps9wxb",
+            "--ensemble",
+            "not_a_preset",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "PRESET_UNKNOWN" in result.output
 
 
 def test_cli_play_writes_playground_and_opens(monkeypatch: pytest.MonkeyPatch) -> None:
