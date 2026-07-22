@@ -1,5 +1,6 @@
 # fusion_jazz bass pattern bank (PHASE_8 §6.4).
-# Pattern mode; pitched events author chord-degrees, never literal pitches
+# Rung-1 mains are dormant PT5/variety completeness (annotated per-id below;
+# C-28, see drums.yaml for the energy detail). Pattern mode; pitched events author chord-degrees, never literal pitches
 # (ROADMAP invariant 2). `retarget` is the bank-level default — §6.4 prints no
 # retarget block, but PT9 (`packs/models.py:251-270`) requires one with span
 # >= 12 on every pitched role, so these are the sibling-identical values
@@ -20,7 +21,7 @@ retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
 patterns:
   # rung 1 (dormant per C-28) — root/b7 half notes (§6.4). The `seventh` degree
   # resolves against the pack's pinned dom7/min7 vocabulary to the flat seventh
-  - id: fu_bs_1
+  - id: fu_bs_1  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: bass
     kind: main
     energyLevel: 1
@@ -31,7 +32,7 @@ patterns:
       - { pos: 960, dur: 960, degree: seventh, octave: 0, velocity: 0.58 }
 
   # rung 1 (dormant, sibling) — root half, then root/b7 quarters
-  - id: fu_bs_1b
+  - id: fu_bs_1b  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: bass
     kind: main
     energyLevel: 1

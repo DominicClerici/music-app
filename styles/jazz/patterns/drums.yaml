@@ -4,7 +4,7 @@
 layeringOrder: [drums, bass, comping, pads]
 patterns:
   # rung 1 — brush sweeps + hats 2/4
-  - id: jz_dr_1
+  - id: jz_dr_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: drums
     kind: main
     energyLevel: 1
@@ -136,7 +136,7 @@ patterns:
 
   # rung 1 (variant) — brush swing texture: long sweeps on 1 & 3 with light
   # taps on the &s of 2 & 4 (the ride contour played on brushes), hats 2/4
-  - id: jz_dr_1b
+  - id: jz_dr_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: drums
     kind: main
     energyLevel: 1

@@ -11,7 +11,7 @@ voicing:
 retarget: { registerLow: 52, registerHigh: 67, onChordChange: retrigger }
 patterns:
   # rung 1 — football
-  - id: jz_cp_1
+  - id: jz_cp_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: comping
     kind: main
     energyLevel: 1
@@ -79,7 +79,7 @@ patterns:
 
   # rung 1 (variant) — two half-note pads (a breathing comp vs the whole-note
   # football)
-  - id: jz_cp_1b
+  - id: jz_cp_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: comping
     kind: main
     energyLevel: 1

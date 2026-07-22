@@ -4,7 +4,7 @@
 layeringOrder: [drums, bass, comping, pads]
 patterns:
   # rung 1 — kick 1+3, quarter hats
-  - id: pr_dr_1
+  - id: pr_dr_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: drums
     kind: main
     energyLevel: 1
@@ -22,7 +22,7 @@ patterns:
 
   # rung 1 (variant) — kick 1 + "and of 3", quarter hats. Same sparse
   # foundation as pr_dr_1, the backbeat displaced kick giving a laid-back lean
-  - id: pr_dr_1b
+  - id: pr_dr_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: drums
     kind: main
     energyLevel: 1

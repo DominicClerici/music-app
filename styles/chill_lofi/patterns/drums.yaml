@@ -4,9 +4,9 @@
 # pack-level layeringOrder (§5.1/PT10). Velocities quiet and varied, nothing
 # above ~0.85 (§4.4).
 #
-# The 0.60 energy ceiling makes rung 4 unreachable (§4.2); rung-4 mains are
-# authored for PT5 completeness only as marginally-fuller rung-3 variants.
-# expected-unreachable  (silences this file's unreachable-content lint, §9.2)
+# The 0.60 energy ceiling keeps every body section at rung 2 (§4.2), so rungs
+# 1/3/4 mains are unreachable — authored for PT5 completeness only and annotated
+# per-id below (# expected-unreachable, C-22).
 #
 # rim mapping: PHASE_8 §4.4's rung-4 "rim layer" uses the `perc` voice — no
 # `rim` voice exists in the engine's DrumVoice vocabulary, and §4.2 (line 132)
@@ -14,7 +14,7 @@
 layeringOrder: [drums, bass, comping, pads]
 patterns:
   # rung 1 — half-time: kick 1, snare beat 3, sparse quarter hats
-  - id: lf_dr_1
+  - id: lf_dr_1  # expected-unreachable — C-22: rung-1 main, below the reachable rung 2 (0.60 energy ceiling)
     role: drums
     kind: main
     energyLevel: 1
@@ -30,7 +30,7 @@ patterns:
 
   # rung 1 (variant) — half-time with a laid-back "and of 3" kick lean; same
   # sparse quarter-hat foundation as lf_dr_1
-  - id: lf_dr_1b
+  - id: lf_dr_1b  # expected-unreachable — C-22: rung-1 main, below the reachable rung 2 (0.60 energy ceiling)
     role: drums
     kind: main
     energyLevel: 1
@@ -90,7 +90,7 @@ patterns:
       - { pos: 1680, voice: hat_closed, velocity: 0.32 }
 
   # rung 3 — boom-bap + minDensity-gated 16th hats + gated perc shaker (§4.4)
-  - id: lf_dr_3
+  - id: lf_dr_3  # expected-unreachable — C-22: rung-3 main, 0.60 energy ceiling caps every body section at rung 2
     role: drums
     kind: main
     energyLevel: 3
@@ -124,7 +124,7 @@ patterns:
 
   # rung 3 (variant) — later swung ghost kick, a gated ghost snare, straight-8th
   # gated 16th-hat subset, and downbeat gated shaker. Distinct top-end texture
-  - id: lf_dr_3b
+  - id: lf_dr_3b  # expected-unreachable — C-22: rung-3 main, 0.60 energy ceiling caps every body section at rung 2
     role: drums
     kind: main
     energyLevel: 3
@@ -157,7 +157,7 @@ patterns:
 
   # rung 4 — rung 3 + gated perc rim layer on 1/3 (UNREACHABLE, completeness
   # only, §4.2). Marginally fuller than lf_dr_3
-  - id: lf_dr_4
+  - id: lf_dr_4  # expected-unreachable — C-22: rung-4 main, 0.60 energy ceiling caps every body section at rung 2
     role: drums
     kind: main
     energyLevel: 4
@@ -193,7 +193,7 @@ patterns:
 
   # rung 4 (variant) — rung-3b family + gated perc rim on 2/4 (UNREACHABLE,
   # completeness only, §4.2). Marginally fuller than lf_dr_3b
-  - id: lf_dr_4b
+  - id: lf_dr_4b  # expected-unreachable — C-22: rung-4 main, 0.60 energy ceiling caps every body section at rung 2
     role: drums
     kind: main
     energyLevel: 4

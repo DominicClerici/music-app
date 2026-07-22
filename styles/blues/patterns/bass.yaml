@@ -1,5 +1,6 @@
 # blues bass pattern bank (PHASE_8 §5.4, under the SESSION_21 S21-2 re-map).
-# Pattern mode; pitched events author chord-degrees, never literal pitches
+# Rung-1/2 mains are dormant grid-wide (annotated per-id below; C-23, see
+# drums.yaml for detail). Pattern mode; pitched events author chord-degrees, never literal pitches
 # (invariant 2). retarget is the bank-level default {28, 45, retrigger}
 # (span 17 >= 12, PT9); the loader injects it into every entry. The boogie/box
 # is the blues bass identity (§3.2) — the `sixth` degree earns its reservation.
@@ -22,7 +23,7 @@ mode: patterns
 retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
 patterns:
   # rung 1 (dormant) — whole-note root
-  - id: bl_bs_1
+  - id: bl_bs_1  # expected-unreachable — C-23: rung-1 main, all-solo form × R2 arch floors every body section at rung 3+
     role: bass
     kind: main
     energyLevel: 1
@@ -32,7 +33,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: root, octave: 0, velocity: 0.62 }
 
   # rung 1 (dormant, variant) — half-note roots (beats 1 and 3)
-  - id: bl_bs_1b
+  - id: bl_bs_1b  # expected-unreachable — C-23: rung-1 main, all-solo form × R2 arch floors every body section at rung 3+
     role: bass
     kind: main
     energyLevel: 1
@@ -43,7 +44,7 @@ patterns:
       - { pos: 960, dur: 960, degree: root, octave: 0, velocity: 0.58 }
 
   # rung 2 (dormant) — root + fifth halves (root beat 1, fifth beat 3)
-  - id: bl_bs_2
+  - id: bl_bs_2  # expected-unreachable — C-23: rung-2 main, all-solo form × R2 arch floors every body section at rung 3+
     role: bass
     kind: main
     energyLevel: 2
@@ -54,7 +55,7 @@ patterns:
       - { pos: 960, dur: 960, degree: fifth, octave: 0, velocity: 0.62 }
 
   # rung 2 (dormant, variant) — root half + fifth/root quarters
-  - id: bl_bs_2b
+  - id: bl_bs_2b  # expected-unreachable — C-23: rung-2 main, all-solo form × R2 arch floors every body section at rung 3+
     role: bass
     kind: main
     energyLevel: 2

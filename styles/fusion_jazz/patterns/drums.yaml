@@ -1,5 +1,10 @@
 # fusion_jazz drum pattern bank (PHASE_8 §6.4).
-# Drum events only — drums are lane-exempt (§5.2), so no retarget (PT9).
+# Rung 1 is dead grid-wide: the lowest body section energy (breakdown/main/head
+# base at the coldest supported arousal) sits at pre-envelope ~0.185 → rung 2
+# under the [0.20, 0.95] envelope, so no supported (mood × position) render
+# selects a rung-1 main. Rung-1 mains are PT5/variety completeness only and are
+# annotated per-id below (# expected-unreachable, C-28); the reachability lint
+# now sees this. Drum events only — drums are lane-exempt (§5.2), so no retarget (PT9).
 # Carries the pack-level layeringOrder (PT10, once per pack).
 #
 # Ladder authored EXACTLY as §6.4 prints it — NO re-map (S22-5, user-ratified).
@@ -27,7 +32,7 @@ layeringOrder: [drums, bass, comping, pads]
 patterns:
   # rung 1 (dormant per C-28) — sparse funk: kick on 1, cross-stick (perc) on
   # 2 and 4, straight 8th hats
-  - id: fu_dr_1
+  - id: fu_dr_1  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: drums
     kind: main
     energyLevel: 1
@@ -54,7 +59,7 @@ patterns:
   # (8 events vs `fu_dr_1`'s 11, same 0.80 peak); the pair now shares only 6 of
   # 13 (pos, voice) slots instead of 11 of 12, which is what a variety pair is
   # for. Rung 1 is dormant (C-28), so this is completeness work, not audible.
-  - id: fu_dr_1b
+  - id: fu_dr_1b  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: drums
     kind: main
     energyLevel: 1

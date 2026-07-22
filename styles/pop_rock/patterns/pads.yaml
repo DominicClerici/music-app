@@ -10,7 +10,7 @@ voicing:
 retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
 patterns:
   # rungs 1-3 whole-note chord; rung 4 half-note pulse
-  - id: pr_pd_1
+  - id: pr_pd_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: pads
     kind: main
     energyLevel: 1
@@ -30,7 +30,7 @@ patterns:
 
   # rung 1 (variant) — bar sustain with a soft beat-4 re-voice, the stillest
   # texture (whole-ish, gentler than the mid-bar re-attacks above rung 1)
-  - id: pr_pd_1b
+  - id: pr_pd_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: pads
     kind: main
     energyLevel: 1

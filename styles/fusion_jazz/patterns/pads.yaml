@@ -1,4 +1,6 @@
-# fusion_jazz pads pattern bank (PHASE_8 §6.4). Sustained degree: chord blocks —
+# fusion_jazz pads pattern bank (PHASE_8 §6.4).
+# Rung-1 mains are dormant PT5/variety completeness (annotated per-id below;
+# C-28, see drums.yaml for the energy detail). Sustained degree: chord blocks —
 # the analog_poly/glass_pad wash under the funk. Bank retarget is the
 # §6.4/constraint-13 default {45, 64, retrigger} (the pattern-fold window only —
 # chord-voicing registers are owned by the arrangement pads lane, C-21).
@@ -32,7 +34,7 @@ voicing:
 retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
 patterns:
   # rung 1 (dormant completeness) — softest quartal wash
-  - id: fu_pd_1
+  - id: fu_pd_1  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: pads
     kind: main
     energyLevel: 1
@@ -42,7 +44,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.28 }
 
   # rung 1 (variant) — whole-note wash a touch warmer, in-band
-  - id: fu_pd_1b
+  - id: fu_pd_1b  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: pads
     kind: main
     energyLevel: 1

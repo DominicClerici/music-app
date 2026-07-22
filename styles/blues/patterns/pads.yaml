@@ -1,4 +1,6 @@
-# blues pads pattern bank (PHASE_8 §5.4). Sustained degree: chord "football"
+# blues pads pattern bank (PHASE_8 §5.4).
+# Rung-1/2 mains are dormant grid-wide (annotated per-id below; C-23, see
+# drums.yaml for detail). Sustained degree: chord "football"
 # hits — the organ pad holding whole notes under the shuffle. Bank retarget is
 # the §5.4/constraint-10 default {45, 64, retrigger} (the pattern-fold window
 # only — chord-voicing registers are owned by the arrangement pads lane, C-21).
@@ -23,7 +25,7 @@ voicing:
 retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
 patterns:
   # rung 1 — whole-note football, softest sustained wash
-  - id: bl_pd_1
+  - id: bl_pd_1  # expected-unreachable — C-23: rung-1 main, all-solo form × R2 arch floors every body section at rung 3+
     role: pads
     kind: main
     energyLevel: 1
@@ -33,7 +35,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.30 }
 
   # rung 1 (variant) — whole-note wash a touch warmer, in-band
-  - id: bl_pd_1b
+  - id: bl_pd_1b  # expected-unreachable — C-23: rung-1 main, all-solo form × R2 arch floors every body section at rung 3+
     role: pads
     kind: main
     energyLevel: 1
@@ -43,7 +45,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.34 }
 
   # rung 2 — whole-note football, band opens above rung 1
-  - id: bl_pd_2
+  - id: bl_pd_2  # expected-unreachable — C-23: rung-2 main, all-solo form × R2 arch floors every body section at rung 3+
     role: pads
     kind: main
     energyLevel: 2
@@ -53,7 +55,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.38 }
 
   # rung 2 (variant) — whole-note wash, in-band
-  - id: bl_pd_2b
+  - id: bl_pd_2b  # expected-unreachable — C-23: rung-2 main, all-solo form × R2 arch floors every body section at rung 3+
     role: pads
     kind: main
     energyLevel: 2

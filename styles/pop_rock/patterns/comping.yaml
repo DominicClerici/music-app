@@ -10,7 +10,7 @@ voicing:
 retarget: { registerLow: 52, registerHigh: 67, onChordChange: retrigger }
 patterns:
   # rung 1 — whole-note block
-  - id: pr_cp_1
+  - id: pr_cp_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: comping
     kind: main
     energyLevel: 1
@@ -21,7 +21,7 @@ patterns:
 
   # rung 1 (variant) — bar-length block with a fresh chord on beat 4 anticipating
   # the next bar. Same sustained foundation as pr_cp_1, a gentle push added
-  - id: pr_cp_1b
+  - id: pr_cp_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: comping
     kind: main
     energyLevel: 1

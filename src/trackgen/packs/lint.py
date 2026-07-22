@@ -47,6 +47,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from trackgen.arrangement.intensity import intensity
+from trackgen.form import section_energy
 from trackgen.interpreter import derived_defaults
 from trackgen.interpreter.moods import load_moods
 from trackgen.packs.loader import (
@@ -62,15 +63,17 @@ from trackgen.packs.models import (
     BassBank,
     DrumsBank,
     FormsConfig,
+    FormTemplate,
     InterpreterConfig,
     Manifest,
     PatternEnvelope,
     ProgressionsConfig,
+    RepeatBlock,
     StylePack,
     TransitionsSpec,
     VoicedBank,
 )
-from trackgen.parts.selection import _eligible_set
+from trackgen.parts.selection import _eligible_set, section_kind
 from trackgen.quality.layer1 import _STRAIGHT_GRID, _TRIPLET_GRID
 from trackgen.schema.document import Role
 
@@ -83,9 +86,33 @@ _RULE_RE = re.compile(r"\b([A-Z]{1,3}\d{1,2}(?:/[A-Z]{1,3}\d{1,2})?)\b")
 # The 0.90 dominance threshold for weight degeneracy (§9.2).
 _DEGENERACY_RATIO = 0.90
 
-# The file-level silence marker for unreachable-content (§9.2). `safe_load`
-# drops comments, so the raw bank-file TEXT is scanned for this token.
+# The per-id silence marker for unreachable-content (§9.2). `safe_load` drops
+# comments, so the raw bank-file TEXT is scanned: a pattern id is silenced iff
+# its `- id: <name>` declaration line also carries this token as a trailing
+# comment. Silence is per pattern id, so a live sibling in the same file still
+# warns.
 _UNREACHABLE_MARKER = "expected-unreachable"
+
+# A `- id: <name>` list-item declaration line, capturing the id.
+_ID_DECL_RE = re.compile(r"^\s*-\s*id:\s*(\S+)")
+
+# Cap on repeat-count enumeration when a template's repeat block is unbounded
+# (`count.max == null` — budget-bounded in production, not statically knowable
+# here). Over-approximating the count only widens the reachable set UPWARD: a
+# larger repeat count lowers the R2 solo arch's minimum index/total ratio (whose
+# floor is `lo + clamp01(0.60 + 0.10*arousal) * (hi-lo)`, i.e. at least the
+# envelope midpoint — for a wide envelope that can sit below the rung-3 line, so
+# the guarantee is directional, not a fixed rung floor) and raises R1 escalation
+# indices (adding only higher rungs). The operative property holds regardless: a
+# larger count only adds indices at the ends of an already-swept 1..total range,
+# so it can never manufacture a spurious LOW rung the sample set missed, and so
+# cannot mask a genuine section-kind-floor dormancy (C-23). Verified empirically:
+# the reachable set is identical at caps 16/40/200/2000 for all five shipped
+# packs. NOTE: `_positional_samples` tracks a single `count_max` per template; a
+# future template with two differing repeat blocks would need per-block counts
+# (latent — no shipped template has >1 repeat block), as would a fallback section
+# absent from the spine.
+_MAX_REPEAT_SAMPLE = 16
 
 
 @dataclass(frozen=True)
@@ -433,40 +460,131 @@ def _warn_grid_mixing(pack: StylePack) -> list[LintWarning]:
     return warnings
 
 
+def _positional_samples(
+    template: FormTemplate,
+) -> list[tuple[str, int, int, float | None]]:
+    """Every `(section_type, index, total_of_type, override)` a body slot of
+    `template` can present to `section_energy` under some reachable form
+    realization — the inputs the energy model's §6.2 positional rules key off.
+
+    Positions are over-approximated upward (repeat counts up to `_MAX_REPEAT_
+    SAMPLE`, `total_of_type` swept from 1) — safe per that constant's note. A
+    type is given the positional sweep only if it has at least one NON-override
+    occurrence; every explicit `slot.energy` override is emitted as its own
+    fixed sample (`section_energy` ignores index/total when `override` is set)."""
+    top_slots: dict[str, list[bool]] = defaultdict(list)
+    repeat_slots: dict[str, list[bool]] = defaultdict(list)
+    count_max: int | None = 1
+    overrides: list[tuple[str, float]] = []
+    has_non_override: set[str] = set()
+
+    def record(section: str, energy: float | None) -> None:
+        if energy is not None:
+            overrides.append((section, energy))
+        else:
+            has_non_override.add(section)
+
+    for element in template.spine:
+        if isinstance(element, RepeatBlock):
+            count_max = element.repeat.count[1]
+            for slot in element.repeat.slots:
+                repeat_slots[slot.section].append(slot.optional is not None)
+                record(slot.section, slot.energy)
+        else:
+            top_slots[element.section].append(element.optional is not None)
+            record(element.section, element.energy)
+
+    reps = _MAX_REPEAT_SAMPLE if count_max is None else count_max
+    samples: list[tuple[str, int, int, float | None]] = []
+    for section in set(top_slots) | set(repeat_slots):
+        if section not in has_non_override:
+            continue
+        max_total = len(top_slots.get(section, [])) + reps * len(
+            repeat_slots.get(section, [])
+        )
+        for total in range(1, max(1, max_total) + 1):
+            for index in range(1, total + 1):
+                samples.append((section, index, total, None))
+    for section, energy in overrides:
+        samples.append((section, 1, 1, energy))
+    return samples
+
+
 def _reachable_rungs(pack: StylePack) -> set[int] | None:
-    """The intensity rungs any energy in the pack's `energyRange` quantizes to
-    (`intensity()` is monotone, so the reachable set is a contiguous span)."""
-    if pack.forms is None:
+    """The intensity rungs a `main` pattern can actually be selected at: the
+    union, over every supported mood's arousal × every `main`-kind section type
+    in the templates × its reachable positional `(index, total)` and energy
+    overrides, of `intensity(section_energy(...))`.
+
+    This is the real per-render reachable set — `section_kind` maps `intro`/
+    `outro` to their own pattern kinds (energy-blind), so only body sections
+    (the ones whose rung is `intensity(section.energy)`, PHASE_5 §3.1 →
+    `select_patterns`) contribute. It narrows the prior envelope-only
+    over-approximation, which modeled neither §6.3 arousal scaling nor the §6.1
+    section-kind energy floors and so reported every rung reachable (the C-22 /
+    C-23 / C-28 lint gap).
+
+    Returns `None` when the pack lacks forms or an interpreter (the moods the
+    per-mood computation needs)."""
+    forms = pack.forms
+    interp = pack.interpreter
+    if forms is None or interp is None:
         return None
-    lo, hi = pack.forms.energy_range
-    return set(range(intensity(lo), intensity(hi) + 1))
+    table = load_moods()
+    arousals = [table.moods[m].arousal for m in interp.supported_moods]
+    if not arousals:
+        return None
+    energy_range = forms.energy_range
+    reachable: set[int] = set()
+    for template in forms.templates:
+        for section, index, total, override in _positional_samples(template):
+            if section_kind(section) != "main":
+                continue
+            for arousal in arousals:
+                energy = section_energy(
+                    section, index, total, arousal, energy_range, override=override
+                )
+                reachable.add(intensity(energy))
+    return reachable
 
 
-def _silenced_files(pack_dir: Path) -> set[str]:
-    """Bank files carrying the `# expected-unreachable` marker. Comments are
-    dropped by `safe_load`, so the raw TEXT is scanned; silence is coarse
-    (file-level), which is acceptable per §9.2."""
-    silenced: set[str] = set()
+def _silenced_ids(pack_dir: Path) -> dict[str, set[str]]:
+    """Per role, the set of pattern ids carrying the `# expected-unreachable`
+    marker on their `- id: <name>` declaration line. Comments are dropped by
+    `safe_load`, so the raw TEXT is scanned line by line; only the id whose own
+    declaration bears the marker is silenced, so sibling patterns still warn."""
+    silenced: dict[str, set[str]] = {}
     for role in ("drums", "bass", "comping", "pads"):
         path = pack_dir / "patterns" / f"{role}.yaml"
-        if path.is_file() and _UNREACHABLE_MARKER in path.read_text(encoding="utf-8"):
-            silenced.add(role)
+        if not path.is_file():
+            continue
+        ids: set[str] = set()
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if _UNREACHABLE_MARKER not in line:
+                continue
+            match = _ID_DECL_RE.match(line)
+            if match is not None:
+                ids.add(match.group(1))
+        if ids:
+            silenced[role] = ids
     return silenced
 
 
 def _warn_unreachable_content(pack: StylePack, pack_dir: Path) -> list[LintWarning]:
-    """A `main` pattern at a rung no reachable section energy quantizes to
-    (via `intensity()` over `energyRange`); silenced file-wide by the
-    `# expected-unreachable` marker (§9.2)."""
+    """A `main` pattern at a rung no reachable section energy quantizes to —
+    "reachable" being the per-mood × per-section-kind × per-position union
+    `_reachable_rungs` computes (not merely the pack envelope). Silenced
+    per pattern id by the `# expected-unreachable` marker (§9.2)."""
     reachable = _reachable_rungs(pack)
     if reachable is None:
         return []
-    silenced = _silenced_files(pack_dir)
+    silenced = _silenced_ids(pack_dir)
     warnings: list[LintWarning] = []
     for role, entries in pack.patterns.items():
-        if role in silenced:
-            continue
+        silenced_here = silenced.get(role, set())
         for env in entries:
+            if env.id in silenced_here:
+                continue
             if env.kind == "main" and env.energy_level not in reachable:
                 warnings.append(
                     LintWarning(
@@ -474,8 +592,8 @@ def _warn_unreachable_content(pack: StylePack, pack_dir: Path) -> list[LintWarni
                         location=f"patterns/{role}.yaml ({env.id})",
                         message=(
                             f"'main' pattern at rung {env.energy_level} is "
-                            f"unreachable: no section energy in energyRange "
-                            f"{pack.forms.energy_range} quantizes to it "  # type: ignore[union-attr]
+                            f"unreachable: no supported (mood x section-kind x "
+                            f"position) section energy quantizes to it "
                             f"(reachable rungs {sorted(reachable)})"
                         ),
                     )

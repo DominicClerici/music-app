@@ -1,5 +1,6 @@
 # fusion_jazz comping pattern bank (PHASE_8 §6.4 — Rhodes/clav).
-# degree: chord rhythm cells; the voicing pass supplies the pitches. Bank
+# Rung-1 mains are dormant PT5/variety completeness (annotated per-id below;
+# C-28, see drums.yaml for the energy detail). degree: chord rhythm cells; the voicing pass supplies the pitches. Bank
 # retarget is the §6.4/constraint-13 default {50, 69, retrigger} (the
 # pattern-fold window only — chord-voicing registers are owned by the
 # arrangement comping lane, C-21; these values do NOT enforce a register floor).
@@ -40,7 +41,7 @@ voicing:
 retarget: { registerLow: 50, registerHigh: 69, onChordChange: retrigger }
 patterns:
   # rung 1 (dormant completeness) — the football: one sustained whole-note chord
-  - id: fu_cp_1
+  - id: fu_cp_1  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: comping
     kind: main
     energyLevel: 1
@@ -50,7 +51,7 @@ patterns:
       - { pos: 0, dur: 1920, degree: chord, velocity: 0.46 }
 
   # rung 1 (variant) — two half-note footballs with a mid-bar re-voice
-  - id: fu_cp_1b
+  - id: fu_cp_1b  # expected-unreachable — C-28: rung-1 main, rung 1 dead grid-wide (lowest body section floors at rung 2)
     role: comping
     kind: main
     energyLevel: 1

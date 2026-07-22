@@ -5,7 +5,7 @@ mode: patterns
 retarget: { registerLow: 28, registerHigh: 45, onChordChange: retrigger }
 patterns:
   # rung 1 — whole-note root
-  - id: pr_bs_1
+  - id: pr_bs_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: bass
     kind: main
     energyLevel: 1
@@ -16,7 +16,7 @@ patterns:
 
   # rung 1 (variant) — half-note roots (beats 1 and 3). Same foundational
   # weight as pr_bs_1's whole note, with a gentle mid-bar re-attack
-  - id: pr_bs_1b
+  - id: pr_bs_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: bass
     kind: main
     energyLevel: 1

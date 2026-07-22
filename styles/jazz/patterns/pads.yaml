@@ -10,7 +10,7 @@ voicing:
     4: [quartal]
 retarget: { registerLow: 45, registerHigh: 64, onChordChange: retrigger }
 patterns:
-  - id: jz_pd_1
+  - id: jz_pd_1  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: pads
     kind: main
     energyLevel: 1
@@ -70,7 +70,7 @@ patterns:
   # (the busiest); escalating velocity by rung ---
 
   # rung 1 (variant) — dotted-half + quarter (gentle)
-  - id: jz_pd_1b
+  - id: jz_pd_1b  # expected-unreachable — C-20: rung-1 main, golden-blind (verse/bridge floor keeps every body section at rung 2+)
     role: pads
     kind: main
     energyLevel: 1
