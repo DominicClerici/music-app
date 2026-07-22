@@ -64,7 +64,10 @@ class GenerationTrace:
 
 
 def generate_trace(
-    raw_params: dict[str, object], *, explain: ExplainCollector | None = None
+    raw_params: dict[str, object],
+    *,
+    explain: ExplainCollector | None = None,
+    selection: SelectionResult | None = None,
 ) -> GenerationTrace:
     """Run the full pipeline for `raw_params`, retaining every IR boundary.
 
@@ -73,6 +76,14 @@ def generate_trace(
     discarded. When an `ExplainCollector` is passed, each §9.3 draw site appends
     a record after it resolves; the collector never touches the RNG, so
     `explain=None` (the default) is byte-identical to today.
+
+    `selection` is the GAP-1 dry-render injection seam. When `None` (default),
+    `select_patterns` is called exactly as before — this path is byte-identical
+    to today. When provided, the passed `SelectionResult` is used verbatim for
+    the per-role `generate()` calls and for the assembled trace's `.selection`,
+    and `select_patterns` is not called. Passing the selection that
+    `select_patterns` *would* have produced reproduces the default document
+    byte-for-byte, so the seam is generation-neutral.
     """
     plan = generate_plan(raw_params, explain=explain)
 
@@ -99,15 +110,18 @@ def generate_trace(
         explain=explain,
     )
     ap = arrange(plan, sf, pack, Rng(0))
-    sel = select_patterns(
-        plan,
-        sf,
-        ap,
-        pack,
-        plan.seed.master,
-        plan.seed.overrides,
-        explain=explain,
-    )
+    if selection is None:
+        sel = select_patterns(
+            plan,
+            sf,
+            ap,
+            pack,
+            plan.seed.master,
+            plan.seed.overrides,
+            explain=explain,
+        )
+    else:
+        sel = selection
 
     phrases_stage5: list[Phrase] = []
     for role in _ROLES:
