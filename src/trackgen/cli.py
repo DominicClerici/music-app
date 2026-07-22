@@ -22,6 +22,13 @@ from trackgen.tooling.audition import (
 from trackgen.tooling.bless import bless, format_result
 from trackgen.tooling.calibrate import calibrate
 from trackgen.tooling.lint import run_lint
+from trackgen.tooling.rubric import (
+    ANCHORS,
+    AXES,
+    CellScore,
+    rubric_cells,
+    run_rubric,
+)
 
 app = typer.Typer(help="trackgen: deterministic backing-track generation pipeline.")
 
@@ -345,6 +352,62 @@ def ab_command(
         f"A/B complete: A={result.wins_a} B={result.wins_b} of {result.n}, "
         f"p={result.p_value:.4g}. Appended to {target}."
     )
+
+
+@app.command("rubric")
+def rubric_command(
+    date: Annotated[
+        str,
+        typer.Option(
+            "--date",
+            help="Session date, passed in (wall-clock is banned), e.g. 2026-07-21.",
+        ),
+    ],
+    log: Annotated[
+        Path | None,
+        typer.Option(
+            "--log",
+            help="Append the rubric records here (default listening/log.jsonl).",
+        ),
+    ] = None,
+) -> None:
+    """Anchored milestone rubric over all 5 packs × 3 moods (§8.4, instrument 3).
+
+    Walks the 15 pinned corpus cells; for each, opens the render in the audition
+    player, prints the written anchor for every point on all four axes, and
+    prompts a 1-5 score per axis plus optional notes. One `{"type": "rubric"}`
+    record per cell is appended to the listening log.
+    """
+
+    def score(pack: str, mood: str, doc: TrackDocument) -> CellScore:
+        typer.echo(f"\n=== {pack} / {mood} ===")
+        open_playground(to_json(doc))
+        typer.prompt(
+            "Press enter when you have heard the track",
+            default="",
+            show_default=False,
+        )
+        scores: dict[str, int] = {}
+        for axis in AXES:
+            typer.echo(f"\n{axis}:")
+            for point in range(1, 6):
+                typer.echo(f"  {point}. {ANCHORS[axis][point]}")
+            pick = 0
+            while pick not in range(1, 6):
+                pick = typer.prompt(f"Score {axis} (1-5)", type=int)
+            scores[axis] = pick
+        notes = typer.prompt("Notes (optional)", default="", show_default=False)
+        return CellScore(scores=scores, notes=notes)
+
+    records = run_rubric(rubric_cells(), score, date=date)
+
+    target = log if log is not None else _LISTENING_LOG
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("a", encoding="utf-8") as fh:
+        for record in records:
+            fh.write(json.dumps(record) + "\n")
+
+    typer.echo(f"Rubric complete: {len(records)} cells scored. Appended to {target}.")
 
 
 @app.command("lint")
