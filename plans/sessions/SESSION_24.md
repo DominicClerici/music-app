@@ -15,6 +15,28 @@ Fresh chunk (C9→C10 split ratified S23-0).
 This is **the last chunk of Phase 8 and of the roadmap.** With it complete, all eight phases
 are built: `generate(params, seed) → TrackDocument` stands across five style families.
 
+### Task ledger
+
+| Task | Status | Commit | Note |
+|---|---|---|---|
+| plan | **done** | `86df32c` | S24-0…S24-5 ratified; listening "minimal now, rest later" |
+| T1 W2 blind-fill fix | **done** | `e4927cc` | APPROVE-WITH-NITS + docstring nit fixed; latent-not-live confirmed |
+| T2 threshold pin | **done** | `0cdcd02` | APPROVE; exact (0.95,0.98) ×5, proven to discriminate |
+| T3 reachability lint | **done** | `af2a4bf` | APPROVE-WITH-NITS (3 latent nits fixed/documented); per-id markers; all 5 packs lint clean; **C-20 rung-1 dormancy on both reference packs, annotated** |
+| T4 GAP-1 dry-render | **done** | `03bfe8b` | APPROVE-WITH-NITS (both fixed); **233 candidates, 0 latent bugs**; seam generation-neutral (bless 60/60, no gv bump); 12 chill_lofi pads unroutable (pinned skips, C-22 extreme) |
+| T5 A/B harness + audition flags | **done** | `019cdba` | APPROVE-WITH-NITS; binomial + unblinding verified; A3 closed |
+| T6 rubric tooling | **done** | `9cf5f2d` | APPROVE-WITH-NITS (notes-capture test hardened); 20 anchors; 15 cells 1:1 with corpus |
+| T7 whole-phase 4-lens review | **in progress** | — | 4 lenses over all 9 chunks + C10 diff |
+| T8 §14 DoD sweep | not started | — | |
+| T9 A/B demo + listening runbook | not started | — | |
+| T10 close-out | not started | — | |
+
+**T3 finding (verified):** the faithful reachability lint reveals both reference packs have dead
+rung-1 mains (pop_rock ×8, jazz ×6) — same section-kind-floor mechanism as blues C-23, already
+documented in **C-20** (open). User ruled **per-id markers** (not file-level, which over-silences).
+T3b refactors lint silencing to per-pattern-id, migrates chill_lofi/blues/fusion markers, annotates
+the 14 reference ids, reworks fixtures, notes C-20's lint remedy delivered.
+
 **Baseline at session start:** `a838b3d`, four gates green — suite ~11053 tests / ~100 s;
 `_GENERATOR_VERSION` **0.1.3**; corpus 60/60; ruff clean; mypy clean. Never `git push`.
 
